@@ -1,4 +1,4 @@
-package ast
+package server
 
 import (
 	"errors"
@@ -16,11 +16,11 @@ type Cursor struct {
 }
 
 // Otherwise I will mess that up for sure. In the LSP 0-based, in the parser 1-based
-func NewCursor(lspLine, lspCol int) Cursor {
+func newCursor(lspLine, lspCol int) Cursor {
 	return Cursor{Line: lspLine + 1, Col: lspCol + 1}
 }
 
-func ParseDocument(document string, documentName string) (*syntax.File, error) {
+func parseDocument(document string, documentName string) (*syntax.File, error) {
 	reader := strings.NewReader(document)
 	parser := syntax.NewParser()
 	file, err := parser.Parse(reader, "")
@@ -30,7 +30,7 @@ func ParseDocument(document string, documentName string) (*syntax.File, error) {
 	return file, nil
 }
 
-func FindNodeUnderCursor(file *syntax.File, cursor Cursor) syntax.Node {
+func findNodeUnderCursor(file *syntax.File, cursor Cursor) syntax.Node {
 	var found syntax.Node
 
 	syntax.Walk(file, func(node syntax.Node) bool {
@@ -49,7 +49,8 @@ func FindNodeUnderCursor(file *syntax.File, cursor Cursor) syntax.Node {
 	return found
 }
 
-func FindAllSourcedFiles(file *syntax.File, env map[string]string, baseDir string, visited map[string]bool) []string {
+
+func findAllSourcedFiles(file *syntax.File, env map[string]string, baseDir string, visited map[string]bool) []string {
 	var sourcedFiles []string
 
 	syntax.Walk(file, func(node syntax.Node) bool {
@@ -86,7 +87,7 @@ func FindAllSourcedFiles(file *syntax.File, env map[string]string, baseDir strin
 		if content, err := os.ReadFile(resolved); err == nil {
 			parser := syntax.NewParser()
 			if parsed, err := parser.Parse(strings.NewReader(string(content)), ""); err == nil {
-				subFiles := FindAllSourcedFiles(parsed, env, filepath.Dir(resolved), visited)
+				subFiles := findAllSourcedFiles(parsed, env, filepath.Dir(resolved), visited)
 				sourcedFiles = append(sourcedFiles, subFiles...)
 			}
 		}
