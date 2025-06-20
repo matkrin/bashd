@@ -12,7 +12,7 @@ type CompletionParams struct {
 
 type CompletionContext struct {
 	TriggerKind      CompletionTriggerKind `json:"triggerKind"`
-	TriggerCharacter *string                 `json:"triggerCharacter"`
+	TriggerCharacter *string               `json:"triggerCharacter"`
 }
 
 type CompletionTriggerKind int
@@ -26,6 +26,16 @@ const (
 type CompletionResponse struct {
 	Response
 	Result []CompletionItem `json:"result"`
+}
+
+func NewCompletionResponse(id int, completionList []CompletionItem) CompletionResponse {
+	return CompletionResponse{
+		Response: Response{
+			RPC: "2.0",
+			ID:  &id,
+		},
+		Result: completionList,
+	}
 }
 
 type CompletionItem struct {

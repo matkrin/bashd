@@ -46,7 +46,7 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 	}
 
 	if definition == nil {
-		// Check if we are over a filename in a source statement
+		// Check if the cursor is over a filename in a source statement
 		filename, err := uriToPath(uri)
 		if err != nil {
 			logger.Error(err.Error())
@@ -54,9 +54,8 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 		}
 		baseDir := filepath.Dir(filename)
 		sourcePath := findSourcedFile(fileAst, cursor, state.EnvVars, baseDir)
-		// Check file exists
+		// Check if file exists
 		if _, err := os.Stat(sourcePath); err != nil {
-			// Send diagnostic here?
 			return nil
 		}
 		definition = &DefNode{

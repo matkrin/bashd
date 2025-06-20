@@ -1,8 +1,6 @@
 package server
 
 import (
-	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,7 +23,7 @@ func parseDocument(document string, documentName string) (*syntax.File, error) {
 	parser := syntax.NewParser()
 	file, err := parser.Parse(reader, "")
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Could not parse document %s", documentName))
+		return nil, err
 	}
 	return file, nil
 }
@@ -49,10 +47,43 @@ func findNodeUnderCursor(file *syntax.File, cursor Cursor) syntax.Node {
 	return found
 }
 
-
 func findAllSourcedFiles(file *syntax.File, env map[string]string, baseDir string, visited map[string]bool) []string {
 	var sourcedFiles []string
+	for _, sourcedFile := range findSourceStatments(file, env) {
+		path := sourcedFile.Name
+		resolved := path
+		if !filepath.IsAbs(path) {
+			resolved = filepath.Join(baseDir, path)
+		}
+		resolved = filepath.Clean(resolved)
 
+		if visited[resolved] {
+			continue
+		}
+		visited[resolved] = true
+
+		sourcedFiles = append(sourcedFiles, resolved)
+
+		// Recurse
+		if content, err := os.ReadFile(resolved); err == nil {
+			parser := syntax.NewParser()
+			if parsed, err := parser.Parse(strings.NewReader(string(content)), ""); err == nil {
+				subFiles := findAllSourcedFiles(parsed, env, filepath.Dir(resolved), visited)
+				sourcedFiles = append(sourcedFiles, subFiles...)
+			}
+		}
+	}
+	return sourcedFiles
+}
+
+type SourcedFile struct {
+	Name  string
+	Start syntax.Pos
+	End   syntax.Pos
+}
+
+func findSourceStatments(file *syntax.File, env map[string]string) []SourcedFile {
+	sourcedFiles := []SourcedFile{}
 	syntax.Walk(file, func(node syntax.Node) bool {
 		call, ok := node.(*syntax.CallExpr)
 		if !ok || len(call.Args) < 2 {
@@ -68,33 +99,13 @@ func findAllSourcedFiles(file *syntax.File, env map[string]string, baseDir strin
 		if path == "" {
 			return true
 		}
-
-		// Resolve to absolute path relative to baseDir
-		resolved := path
-		if !filepath.IsAbs(path) {
-			resolved = filepath.Join(baseDir, path)
-		}
-		resolved = filepath.Clean(resolved)
-
-		if visited[resolved] {
-			return true
-		}
-		visited[resolved] = true
-
-		sourcedFiles = append(sourcedFiles, resolved)
-
-		// Recurse
-		if content, err := os.ReadFile(resolved); err == nil {
-			parser := syntax.NewParser()
-			if parsed, err := parser.Parse(strings.NewReader(string(content)), ""); err == nil {
-				subFiles := findAllSourcedFiles(parsed, env, filepath.Dir(resolved), visited)
-				sourcedFiles = append(sourcedFiles, subFiles...)
-			}
-		}
-
+		sourcedFiles = append(sourcedFiles, SourcedFile{
+			Name:  path,
+			Start: node.Pos(),
+			End:   node.End(),
+		})
 		return true
 	})
-
 	return sourcedFiles
 }
 

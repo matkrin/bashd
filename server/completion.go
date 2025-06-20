@@ -31,53 +31,25 @@ var KEYWORDS = [...]string{
 }
 
 func handleCompletion(request *lsp.CompletionRequest, state *State) *lsp.CompletionResponse {
+	completionList := []lsp.CompletionItem{}
+	completionList = append(completionList, completionKeywords()...)
+
 	uri := request.Params.TextDocument.URI
 	document := state.Documents[uri].Text
 	fileAst, err := parseDocument(document, uri)
 	if err != nil {
-		return nil
+		response := lsp.NewCompletionResponse(request.ID, completionList)
+		return &response
 	}
-
-	completionList := []lsp.CompletionItem{}
 
 	triggerChar := request.Params.Context.TriggerCharacter
 	if triggerChar != nil && *triggerChar == "$" {
 		completionList = append(completionList, completeDollar(fileAst, state)...)
 	} else {
-		for _, keyword := range KEYWORDS {
-			completionItem := lsp.CompletionItem{
-				Label:         keyword,
-				Kind:          lsp.CompletionKeyword,
-				Detail:        "detail",
-				Documentation: "doc",
-			}
-			completionList = append(completionList, completionItem)
-		}
-
-		for _, pathItem := range state.PathItems {
-			completionItem := lsp.CompletionItem{
-				Label:         pathItem,
-				Kind:          lsp.CompletionFunction,
-				Detail:        "detail",
-				Documentation: "doc",
-			}
-			completionList = append(completionList, completionItem)
-		}
-
-		if fileAst, err := parseDocument(document, uri); err == nil {
-			astCompletionItems := findCompletionItems(fileAst)
-			completionList = append(completionList, astCompletionItems...)
-		}
+		completionList = append(completionList, completionFunctions(fileAst)...)
 	}
 
-	response := lsp.CompletionResponse{
-		Response: lsp.Response{
-			RPC: "2.0",
-			ID:  &request.ID,
-		},
-		Result: completionList,
-	}
-
+	response := lsp.NewCompletionResponse(request.ID, completionList)
 	return &response
 }
 
@@ -116,35 +88,34 @@ func completeDollar(file *syntax.File, state *State) []lsp.CompletionItem {
 	return result
 }
 
-func findCompletionItems(file *syntax.File) []lsp.CompletionItem {
+func completionKeywords() []lsp.CompletionItem {
+	var result []lsp.CompletionItem
+	for _, keyword := range KEYWORDS {
+		completionItem := lsp.CompletionItem{
+			Label:         keyword,
+			Kind:          lsp.CompletionKeyword,
+			Detail:        "",
+			Documentation: "",
+		}
+		result = append(result, completionItem)
+	}
+
+	return result
+}
+
+func completionFunctions(file *syntax.File) []lsp.CompletionItem {
 	var result []lsp.CompletionItem
 
 	syntax.Walk(file, func(node syntax.Node) bool {
-		if node == nil {
-			return false
+		funcDecl, ok := node.(*syntax.FuncDecl)
+		if !ok {
+			return true
 		}
 
-		var name string
-		var kind lsp.CompletionItemKind
-
-		switch n := node.(type) {
-		case *syntax.Assign:
-			if n.Name != nil {
-				name = n.Name.Value
-				kind = lsp.CompletionVariable
-			}
-		case *syntax.FuncDecl:
-			if n.Name != nil {
-				name = n.Name.Value
-				kind = lsp.CompletionFunction
-			}
-
-		}
-
-		if name != "" {
+		if funcDecl.Name != nil {
 			result = append(result, lsp.CompletionItem{
-				Label:         name,
-				Kind:          kind,
+				Label:         funcDecl.Name.Value,
+				Kind:          lsp.CompletionFunction,
 				Detail:        "",
 				Documentation: "",
 			})

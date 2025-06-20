@@ -48,10 +48,17 @@ type ServerCapabilities struct {
 	CompletionProvider CompletionOptions `json:"completionProvider"`
 	DefinitionProvider bool              `json:"definitionProvider"`
 	HoverProvider      bool              `json:"hoverProvider"`
+	DiagnosticProvider DiagnosticOptions `json:"diagnosticProvider"`
 }
 
 type CompletionOptions struct {
 	TriggerCharacters []string `json:"triggerCharacters"`
+}
+
+type DiagnosticOptions struct {
+	Identifier            *string `json:"identifier"`
+	InterFileDependencies bool    `json:"interFileDependencies"`
+	WorkspaceDiagnostics  bool    `json:"workspaceDiagnostics"`
 }
 
 func NewInitializeResponse(id int) InitializeResponse {
@@ -67,6 +74,11 @@ func NewInitializeResponse(id int) InitializeResponse {
 				DefinitionProvider: true,
 				CompletionProvider: CompletionOptions{
 					TriggerCharacters: []string{"$"},
+				},
+				DiagnosticProvider: DiagnosticOptions{
+					Identifier:            nil,
+					InterFileDependencies: false,
+					WorkspaceDiagnostics:  false,
 				},
 			},
 			ServerInfo: ServerInfo{

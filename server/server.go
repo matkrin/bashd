@@ -46,6 +46,9 @@ func HandleMessage(writer io.Writer, state State, method string, contents []byte
 
 		state.OpenDocument(request.Params.TextDocument.URI, request.Params.TextDocument.Text)
 
+		diagnostics := checkFile(request.Params.TextDocument.URI, state)
+		pushDiagnostic(writer, request.Params.TextDocument.URI, diagnostics)
+
 	case "textDocument/didChange":
 		var request lsp.TextDocumentDidChangeNotification
 		if err := json.Unmarshal(contents, &request); err != nil {
@@ -56,6 +59,9 @@ func HandleMessage(writer io.Writer, state State, method string, contents []byte
 		for _, change := range request.Params.ContentChanges {
 			state.UpdateDocument(request.Params.TextDocument.URI, change.Text)
 		}
+
+		diagnostics := checkFile(request.Params.TextDocument.URI, state)
+		pushDiagnostic(writer, request.Params.TextDocument.URI, diagnostics)
 
 	case "textDocument/hover":
 		var request lsp.HoverRequest
@@ -115,6 +121,11 @@ func HandleMessage(writer io.Writer, state State, method string, contents []byte
 
 	}
 
+}
+
+func pushDiagnostic(writer io.Writer, uri string, diagnostics []lsp.Diagnostic) {
+	notification := lsp.NewDiagnosticNotification(uri, diagnostics)
+	writeResponse(writer, notification)
 }
 
 func writeResponse(writer io.Writer, msg any) {
