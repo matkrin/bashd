@@ -32,7 +32,6 @@ var KEYWORDS = [...]string{
 
 func handleCompletion(request *lsp.CompletionRequest, state *State) *lsp.CompletionResponse {
 	completionList := []lsp.CompletionItem{}
-	completionList = append(completionList, completionKeywords()...)
 
 	uri := request.Params.TextDocument.URI
 	document := state.Documents[uri].Text
@@ -46,6 +45,7 @@ func handleCompletion(request *lsp.CompletionRequest, state *State) *lsp.Complet
 	if triggerChar != nil && *triggerChar == "$" {
 		completionList = append(completionList, completeDollar(fileAst, state)...)
 	} else {
+		completionList = append(completionList, completionKeywords()...)
 		completionList = append(completionList, completionFunctions(fileAst)...)
 	}
 
