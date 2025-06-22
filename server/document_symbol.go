@@ -51,6 +51,7 @@ func handleDocumentSymbol(request *lsp.DocumentSymbolsRequest, state *State) lsp
 			selectionEndLine = int(n.Name.End().Line()) - 1
 			selectionEndCol = int(n.Name.End().Col()) - 1
 		}
+
 		documentSymbols = append(documentSymbols, lsp.DocumentSymbol{
 			Name: node.Name,
 			Kind: kind,

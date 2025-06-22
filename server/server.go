@@ -36,6 +36,22 @@ func HandleMessage(writer io.Writer, state State, method string, contents []byte
 		msg := lsp.NewInitializeResponse(request.ID)
 		writeResponse(writer, msg)
 
+	case "shutdown":
+		var request lsp.ShutdownRequest
+		if err := json.Unmarshal(contents, &request); err != nil {
+			logger.Errorf("Could not parse `%s' request", method)
+		}
+
+		logger.Info("Shutdown server")
+		response := lsp.ShutdownResponse{
+			Response: lsp.Response{
+				RPC: "2.0",
+				ID:  &request.ID,
+			},
+			Result: nil,
+		}
+		writeResponse(writer, response)
+
 	case "textDocument/didOpen":
 		var request lsp.DidOpenTextDocumentNotification
 		if err := json.Unmarshal(contents, &request); err != nil {
