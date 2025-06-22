@@ -44,11 +44,12 @@ type ServerInfo struct {
 }
 
 type ServerCapabilities struct {
-	TextDocumentSync   int               `json:"textDocumentSync"`
-	CompletionProvider CompletionOptions `json:"completionProvider"`
-	DefinitionProvider bool              `json:"definitionProvider"`
-	HoverProvider      bool              `json:"hoverProvider"`
-	DiagnosticProvider DiagnosticOptions `json:"diagnosticProvider"`
+	TextDocumentSync       int               `json:"textDocumentSync"`
+	DefinitionProvider     bool              `json:"definitionProvider"`
+	HoverProvider          bool              `json:"hoverProvider"`
+	DocumentSymbolProvider bool              `json:"documentSymbolProvider"`
+	CompletionProvider     CompletionOptions `json:"completionProvider"`
+	DiagnosticProvider     DiagnosticOptions `json:"diagnosticProvider"`
 }
 
 type CompletionOptions struct {
@@ -69,9 +70,10 @@ func NewInitializeResponse(id int) InitializeResponse {
 		},
 		Result: InitializeResult{
 			Capabilities: ServerCapabilities{
-				TextDocumentSync:   1,
-				HoverProvider:      true,
-				DefinitionProvider: true,
+				TextDocumentSync:       1,
+				HoverProvider:          true,
+				DefinitionProvider:     true,
+				DocumentSymbolProvider: true,
 				CompletionProvider: CompletionOptions{
 					TriggerCharacters: []string{"$"},
 				},

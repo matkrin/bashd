@@ -89,28 +89,19 @@ type DefNode struct {
 	End   syntax.Pos // End position of the node
 }
 
-func findDefInFile(cursorNode syntax.Node, file *syntax.File) *DefNode {
-	targetIdentifier := extractIdentifier(cursorNode)
-	if targetIdentifier == "" {
-		return nil
-	}
-
-	var result *DefNode
+func defNodes(file *syntax.File) []DefNode {
+	defNodes := []DefNode{}
 
 	syntax.Walk(file, func(node syntax.Node) bool {
-		if node == nil || result != nil {
-			return false
-		}
-
 		var name string
 		var pos, end syntax.Pos
 
 		switch n := node.(type) {
-		case *syntax.ParamExp:
-			if n.Param != nil {
-				name = n.Param.Value
-				pos, end = n.Pos(), n.End()
-			}
+		// case *syntax.ParamExp:
+		// 	if n.Param != nil {
+		// 		name = n.Param.Value
+		// 		pos, end = n.Pos(), n.End()
+		// 	}
 		case *syntax.Assign:
 			if n.Name != nil {
 				name = n.Name.Value
@@ -121,23 +112,37 @@ func findDefInFile(cursorNode syntax.Node, file *syntax.File) *DefNode {
 				name = n.Name.Value
 				pos, end = n.Name.Pos(), n.Name.End()
 			}
-		case *syntax.CallExpr:
-
 		}
 
-		if name == targetIdentifier {
-			result = &DefNode{
+		if name != "" {
+			defNodes = append(defNodes, DefNode{
 				Node:  node,
+				Name:  name,
 				Start: pos,
 				End:   end,
-			}
-			return false
+			})
 		}
 
 		return true
 	})
 
-	return result
+	return defNodes
+}
+
+func findDefInFile(cursorNode syntax.Node, file *syntax.File) *DefNode {
+	targetIdentifier := extractIdentifier(cursorNode)
+	if targetIdentifier == "" {
+		return nil
+	}
+
+	for _, node := range defNodes(file) {
+		if node.Name == targetIdentifier {
+			return &node
+		}
+
+	}
+
+	return nil
 }
 
 // Find a definition in a sourced file.
@@ -208,4 +213,3 @@ func findSourcedFile(
 
 	return found
 }
-

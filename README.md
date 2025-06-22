@@ -5,6 +5,7 @@
 Diagnostics:
 
 - Check if sourced file exists
+- Parser errors
 
 Definition:
 
@@ -19,6 +20,11 @@ Completion:
 - Environment variables (`$`)
 - Keywords
 
+Document symbols:
+
+- Variable assignment in document
+- Function declaration in document
+
 ## TODO
 
 - Language features:
@@ -27,7 +33,6 @@ Completion:
   - Find references: Variables, functions
   - Rename
   - Hover: man pages, flags parsing from man pages
-  - Document symbols: Variables, functions
   - Formatting, range formatting: sh package?
   - Maybe:
     - Inlay hint

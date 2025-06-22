@@ -119,6 +119,13 @@ func HandleMessage(writer io.Writer, state State, method string, contents []byte
 			writeResponse(writer, response)
 		}
 
+	case "textDocument/documentSymbol":
+		var request lsp.DocumentSymbolsRequest
+		if err := json.Unmarshal(contents, &request); err != nil {
+			logger.Errorf("Could not parse `%s' request", method)
+		}
+		response := handleDocumentSymbol(&request, &state)
+		writeResponse(writer, response)
 	}
 
 }
