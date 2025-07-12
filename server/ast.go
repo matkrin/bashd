@@ -38,7 +38,7 @@ func findNodeUnderCursor(file *syntax.File, cursor Cursor) syntax.Node {
 		start, end := node.Pos(), node.End()
 		if isCursorInNode(cursor, start, end) {
 			found = node
-			// Continue walking to find smallest (deepest) node containing cursor
+			// Continue walking to find deepest node containing cursor
 			return true
 		}
 		return true

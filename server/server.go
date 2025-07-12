@@ -125,6 +125,16 @@ func HandleMessage(writer io.Writer, state State, method string, contents []byte
 			writeResponse(writer, response)
 		}
 
+	case "textDocument/references":
+		var request lsp.ReferencesRequest
+		if err := json.Unmarshal(contents, &request); err != nil {
+			logger.Errorf("Could not parse '%s' request", method)
+		}
+		response := handleReferences(&request, &state)
+		if response != nil {
+			writeResponse(writer, response)
+		}
+
 	case "textDocument/completion":
 		var request lsp.CompletionRequest
 		if err := json.Unmarshal(contents, &request); err != nil {

@@ -46,6 +46,7 @@ type ServerInfo struct {
 type ServerCapabilities struct {
 	TextDocumentSync       int               `json:"textDocumentSync"`
 	DefinitionProvider     bool              `json:"definitionProvider"`
+	ReferencesProvider     bool              `json:"referencesProvider"`
 	HoverProvider          bool              `json:"hoverProvider"`
 	DocumentSymbolProvider bool              `json:"documentSymbolProvider"`
 	CompletionProvider     CompletionOptions `json:"completionProvider"`
@@ -73,6 +74,7 @@ func NewInitializeResponse(id int) InitializeResponse {
 				TextDocumentSync:       1,
 				HoverProvider:          true,
 				DefinitionProvider:     true,
+				ReferencesProvider:     true,
 				DocumentSymbolProvider: true,
 				CompletionProvider: CompletionOptions{
 					TriggerCharacters: []string{"$"},
