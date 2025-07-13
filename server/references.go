@@ -113,14 +113,12 @@ func refNodes(ast *syntax.File, includeDeclaration bool) []RefNode {
 
 func findRefsInFile(file *syntax.File, cursorNode syntax.Node, includeDeclaration bool) []RefNode {
 	targetIdentifier := extractIdentifier(cursorNode)
-	logger.Infof("targetIdentifier : %v", targetIdentifier)
 	if targetIdentifier == "" {
 		return nil
 	}
 
 	references := []RefNode{}
 	for _, node := range refNodes(file, includeDeclaration) {
-		logger.Infof("node.Name : %v", node.Name)
 		if node.Name == targetIdentifier {
 			references = append(references, node)
 		}

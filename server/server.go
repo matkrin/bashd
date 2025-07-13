@@ -152,8 +152,17 @@ func HandleMessage(writer io.Writer, state State, method string, contents []byte
 		}
 		response := handleDocumentSymbol(&request, &state)
 		writeResponse(writer, response)
-	}
 
+	case "textDocument/prepareRename":
+		var request lsp.PrepareRenameRequest
+		if err := json.Unmarshal(contents, &request); err != nil {
+			logger.Errorf("Could not parse `%s' request", method)
+		}
+		response := handlePrepareRename(&request, &state)
+		if response != nil {
+			writeResponse(writer, response)
+		}
+	}
 }
 
 func pushDiagnostic(writer io.Writer, uri string, diagnostics []lsp.Diagnostic) {

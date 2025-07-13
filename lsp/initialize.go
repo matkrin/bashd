@@ -49,6 +49,7 @@ type ServerCapabilities struct {
 	ReferencesProvider     bool              `json:"referencesProvider"`
 	HoverProvider          bool              `json:"hoverProvider"`
 	DocumentSymbolProvider bool              `json:"documentSymbolProvider"`
+	RenameProvider         RenameOptions     `json:"renameProvider"`
 	CompletionProvider     CompletionOptions `json:"completionProvider"`
 	DiagnosticProvider     DiagnosticOptions `json:"diagnosticProvider"`
 }
@@ -61,6 +62,10 @@ type DiagnosticOptions struct {
 	Identifier            *string `json:"identifier"`
 	InterFileDependencies bool    `json:"interFileDependencies"`
 	WorkspaceDiagnostics  bool    `json:"workspaceDiagnostics"`
+}
+
+type RenameOptions struct {
+	PrepareProvider bool `json:"prepareProvider"`
 }
 
 func NewInitializeResponse(id int) InitializeResponse {
@@ -76,6 +81,9 @@ func NewInitializeResponse(id int) InitializeResponse {
 				DefinitionProvider:     true,
 				ReferencesProvider:     true,
 				DocumentSymbolProvider: true,
+				RenameProvider: RenameOptions{
+					PrepareProvider: true,
+				},
 				CompletionProvider: CompletionOptions{
 					TriggerCharacters: []string{"$"},
 				},
