@@ -162,6 +162,16 @@ func HandleMessage(writer io.Writer, state State, method string, contents []byte
 		if response != nil {
 			writeResponse(writer, response)
 		}
+
+	case "textDocument/rename":
+		var request lsp.RenameRequest
+		if err := json.Unmarshal(contents, &request); err != nil {
+			logger.Errorf("Could not parse `%s' request", method)
+		}
+		response := handleRename(&request, &state)
+		if response != nil {
+			writeResponse(writer, response)
+		}
 	}
 }
 

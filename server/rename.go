@@ -55,3 +55,34 @@ func handlePrepareRename(request *lsp.PrepareRenameRequest, state *State) *lsp.P
 	return &response
 }
 
+func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse {
+	params := request.Params
+	uri := params.TextDocument.URI
+	cursor := newCursor(
+		params.Position.Line,
+		params.Position.Character,
+	)
+
+	document := state.Documents[uri].Text
+	fileAst, err := parseDocument(document, uri)
+	if err != nil {
+		logger.Error(err.Error())
+	}
+	cursorNode := findNodeUnderCursor(fileAst, cursor)
+	referenceNodes := findRefsInFile(fileAst, cursorNode, true)
+
+	if len(referenceNodes) == 0 {
+		return nil
+	}
+
+	response := lsp.RenameResponse{
+		Response: lsp.Response{
+			RPC: "2.0",
+			ID:  &request.ID,
+		},
+		Result: &lsp.WorkspaceEdit{
+			Changes: map[string][]lsp.TextEdit{},
+		},
+	}
+	return &response
+}
