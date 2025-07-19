@@ -5,30 +5,6 @@ import (
 	"mvdan.cc/sh/v3/syntax"
 )
 
-var KEYWORDS = [...]string{
-	"if",
-	"then",
-	"elif",
-	"else",
-	"fi",
-	"for",
-	"in",
-	"do",
-	"done",
-	"case",
-	"esac",
-	"select",
-	"function",
-	"{",
-	"}",
-	"[[",
-	"]]",
-	"!",
-	"time",
-	"until",
-	"while",
-	"coproc",
-}
 
 func handleCompletion(request *lsp.CompletionRequest, state *State) *lsp.CompletionResponse {
 	completionList := []lsp.CompletionItem{}
@@ -90,7 +66,7 @@ func completeDollar(file *syntax.File, state *State) []lsp.CompletionItem {
 
 func completionKeywords() []lsp.CompletionItem {
 	var result []lsp.CompletionItem
-	for _, keyword := range KEYWORDS {
+	for _, keyword := range BASH_KEYWORDS {
 		completionItem := lsp.CompletionItem{
 			Label:         keyword,
 			Kind:          lsp.CompletionKeyword,

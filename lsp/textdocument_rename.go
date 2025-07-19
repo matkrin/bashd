@@ -22,6 +22,6 @@ type WorkspaceEdit struct {
 }
 
 type TextEdit struct {
-	Range
+	Range   Range  `json:"range"`
 	NewText string `json:"newText"`
 }

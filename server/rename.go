@@ -7,7 +7,10 @@ import (
 	"github.com/matkrin/bashd/lsp"
 )
 
-func handlePrepareRename(request *lsp.PrepareRenameRequest, state *State) *lsp.PrepareRenameResponse {
+func handlePrepareRename(
+	request *lsp.PrepareRenameRequest,
+	state *State,
+) *lsp.PrepareRenameResponse {
 	params := request.Params
 	uri := params.TextDocument.URI
 	cursor := newCursor(
@@ -28,13 +31,11 @@ func handlePrepareRename(request *lsp.PrepareRenameRequest, state *State) *lsp.P
 		return nil
 	}
 
-	// Check if rename target is a executable in PATH
+	// Check if rename target is a executable in PATH or a builtin
 	identifier := extractIdentifier(cursorNode)
-	if slices.Contains(state.PathItems, identifier) {
+	if slices.Contains(state.PathItems, identifier) || slices.Contains(BASH_BUILTINS[:], identifier) {
 		return nil
 	}
-
-	// TODO: Check if rename target is bash builtin
 
 	response := lsp.PrepareRenameResponse{
 		Response: lsp.Response{
@@ -71,8 +72,26 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 	cursorNode := findNodeUnderCursor(fileAst, cursor)
 	referenceNodes := findRefsInFile(fileAst, cursorNode, true)
 
+	logger.Infof("ref Nodes : %#v", referenceNodes)
 	if len(referenceNodes) == 0 {
 		return nil
+	}
+
+	changes := map[string][]lsp.TextEdit{}
+	for _, node := range referenceNodes {
+		changes[uri] = append(changes[uri], lsp.TextEdit{
+			Range: lsp.Range{
+				Start: lsp.Position{
+					Line:      int(node.Start.Line()) - 1,
+					Character: int(node.Start.Col()) - 1,
+				},
+				End: lsp.Position{
+					Line:      int(node.End.Line()) - 1,
+					Character: int(node.End.Col()) - 1,
+				},
+			},
+			NewText: params.NewName,
+		})
 	}
 
 	response := lsp.RenameResponse{
@@ -81,7 +100,7 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 			ID:  &request.ID,
 		},
 		Result: &lsp.WorkspaceEdit{
-			Changes: map[string][]lsp.TextEdit{},
+			Changes: changes,
 		},
 	}
 	return &response
