@@ -27,22 +27,22 @@
 - Environment variables (on `$`)
 - Keywords
 
-Document symbols:
+### Document symbols:
 
 - Variable assignment in document
 - Function declaration in document
 
 ### Rename:
 
-- Function declarations and calls in document
-- Variable assignments and usage in document
+- Function declarations and calls in document and sourced files
+- Variable assignments and usage in document and sourced files
 
 ## TODO
 
 - Language features:
   - Better completion: resolve with docs from man pages
   - Go to declaration: `declare` statements
-  - Rename in workspace, sourced files
+  - Rename in workspace
   - Hover: man pages, flags parsing from man pages
   - Formatting, range formatting: sh package?
   - Maybe:

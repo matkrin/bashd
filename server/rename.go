@@ -1,6 +1,7 @@
 package server
 
 import (
+	"path/filepath"
 	"slices"
 
 	"github.com/matkrin/bashd/logger"
@@ -92,6 +93,39 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 			},
 			NewText: params.NewName,
 		})
+	}
+
+	// In sourced files
+	filename, err := uriToPath(uri)
+	if err != nil {
+		logger.Error(err.Error())
+	}
+	baseDir := filepath.Dir(filename)
+	referenceNodesInSourcedFiles := findRefsinSourcedFile(
+		fileAst,
+		cursorNode,
+		state.EnvVars,
+		baseDir,
+		true,
+	)
+
+	for file, refNodes := range referenceNodesInSourcedFiles {
+		fileUri := pathToURI(file)
+		for _, node := range refNodes {
+			changes[fileUri] = append(changes[fileUri], lsp.TextEdit{
+				Range: lsp.Range{
+					Start: lsp.Position{
+						Line:      int(node.Start.Line()) - 1,
+						Character: int(node.Start.Col()) - 1,
+					},
+					End: lsp.Position{
+						Line:      int(node.End.Line()) - 1,
+						Character: int(node.End.Col()) - 1,
+					},
+				},
+				NewText: params.NewName,
+			})
+		}
 	}
 
 	response := lsp.RenameResponse{

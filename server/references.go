@@ -1,6 +1,9 @@
 package server
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/matkrin/bashd/logger"
 	"github.com/matkrin/bashd/lsp"
 	"mvdan.cc/sh/v3/syntax"
@@ -22,6 +25,7 @@ func handleReferences(request *lsp.ReferencesRequest, state *State) *lsp.Referen
 	cursorNode := findNodeUnderCursor(fileAst, cursor)
 	referenceNodes := findRefsInFile(fileAst, cursorNode, params.Context.IncludeDeclaration)
 
+	// In current file
 	locations := []lsp.Location{}
 	for _, node := range referenceNodes {
 		location := lsp.Location{
@@ -38,6 +42,39 @@ func handleReferences(request *lsp.ReferencesRequest, state *State) *lsp.Referen
 			},
 		}
 		locations = append(locations, location)
+	}
+
+	// In sourced files
+	filename, err := uriToPath(uri)
+	if err != nil {
+		logger.Error(err.Error())
+	}
+	baseDir := filepath.Dir(filename)
+	referenceNodesInSourcedFiles := findRefsinSourcedFile(
+		fileAst,
+		cursorNode,
+		state.EnvVars,
+		baseDir,
+		params.Context.IncludeDeclaration,
+	)
+
+	for file, refNodes := range referenceNodesInSourcedFiles {
+		for _, node := range refNodes {
+			location := lsp.Location{
+				URI: pathToURI(file),
+				Range: lsp.Range{
+					Start: lsp.Position{
+						Line:      int(node.Start.Line()) - 1,
+						Character: int(node.Start.Col()) - 1,
+					},
+					End: lsp.Position{
+						Line:      int(node.End.Line()) - 1,
+						Character: int(node.End.Col()) - 1,
+					},
+				},
+			}
+			locations = append(locations, location)
+		}
 	}
 
 	response := lsp.ReferencesResponse{
@@ -126,4 +163,32 @@ func findRefsInFile(file *syntax.File, cursorNode syntax.Node, includeDeclaratio
 	}
 
 	return references
+}
+
+func findRefsinSourcedFile(
+	fileAst *syntax.File,
+	cursorNode syntax.Node,
+	env map[string]string,
+	baseDir string,
+	includeDeclaration bool,
+) map[string][]RefNode {
+	sourcedFiles := findAllSourcedFiles(fileAst, env, baseDir, map[string]bool{})
+
+	filesRefNodes := map[string][]RefNode{}
+	for _, sourcedFile := range sourcedFiles {
+		fileContent, err := os.ReadFile(sourcedFile)
+		if err != nil {
+			logger.Error("Could not read file: %s", sourcedFile)
+			continue
+		}
+		sourcedFileAst, err := parseDocument(string(fileContent), sourcedFile)
+		if err != nil {
+			logger.Error(err.Error())
+			continue
+		}
+		references := findRefsInFile(sourcedFileAst, cursorNode, includeDeclaration)
+		filesRefNodes[sourcedFile] = references
+	}
+
+	return filesRefNodes
 }
