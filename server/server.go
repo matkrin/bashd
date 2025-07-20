@@ -14,7 +14,7 @@ import (
 	"mvdan.cc/sh/v3/syntax"
 )
 
-func HandleMessage(writer io.Writer, state State, method string, contents []byte) {
+func HandleMessage(writer io.Writer, state *State, method string, contents []byte) {
 	logger.Infof("Received msg with method: `%s`", method)
 
 	switch method {
@@ -120,7 +120,7 @@ func HandleMessage(writer io.Writer, state State, method string, contents []byte
 		if err := json.Unmarshal(contents, &request); err != nil {
 			logger.Errorf("Could not parse `%s' request", method)
 		}
-		response := handleDefinition(&request, &state)
+		response := handleDefinition(&request, state)
 		if response != nil {
 			writeResponse(writer, response)
 		}
@@ -130,7 +130,7 @@ func HandleMessage(writer io.Writer, state State, method string, contents []byte
 		if err := json.Unmarshal(contents, &request); err != nil {
 			logger.Errorf("Could not parse '%s' request", method)
 		}
-		response := handleReferences(&request, &state)
+		response := handleReferences(&request, state)
 		if response != nil {
 			writeResponse(writer, response)
 		}
@@ -140,7 +140,7 @@ func HandleMessage(writer io.Writer, state State, method string, contents []byte
 		if err := json.Unmarshal(contents, &request); err != nil {
 			logger.Errorf("Could not parse `%s' request", method)
 		}
-		response := handleCompletion(&request, &state)
+		response := handleCompletion(&request, state)
 		if response != nil {
 			writeResponse(writer, response)
 		}
@@ -150,7 +150,7 @@ func HandleMessage(writer io.Writer, state State, method string, contents []byte
 		if err := json.Unmarshal(contents, &request); err != nil {
 			logger.Errorf("Could not parse `%s' request", method)
 		}
-		response := handleDocumentSymbol(&request, &state)
+		response := handleDocumentSymbol(&request, state)
 		writeResponse(writer, response)
 
 	case "textDocument/prepareRename":
@@ -158,7 +158,7 @@ func HandleMessage(writer io.Writer, state State, method string, contents []byte
 		if err := json.Unmarshal(contents, &request); err != nil {
 			logger.Errorf("Could not parse `%s' request", method)
 		}
-		response := handlePrepareRename(&request, &state)
+		response := handlePrepareRename(&request, state)
 		if response != nil {
 			writeResponse(writer, response)
 		}
@@ -168,10 +168,21 @@ func HandleMessage(writer io.Writer, state State, method string, contents []byte
 		if err := json.Unmarshal(contents, &request); err != nil {
 			logger.Errorf("Could not parse `%s' request", method)
 		}
-		response := handleRename(&request, &state)
+		response := handleRename(&request, state)
 		if response != nil {
 			writeResponse(writer, response)
 		}
+
+	case "workspace/symbol":
+		var request lsp.WorkspaceSymbolRequest
+		if err := json.Unmarshal(contents, &request); err != nil {
+			logger.Errorf("Could not parse `%s' request", method)
+		}
+		response := handleWorkspaceSymbol(&request, state)
+		if response != nil {
+			writeResponse(writer, response)
+		}
+
 	}
 }
 

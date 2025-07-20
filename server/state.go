@@ -1,7 +1,10 @@
 package server
 
 import (
+	"io/fs"
 	"os"
+	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/matkrin/bashd/logger"
@@ -42,6 +45,33 @@ func (s *State) UpdateDocument(uri, text string) {
 		Text:         text,
 		SourcedFiles: []Document{},
 	}
+}
+
+var excludeDirs = [...]string{
+	".git",
+	".venv",
+	"node_modules",
+}
+
+func (s *State) WorkspaceShFiles() []string {
+	shFiles := []string{}
+	for _, folder := range s.WorkspaceFolders {
+		filepath.WalkDir(folder.Name, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.IsDir() && slices.Contains(excludeDirs[:], d.Name()) {
+				return fs.SkipDir
+			}
+			fileext := filepath.Ext(path)
+			if fileext == ".sh" {
+				shFiles = append(shFiles, path)
+			}
+			return nil
+		})
+	}
+
+	return shFiles
 }
 
 func getEnvVars() map[string]string {

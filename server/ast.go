@@ -47,7 +47,12 @@ func findNodeUnderCursor(file *syntax.File, cursor Cursor) syntax.Node {
 	return found
 }
 
-func findAllSourcedFiles(file *syntax.File, env map[string]string, baseDir string, visited map[string]bool) []string {
+func findAllSourcedFiles(
+	file *syntax.File,
+	env map[string]string,
+	baseDir string,
+	visited map[string]bool,
+) []string {
 	var sourcedFiles []string
 	for _, sourcedFile := range findSourceStatments(file, env) {
 		path := sourcedFile.Name

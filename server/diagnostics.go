@@ -9,7 +9,7 @@ import (
 	"mvdan.cc/sh/v3/syntax"
 )
 
-func checkFile(uri string, state State) []lsp.Diagnostic {
+func checkFile(uri string, state *State) []lsp.Diagnostic {
 	diagnostics := []lsp.Diagnostic{}
 	document := state.Documents[uri]
 	fileAst, err := parseDocument(document.Text, uri)

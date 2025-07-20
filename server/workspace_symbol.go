@@ -1,0 +1,75 @@
+package server
+
+import (
+	"os"
+
+	"github.com/matkrin/bashd/logger"
+	"github.com/matkrin/bashd/lsp"
+	"mvdan.cc/sh/v3/syntax"
+)
+
+// TODO: Only for .sh files (could also do files without extension and check #!)
+func handleWorkspaceSymbol(request *lsp.WorkspaceSymbolRequest, state *State) *lsp.WorkspaceSymbolResponse {
+	logger.Infof("Workspace Symbols Query: %v", request.Params.Query)
+	shFiles := state.WorkspaceShFiles()
+
+	workspaceSymbols := []lsp.WorkspaceSymbol{}
+	for _, shFile := range shFiles {
+		fileContent, err := os.ReadFile(shFile)
+		if err != nil {
+			logger.Errorf("Could not read file %s", shFile)
+			continue
+		}
+		fileAst, err := parseDocument(string(fileContent), shFile)
+
+		for _, node := range defNodes(fileAst) {
+			var kind lsp.SymbolKind
+			var startLine, startCol, endLine, endCol int
+			switch n := node.Node.(type) {
+			case *syntax.FuncDecl:
+				kind = lsp.SymbolFunction
+
+				startLine = int(n.Pos().Line()) - 1
+				startCol = int(n.Pos().Col()) - 1
+				endLine = int(n.Body.End().Line()) - 1
+				endCol = int(n.Body.End().Col()) - 1
+
+			case *syntax.Assign:
+				kind = lsp.SymbolVariable
+
+				startLine = int(n.Pos().Line()) - 1
+				startCol = int(n.Pos().Col()) - 1
+				endLine = int(n.End().Line()) - 1
+				endCol = int(n.End().Col()) - 1
+
+			}
+
+			workspaceSymbols = append(workspaceSymbols, lsp.WorkspaceSymbol{
+				Name: node.Name,
+				Kind: kind,
+				Location: lsp.Location{
+					URI: pathToURI(shFile),
+					Range: lsp.Range{
+						Start: lsp.Position{
+							Line:      startLine,
+							Character: startCol,
+						},
+						End: lsp.Position{
+							Line:      endLine,
+							Character: endCol,
+						},
+					},
+				},
+			})
+		}
+	}
+	response := lsp.WorkspaceSymbolResponse{
+		Response: lsp.Response{
+			RPC: "2.0",
+			ID:  &request.ID,
+		},
+		Result: workspaceSymbols,
+	}
+	return &response
+
+}

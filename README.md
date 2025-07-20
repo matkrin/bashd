@@ -12,6 +12,7 @@
 - Variable assignment in document and sourced files
 - Function declaration in document and sourced files
 - Sourced file itself
+- TODO: Workspace
 
 ### References:
 
@@ -19,6 +20,7 @@
 - Variable usage in document
 - Depending on `ReferenceContext.includeDeclaration` function declarations and
   variable assignments
+- TODO: Workspace
 
 ### Completion:
 
@@ -27,22 +29,28 @@
 - Environment variables (on `$`)
 - Keywords
 
+### Rename:
+
+- Function declarations and calls in document and sourced files
+- Variable assignments and usage in document and sourced files
+- TODO: Workspace
+
 ### Document symbols:
 
 - Variable assignment in document
 - Function declaration in document
 
-### Rename:
+### Workspace symbols:
 
-- Function declarations and calls in document and sourced files
-- Variable assignments and usage in document and sourced files
+- Variable assignment in workspace .sh files
+- Function declaration in workspace .sh files
+- TODO: Files without extension and check shebang??
 
 ## TODO
 
 - Language features:
   - Better completion: resolve with docs from man pages
   - Go to declaration: `declare` statements
-  - Rename in workspace
   - Hover: man pages, flags parsing from man pages
   - Formatting, range formatting: sh package?
   - Maybe:
@@ -53,7 +61,3 @@
   - Find references: Variables, functions in sourced files (does this make
     sense? maybe for other scripts in workspace, would need to check if file is
     sourced...)
-
-- Workspace features:
-  - Workspace symbols
-  -

@@ -67,6 +67,6 @@ func main() {
 		if err != nil {
 			logger.Error("Got an error: %s", err)
 		}
-		server.HandleMessage(writer, state, method, contents)
+		server.HandleMessage(writer, &state, method, contents)
 	}
 }
