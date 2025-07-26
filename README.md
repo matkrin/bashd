@@ -28,6 +28,9 @@
 - Functions declared in document
 - Environment variables (on `$`)
 - Keywords
+- Executables in PATH
+- Resolve with help output as docs for keywords and builtins
+- Resolve with man page as docs for executables
 
 ### Rename:
 
@@ -49,7 +52,6 @@
 ## TODO
 
 - Language features:
-  - Better completion: resolve with docs from man pages
   - Go to declaration: `declare` statements
   - Hover: man pages, flags parsing from man pages
   - Formatting, range formatting: sh package?
