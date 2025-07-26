@@ -23,6 +23,7 @@ func handleCompletion(request *lsp.CompletionRequest, state *State) *lsp.Complet
 	} else {
 		completionList = append(completionList, completionKeywords()...)
 		completionList = append(completionList, completionFunctions(fileAst)...)
+		completionList = append(completionList, completionPathItem(state)...)
 	}
 
 	response := lsp.NewCompletionResponse(request.ID, completionList)
@@ -102,3 +103,18 @@ func completionFunctions(file *syntax.File) []lsp.CompletionItem {
 
 	return result
 }
+
+func completionPathItem(state *State) []lsp.CompletionItem {
+	var result []lsp.CompletionItem
+	for _, pathItem := range state.PathItems {
+		completionItem := lsp.CompletionItem{
+			Label:         pathItem,
+			Kind:          lsp.CompletionFunction,
+			Detail:        "",
+			Documentation: nil,
+		}
+		result = append(result, completionItem)
+	}
+	return result
+}
+
