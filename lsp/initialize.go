@@ -57,6 +57,7 @@ type ServerCapabilities struct {
 
 type CompletionOptions struct {
 	TriggerCharacters []string `json:"triggerCharacters"`
+	ResolveProvider   bool     `json:"resolveProvider"`
 }
 
 type DiagnosticOptions struct {
@@ -88,6 +89,7 @@ func NewInitializeResponse(id int) InitializeResponse {
 				},
 				CompletionProvider: CompletionOptions{
 					TriggerCharacters: []string{"$"},
+					ResolveProvider:   true,
 				},
 				DiagnosticProvider: DiagnosticOptions{
 					Identifier:            nil,

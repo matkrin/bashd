@@ -145,6 +145,19 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 			writeResponse(writer, response)
 		}
 
+	case "completionItem/resolve":
+
+		logger.Infof("RESOLVE REQUEST ##################")
+		var request lsp.CompletionItemResolveRequest
+		if err := json.Unmarshal(contents, &request); err != nil {
+			logger.Errorf("Could not parse `%s' request", method)
+		}
+		logger.Infof("RESOLVE REQUEST: %v", request)
+		response := handleCompletionItemResolve(&request)
+		if response != nil {
+			writeResponse(writer, response)
+		}
+
 	case "textDocument/documentSymbol":
 		var request lsp.DocumentSymbolsRequest
 		if err := json.Unmarshal(contents, &request); err != nil {

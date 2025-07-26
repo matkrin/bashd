@@ -39,12 +39,12 @@ func NewCompletionResponse(id int, completionList []CompletionItem) CompletionRe
 }
 
 type CompletionItem struct {
-	Label string `json:"label"`
-	// LabelDetails
-	Kind CompletionItemKind `json:"kind"`
+	Label        string                      `json:"label"`
+	LabelDetails *CompletionItemLabelDetails `json:"labelDetails"`
+	Kind         CompletionItemKind          `json:"kind"`
 	// Tags
-	Detail        string `json:"detail"`
-	Documentation string `json:"documentation"` // Can make this markdown
+	Detail        string         `json:"detail"`
+	Documentation *MarkupContent `json:"documentation"` // Can make this markdown
 	// Deprecated
 	// Preselect
 	// SortText
@@ -58,6 +58,11 @@ type CompletionItem struct {
 	// CommitCharacters
 	// Command
 	// Data
+}
+
+type CompletionItemLabelDetails struct {
+	Detail      *string `json:"detail"`
+	Description *string `json:"description"`
 }
 
 type CompletionItemKind int
@@ -88,4 +93,16 @@ const (
 	CompletionEvent
 	CompletionOperator
 	CompletionTypeParameter
+)
+
+type MarkupContent struct {
+	Kind  MarkupKind `json:"kind"`
+	Value string     `json:"value"`
+}
+
+type MarkupKind string
+
+const (
+	MarkupKindPlainText MarkupKind = "plaintext"
+	MarkupKindMarkdown  MarkupKind = "markdown"
 )
