@@ -44,15 +44,16 @@ type ServerInfo struct {
 }
 
 type ServerCapabilities struct {
-	TextDocumentSync        int               `json:"textDocumentSync"`
-	DefinitionProvider      bool              `json:"definitionProvider"`
-	ReferencesProvider      bool              `json:"referencesProvider"`
-	HoverProvider           bool              `json:"hoverProvider"`
-	DocumentSymbolProvider  bool              `json:"documentSymbolProvider"`
-	WorkspaceSymbolProvider bool              `json:"workspaceSymbolProvider"`
-	RenameProvider          RenameOptions     `json:"renameProvider"`
-	CompletionProvider      CompletionOptions `json:"completionProvider"`
-	DiagnosticProvider      DiagnosticOptions `json:"diagnosticProvider"`
+	TextDocumentSync           int               `json:"textDocumentSync"`
+	DefinitionProvider         bool              `json:"definitionProvider"`
+	ReferencesProvider         bool              `json:"referencesProvider"`
+	HoverProvider              bool              `json:"hoverProvider"`
+	DocumentSymbolProvider     bool              `json:"documentSymbolProvider"`
+	WorkspaceSymbolProvider    bool              `json:"workspaceSymbolProvider"`
+	DocumentFormattingProvider bool              `json:"documentFormattingProvider"`
+	RenameProvider             RenameOptions     `json:"renameProvider"`
+	CompletionProvider         CompletionOptions `json:"completionProvider"`
+	DiagnosticProvider         DiagnosticOptions `json:"diagnosticProvider"`
 }
 
 type CompletionOptions struct {
@@ -78,12 +79,13 @@ func NewInitializeResponse(id int) InitializeResponse {
 		},
 		Result: InitializeResult{
 			Capabilities: ServerCapabilities{
-				TextDocumentSync:        1,
-				HoverProvider:           true,
-				DefinitionProvider:      true,
-				ReferencesProvider:      true,
-				DocumentSymbolProvider:  true,
-				WorkspaceSymbolProvider: true,
+				TextDocumentSync:           1,
+				HoverProvider:              true,
+				DefinitionProvider:         true,
+				ReferencesProvider:         true,
+				DocumentSymbolProvider:     true,
+				WorkspaceSymbolProvider:    true,
+				DocumentFormattingProvider: true,
 				RenameProvider: RenameOptions{
 					PrepareProvider: true,
 				},

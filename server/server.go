@@ -165,6 +165,16 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 			writeResponse(writer, response)
 		}
 
+	case "textDocument/formatting":
+		var request lsp.FormattingRequest
+		if err := json.Unmarshal(contents, &request); err != nil {
+			logger.Errorf("Could not parse `%s' request", method)
+		}
+		response := handleFormatting(&request, state)
+		if response != nil {
+			writeResponse(writer, response)
+		}
+
 	}
 }
 

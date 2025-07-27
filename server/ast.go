@@ -20,7 +20,7 @@ func newCursor(lspLine, lspCol int) Cursor {
 
 func parseDocument(document string, documentName string) (*syntax.File, error) {
 	reader := strings.NewReader(document)
-	parser := syntax.NewParser()
+	parser := syntax.NewParser(syntax.KeepComments(true))
 	file, err := parser.Parse(reader, documentName)
 	if err != nil {
 		return nil, err

@@ -11,13 +11,14 @@
 
 - Show `help` output as docs for keywords and builtins
 - Show man page as docs for executables
+- **TODO**: function preview, variable preview?, flags parsing from man pages?
 
 ### Definition:
 
 - Variable assignment in document and sourced files
 - Function declaration in document and sourced files
 - Sourced file itself
-- TODO: Workspace
+- **TODO**: Workspace
 
 ### References:
 
@@ -25,7 +26,7 @@
 - Variable usage in document
 - Depending on `ReferenceContext.includeDeclaration` function declarations and
   variable assignments
-- TODO: Workspace
+- **TODO**: Workspace
 
 ### Completion:
 
@@ -41,7 +42,7 @@
 
 - Function declarations and calls in document and sourced files
 - Variable assignments and usage in document and sourced files
-- TODO: Workspace
+- **TODO**: Workspace
 
 ### Document symbols:
 
@@ -52,13 +53,16 @@
 
 - Variable assignment in workspace .sh files
 - Function declaration in workspace .sh files
-- TODO: Files without extension and check shebang??
+- **TODO**: Files without extension and check shebang??
+
+### Formatting
+
+- Entire file
+- **TODO**: Range formatting
 
 ## TODO
 
 - Go to declaration: `declare` statements
-- Hover: function preview, variable preview?, flags parsing from man pages?
-- Formatting, range formatting: sh package?
 - Maybe:
   - Inlay hint
   - Code lens
