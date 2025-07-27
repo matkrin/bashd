@@ -16,5 +16,5 @@ type HoverResponse struct {
 }
 
 type HoverResult struct {
-	Contents string `json:"contents"`
+	Contents MarkupContent `json:"contents"`
 }

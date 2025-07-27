@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/matkrin/bashd/logger"
 	"github.com/matkrin/bashd/lsp"
-	"mvdan.cc/sh/v3/syntax"
 )
 
 func HandleMessage(writer io.Writer, state *State, method string, contents []byte) {
@@ -84,34 +82,8 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 		if err := json.Unmarshal(contents, &request); err != nil {
 			logger.Errorf("Could not parse `%s' request", method)
 		}
-
-		documentName := request.Params.TextDocument.URI
-		cursor := newCursor(
-			request.Params.Position.Line,
-			request.Params.Position.Character,
-		)
-		document := state.Documents[documentName].Text
-		fileAst, err := parseDocument(document, documentName)
-		if err != nil {
-			logger.Error(err.Error())
-			return
-		}
-		node := findNodeUnderCursor(fileAst, cursor)
-
-		if node != nil {
-			var buf bytes.Buffer
-			syntax.DebugPrint(&buf, node)
-
-			response := lsp.HoverResponse{
-				Response: lsp.Response{
-					RPC: "2.0",
-					ID:  &request.ID,
-				},
-				Result: lsp.HoverResult{
-					Contents: buf.String(),
-				},
-			}
-
+		response := handleHover(&request, state)
+		if response != nil {
 			writeResponse(writer, response)
 		}
 

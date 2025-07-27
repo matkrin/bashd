@@ -7,6 +7,11 @@
 - Check if sourced file exists
 - [Parser](https://github.com/mvdan/sh/) errors
 
+### Hover
+
+- Show `help` output as docs for keywords and builtins
+- Show man page as docs for executables
+
 ### Definition:
 
 - Variable assignment in document and sourced files
@@ -29,7 +34,7 @@
 - Environment variables (on `$`)
 - Keywords
 - Executables in PATH
-- Resolve with help output as docs for keywords and builtins
+- Resolve with `help` output as docs for keywords and builtins
 - Resolve with man page as docs for executables
 
 ### Rename:
@@ -51,15 +56,13 @@
 
 ## TODO
 
-- Language features:
-  - Go to declaration: `declare` statements
-  - Hover: man pages, flags parsing from man pages
-  - Formatting, range formatting: sh package?
-  - Maybe:
-    - Inlay hint
-    - Code lens
-    - Signature help
-
+- Go to declaration: `declare` statements
+- Hover: function preview, variable preview?, flags parsing from man pages?
+- Formatting, range formatting: sh package?
+- Maybe:
+  - Inlay hint
+  - Code lens
+  - Signature help
   - Find references: Variables, functions in sourced files (does this make
     sense? maybe for other scripts in workspace, would need to check if file is
     sourced...)

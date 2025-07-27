@@ -1,6 +1,8 @@
 package server
 
 import (
+	"fmt"
+
 	"github.com/matkrin/bashd/lsp"
 	"mvdan.cc/sh/v3/syntax"
 )
@@ -34,10 +36,11 @@ func handleCompletionItemResolve(
 ) *lsp.CompletionItemResolveResponse {
 	completionItem := request.Params.CompletionItem
 	documentation := getDocumentation(completionItem.Label)
+	mdDocumentation := fmt.Sprintf("```man\n%s\n```", documentation)
 
 	completionItem.Documentation = &lsp.MarkupContent{
 		Kind:  lsp.MarkupKindMarkdown,
-		Value: documentation,
+		Value: mdDocumentation,
 	}
 
 	response := lsp.CompletionItemResolveResponse{

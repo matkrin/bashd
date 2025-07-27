@@ -18,7 +18,7 @@ func getDocumentation(command string) string {
 		documentation = runMan(command)
 	}
 
-	return fmt.Sprintf("```man\n%s\n```", documentation)
+	return documentation
 }
 
 func runMan(command string) string {
