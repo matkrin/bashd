@@ -164,13 +164,14 @@ func isCursorInNode(cursor Cursor, start, end syntax.Pos) bool {
 	}
 
 	// Multi-line node
-	if cursor.Line == startLine {
+	switch cursor.Line {
+	case startLine:
 		// On first line of node: col must be >= start.Col()
 		return cursor.Col >= startCol
-	} else if cursor.Line == endLine {
+	case endLine:
 		// On last line of node: col must be <= end.Col()
 		return cursor.Col <= endCol
-	} else {
+	default:
 		// Any line in between start and end line is inside
 		return true
 	}

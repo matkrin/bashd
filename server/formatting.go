@@ -2,14 +2,14 @@ package server
 
 import (
 	"bytes"
+	"log/slog"
 
-	"github.com/matkrin/bashd/logger"
 	"github.com/matkrin/bashd/lsp"
 	"mvdan.cc/sh/v3/syntax"
 )
 
 func handleFormatting(request *lsp.FormattingRequest, state *State) *lsp.FormattingResponse {
-	logger.Infof("FORMATTING PARAMS: %#v", request.Params)
+	slog.Info("FORMATTING", "params", request.Params)
 	uri := request.Params.TextDocument.URI
 	document := state.Documents[uri].Text
 	fileAst, err := parseDocument(document, uri)
@@ -31,12 +31,12 @@ func handleFormatting(request *lsp.FormattingRequest, state *State) *lsp.Formatt
 	printer.Print(buffer, fileAst)
 
 	textedit := lsp.TextEdit{
-		Range:   lsp.Range{
+		Range: lsp.Range{
 			Start: lsp.Position{
 				Line:      0,
 				Character: 0,
 			},
-			End:   lsp.Position{
+			End: lsp.Position{
 				Line:      99999,
 				Character: 99999,
 			},

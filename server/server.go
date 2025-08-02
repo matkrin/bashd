@@ -4,32 +4,32 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/url"
 	"path/filepath"
 	"strings"
 
-	"github.com/matkrin/bashd/logger"
 	"github.com/matkrin/bashd/lsp"
 )
 
 func HandleMessage(writer io.Writer, state *State, method string, contents []byte) {
-	logger.Infof("Received msg with method: `%s`", method)
+	// logger.Infof("Received msg with method: `%s`", method)
+	slog.Info("Received msg", "method", method)
 
 	switch method {
 	case "initialize":
 		var request lsp.InitializeRequest
 		if err := json.Unmarshal(contents, &request); err != nil {
-			logger.Errorf("Could not parse `%s' request", method)
+			slog.Error("Could not parse request", "method", method)
 		}
 
-		logger.Infof(
-			"Connected to: %s %s",
-			request.Params.ClientInfo.Name,
-			request.Params.ClientInfo.Version,
+		slog.Info("Connected to client",
+			"name", request.Params.ClientInfo.Name,
+			"version", request.Params.ClientInfo.Version,
 		)
 
 		state.WorkspaceFolders = request.Params.WorkspaceFolders
-		logger.Infof("Workspace folders set to: %#v", state.WorkspaceFolders)
+		slog.Info("Workspace folders set", "workerspaceFolders", state.WorkspaceFolders)
 
 		msg := lsp.NewInitializeResponse(request.ID)
 		writeResponse(writer, msg)
@@ -37,10 +37,10 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 	case "shutdown":
 		var request lsp.ShutdownRequest
 		if err := json.Unmarshal(contents, &request); err != nil {
-			logger.Errorf("Could not parse `%s' request", method)
+			slog.Error("Could not parse request", "method", method)
 		}
 
-		logger.Info("Shutdown server")
+		slog.Info("Shutdown server")
 		response := lsp.ShutdownResponse{
 			Response: lsp.Response{
 				RPC: "2.0",
@@ -53,10 +53,10 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 	case "textDocument/didOpen":
 		var request lsp.DidOpenTextDocumentNotification
 		if err := json.Unmarshal(contents, &request); err != nil {
-			logger.Errorf("Could not parse `%s' request", method)
+			slog.Error("Could not parse request", "method", method)
 		}
 
-		logger.Infof("Opened: %s", request.Params.TextDocument.URI)
+		slog.Info("Opened", "URI", request.Params.TextDocument.URI)
 
 		state.OpenDocument(request.Params.TextDocument.URI, request.Params.TextDocument.Text)
 
@@ -66,10 +66,11 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 	case "textDocument/didChange":
 		var request lsp.TextDocumentDidChangeNotification
 		if err := json.Unmarshal(contents, &request); err != nil {
-			logger.Errorf("Could not parse `%s' request", method)
+			slog.Error("Could not parse request", "method", method)
 		}
 
-		logger.Infof("Changed: %s", request.Params.TextDocument.URI)
+		slog.Info("Changed", "URI", request.Params.TextDocument.URI)
+
 		for _, change := range request.Params.ContentChanges {
 			state.UpdateDocument(request.Params.TextDocument.URI, change.Text)
 		}
@@ -80,7 +81,7 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 	case "textDocument/hover":
 		var request lsp.HoverRequest
 		if err := json.Unmarshal(contents, &request); err != nil {
-			logger.Errorf("Could not parse `%s' request", method)
+			slog.Error("Could not parse request", "method", method)
 		}
 		response := handleHover(&request, state)
 		if response != nil {
@@ -90,7 +91,8 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 	case "textDocument/definition":
 		var request lsp.DefinitionRequest
 		if err := json.Unmarshal(contents, &request); err != nil {
-			logger.Errorf("Could not parse `%s' request", method)
+			slog.Error("Could not parse request", "method", method)
+
 		}
 		response := handleDefinition(&request, state)
 		if response != nil {
@@ -100,7 +102,7 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 	case "textDocument/references":
 		var request lsp.ReferencesRequest
 		if err := json.Unmarshal(contents, &request); err != nil {
-			logger.Errorf("Could not parse '%s' request", method)
+			slog.Error("Could not parse request", "method", method)
 		}
 		response := handleReferences(&request, state)
 		if response != nil {
@@ -110,7 +112,7 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 	case "textDocument/completion":
 		var request lsp.CompletionRequest
 		if err := json.Unmarshal(contents, &request); err != nil {
-			logger.Errorf("Could not parse `%s' request", method)
+			slog.Error("Could not parse request", "method", method)
 		}
 		response := handleCompletion(&request, state)
 		if response != nil {
@@ -120,7 +122,7 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 	case "completionItem/resolve":
 		var request lsp.CompletionItemResolveRequest
 		if err := json.Unmarshal(contents, &request); err != nil {
-			logger.Errorf("Could not parse `%s' request", method)
+			slog.Error("Could not parse request", "method", method)
 		}
 		response := handleCompletionItemResolve(&request)
 		if response != nil {
@@ -130,7 +132,7 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 	case "textDocument/documentSymbol":
 		var request lsp.DocumentSymbolsRequest
 		if err := json.Unmarshal(contents, &request); err != nil {
-			logger.Errorf("Could not parse `%s' request", method)
+			slog.Error("Could not parse request", "method", method)
 		}
 		response := handleDocumentSymbol(&request, state)
 		writeResponse(writer, response)
@@ -138,7 +140,7 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 	case "textDocument/prepareRename":
 		var request lsp.PrepareRenameRequest
 		if err := json.Unmarshal(contents, &request); err != nil {
-			logger.Errorf("Could not parse `%s' request", method)
+			slog.Error("Could not parse request", "method", method)
 		}
 		response := handlePrepareRename(&request, state)
 		if response != nil {
@@ -148,7 +150,7 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 	case "textDocument/rename":
 		var request lsp.RenameRequest
 		if err := json.Unmarshal(contents, &request); err != nil {
-			logger.Errorf("Could not parse `%s' request", method)
+			slog.Error("Could not parse request", "method", method)
 		}
 		response := handleRename(&request, state)
 		if response != nil {
@@ -158,7 +160,7 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 	case "workspace/symbol":
 		var request lsp.WorkspaceSymbolRequest
 		if err := json.Unmarshal(contents, &request); err != nil {
-			logger.Errorf("Could not parse `%s' request", method)
+			slog.Error("Could not parse request", "method", method)
 		}
 		response := handleWorkspaceSymbol(&request, state)
 		if response != nil {
@@ -168,7 +170,7 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 	case "textDocument/formatting":
 		var request lsp.FormattingRequest
 		if err := json.Unmarshal(contents, &request); err != nil {
-			logger.Errorf("Could not parse `%s' request", method)
+			slog.Error("Could not parse request", "method", method)
 		}
 		response := handleFormatting(&request, state)
 		if response != nil {

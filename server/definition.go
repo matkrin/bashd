@@ -1,10 +1,10 @@
 package server
 
 import (
+	"log/slog"
 	"os"
 	"path/filepath"
 
-	"github.com/matkrin/bashd/logger"
 	"github.com/matkrin/bashd/lsp"
 	"mvdan.cc/sh/v3/syntax"
 )
@@ -19,7 +19,7 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 	document := state.Documents[uri].Text
 	fileAst, err := parseDocument(document, uri)
 	if err != nil {
-		logger.Error(err.Error())
+		slog.Error(err.Error())
 	}
 	cursorNode := findNodeUnderCursor(fileAst, cursor)
 	definition := findDefInFile(cursorNode, fileAst)
@@ -28,7 +28,7 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 		// Check for the definition in a sourced file
 		filename, err := uriToPath(uri)
 		if err != nil {
-			logger.Error(err.Error())
+			slog.Error(err.Error())
 			return nil
 		}
 		baseDir := filepath.Dir(filename)
@@ -49,7 +49,7 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 		// Check if the cursor is over a filename in a source statement
 		filename, err := uriToPath(uri)
 		if err != nil {
-			logger.Error(err.Error())
+			slog.Error(err.Error())
 			return nil
 		}
 		baseDir := filepath.Dir(filename)
@@ -158,12 +158,12 @@ func findDefInSourcedFile(
 	for _, sourcedFile := range sourcedFiles {
 		fileContent, err := os.ReadFile(sourcedFile)
 		if err != nil {
-			logger.Error("Could not read file: %s", sourcedFile)
+			slog.Error("Could not read file", "file", sourcedFile)
 			continue
 		}
 		sourcedFileAst, err := parseDocument(string(fileContent), sourcedFile)
 		if err != nil {
-			logger.Error(err.Error())
+			slog.Error(err.Error())
 			continue
 		}
 		definition = findDefInFile(cursorNode, sourcedFileAst)

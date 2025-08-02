@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log/slog"
 	"os/exec"
 	"slices"
-
-	"github.com/matkrin/bashd/logger"
 )
 
 func getDocumentation(command string) string {
@@ -27,7 +26,7 @@ func runMan(command string) string {
 
 	man, err := runPipe(manCmd, colCmd)
 	if err != nil {
-		logger.Errorf("Error running pipe: %s", err)
+		slog.Error("Error running pipe", "err", err)
 	}
 	return man
 }
@@ -38,7 +37,7 @@ func runHelp(command string) string {
 
 	help, err := runPipe(helpCmd, colCmd)
 	if err != nil {
-		logger.Errorf("Error running pipe: %s", err)
+		slog.Error("Error running pipe", "err", err)
 	}
 	return help
 }

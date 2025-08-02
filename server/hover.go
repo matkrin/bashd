@@ -2,9 +2,9 @@ package server
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 
-	"github.com/matkrin/bashd/logger"
 	"github.com/matkrin/bashd/lsp"
 )
 
@@ -18,7 +18,7 @@ func handleHover(request *lsp.HoverRequest, state *State) *lsp.HoverResponse {
 	document := state.Documents[documentName].Text
 	fileAst, err := parseDocument(document, documentName)
 	if err != nil {
-		logger.Error(err.Error())
+		slog.Error(err.Error())
 		return nil
 	}
 
@@ -28,11 +28,7 @@ func handleHover(request *lsp.HoverRequest, state *State) *lsp.HoverResponse {
 	}
 
 	identifier := extractIdentifier(node)
-	logger.Infof("IDENTIFIER: %s", identifier)
-	logger.Infof("NODE: %#v", node)
-	logger.Infof("NODE TYPE: %T", node)
 	documentation := getDocumentation(identifier)
-	logger.Infof("DOCUMENTATION: %s", documentation)
 	if strings.Trim(documentation, "\n") == "" {
 		return nil
 	}

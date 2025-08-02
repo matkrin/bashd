@@ -1,10 +1,10 @@
 package server
 
 import (
+	"log/slog"
 	"os"
 	"path/filepath"
 
-	"github.com/matkrin/bashd/logger"
 	"github.com/matkrin/bashd/lsp"
 	"mvdan.cc/sh/v3/syntax"
 )
@@ -20,7 +20,7 @@ func handleReferences(request *lsp.ReferencesRequest, state *State) *lsp.Referen
 	document := state.Documents[uri].Text
 	fileAst, err := parseDocument(document, uri)
 	if err != nil {
-		logger.Error(err.Error())
+		slog.Error(err.Error())
 	}
 	cursorNode := findNodeUnderCursor(fileAst, cursor)
 	referenceNodes := findRefsInFile(fileAst, cursorNode, params.Context.IncludeDeclaration)
@@ -47,7 +47,7 @@ func handleReferences(request *lsp.ReferencesRequest, state *State) *lsp.Referen
 	// In sourced files
 	filename, err := uriToPath(uri)
 	if err != nil {
-		logger.Error(err.Error())
+		slog.Error(err.Error())
 	}
 	baseDir := filepath.Dir(filename)
 	referenceNodesInSourcedFiles := findRefsinSourcedFile(
@@ -178,12 +178,12 @@ func findRefsinSourcedFile(
 	for _, sourcedFile := range sourcedFiles {
 		fileContent, err := os.ReadFile(sourcedFile)
 		if err != nil {
-			logger.Error("Could not read file: %s", sourcedFile)
+			slog.Error("Could not read file", "file", sourcedFile)
 			continue
 		}
 		sourcedFileAst, err := parseDocument(string(fileContent), sourcedFile)
 		if err != nil {
-			logger.Error(err.Error())
+			slog.Error(err.Error())
 			continue
 		}
 		references := findRefsInFile(sourcedFileAst, cursorNode, includeDeclaration)

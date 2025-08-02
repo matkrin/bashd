@@ -2,9 +2,9 @@ package main
 
 import (
 	"bufio"
+	"log/slog"
 	"os"
 
-	"github.com/matkrin/bashd/logger"
 	"github.com/matkrin/bashd/lsp"
 	"github.com/matkrin/bashd/server"
 )
@@ -52,8 +52,9 @@ func main() {
 	// testParser()
 
 	logLevel := "debug"
-	logger.Init("debug", "/Users/matthias/Developer/bashd/bashd.log")
-	logger.Infof("Logging initialized with level: %s", logLevel)
+	logFile := "/Users/matthias/Developer/bashd/bashd.log"
+	initLogging(logLevel, logFile)
+	slog.Info("Logging initialized", "level", logLevel)
 
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Split(lsp.Split)
@@ -65,8 +66,42 @@ func main() {
 		msg := scanner.Bytes()
 		method, contents, err := lsp.DecodeMessage(msg)
 		if err != nil {
-			logger.Error("Got an error: %s", err)
+			slog.Error("ERROR decoding message", "err", err)
 		}
 		server.HandleMessage(writer, &state, method, contents)
 	}
+}
+
+func initLogging(levelStr string, filename string) {
+
+	var logger *slog.Logger
+	level := new(slog.LevelVar)
+
+	var l slog.Level
+	switch levelStr {
+	case "debug":
+		l = slog.LevelDebug
+	case "info":
+		l = slog.LevelInfo
+	case "warn":
+		l = slog.LevelWarn
+	case "error":
+		l = slog.LevelError
+	default:
+		l = slog.LevelInfo
+	}
+
+	level.Set(l)
+
+	logfile, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
+	if err != nil {
+		panic("No log file")
+	}
+
+	handler := slog.NewTextHandler(logfile, &slog.HandlerOptions{
+		Level: level,
+	})
+
+	logger = slog.New(handler)
+	slog.SetDefault(logger)
 }

@@ -1,23 +1,23 @@
 package server
 
 import (
+	"log/slog"
 	"os"
 
-	"github.com/matkrin/bashd/logger"
 	"github.com/matkrin/bashd/lsp"
 	"mvdan.cc/sh/v3/syntax"
 )
 
 // TODO: Only for .sh files (could also do files without extension and check #!)
 func handleWorkspaceSymbol(request *lsp.WorkspaceSymbolRequest, state *State) *lsp.WorkspaceSymbolResponse {
-	logger.Infof("Workspace Symbols Query: %v", request.Params.Query)
+	slog.Info("Workspace Symbols Query", "query", request.Params.Query)
 	shFiles := state.WorkspaceShFiles()
 
 	workspaceSymbols := []lsp.WorkspaceSymbol{}
 	for _, shFile := range shFiles {
 		fileContent, err := os.ReadFile(shFile)
 		if err != nil {
-			logger.Errorf("Could not read file %s", shFile)
+			slog.Error("Could not read file", "file", shFile)
 			continue
 		}
 		fileAst, err := parseDocument(string(fileContent), shFile)

@@ -2,12 +2,12 @@ package server
 
 import (
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 
-	"github.com/matkrin/bashd/logger"
 	"github.com/matkrin/bashd/lsp"
 )
 
@@ -107,7 +107,7 @@ func getPathItems(envVars map[string]string) []string {
 
 			info, err := entry.Info()
 			if err != nil {
-				logger.Errorf("Error getting the info of %s", entry.Name())
+				slog.Error("Error getting file into", "file", entry.Name())
 				continue
 			}
 

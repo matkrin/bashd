@@ -1,10 +1,10 @@
 package server
 
 import (
+	"log/slog"
 	"path/filepath"
 	"slices"
 
-	"github.com/matkrin/bashd/logger"
 	"github.com/matkrin/bashd/lsp"
 )
 
@@ -22,12 +22,12 @@ func handlePrepareRename(
 	document := state.Documents[uri].Text
 	fileAst, err := parseDocument(document, uri)
 	if err != nil {
-		logger.Error(err.Error())
+		slog.Error(err.Error())
 	}
 	cursorNode := findNodeUnderCursor(fileAst, cursor)
 	referenceNodes := findRefsInFile(fileAst, cursorNode, true)
 
-	logger.Infof("referenceNodes : %#v", referenceNodes)
+	slog.Info("Prepare rename", "referenceNodes", referenceNodes)
 	if len(referenceNodes) == 0 {
 		return nil
 	}
@@ -68,12 +68,12 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 	document := state.Documents[uri].Text
 	fileAst, err := parseDocument(document, uri)
 	if err != nil {
-		logger.Error(err.Error())
+		slog.Error(err.Error())
 	}
 	cursorNode := findNodeUnderCursor(fileAst, cursor)
 	referenceNodes := findRefsInFile(fileAst, cursorNode, true)
 
-	logger.Infof("ref Nodes : %#v", referenceNodes)
+	slog.Info("Handle rename", "referenceNodes", referenceNodes)
 	if len(referenceNodes) == 0 {
 		return nil
 	}
@@ -98,7 +98,7 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 	// In sourced files
 	filename, err := uriToPath(uri)
 	if err != nil {
-		logger.Error(err.Error())
+		slog.Error(err.Error())
 	}
 	baseDir := filepath.Dir(filename)
 	referenceNodesInSourcedFiles := findRefsinSourcedFile(
