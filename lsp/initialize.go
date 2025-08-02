@@ -51,6 +51,7 @@ type ServerCapabilities struct {
 	DocumentSymbolProvider     bool              `json:"documentSymbolProvider"`
 	WorkspaceSymbolProvider    bool              `json:"workspaceSymbolProvider"`
 	DocumentFormattingProvider bool              `json:"documentFormattingProvider"`
+	CodeActionProvider         bool              `json:"codeActionProvider"`
 	RenameProvider             RenameOptions     `json:"renameProvider"`
 	CompletionProvider         CompletionOptions `json:"completionProvider"`
 	DiagnosticProvider         DiagnosticOptions `json:"diagnosticProvider"`
@@ -86,6 +87,7 @@ func NewInitializeResponse(id int) InitializeResponse {
 				DocumentSymbolProvider:     true,
 				WorkspaceSymbolProvider:    true,
 				DocumentFormattingProvider: true,
+				CodeActionProvider:         true,
 				RenameProvider: RenameOptions{
 					PrepareProvider: true,
 				},
