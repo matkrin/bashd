@@ -6,10 +6,11 @@ import (
 	"os"
 
 	"github.com/matkrin/bashd/lsp"
+	"github.com/matkrin/bashd/shellcheck"
 	"mvdan.cc/sh/v3/syntax"
 )
 
-func checkFile(uri string, state *State) []lsp.Diagnostic {
+func checkDiagnostics(uri string, state *State) []lsp.Diagnostic {
 	diagnostics := []lsp.Diagnostic{}
 	document := state.Documents[uri]
 	fileAst, err := parseDocument(document.Text, uri)
@@ -25,6 +26,13 @@ func checkFile(uri string, state *State) []lsp.Diagnostic {
 		}
 	}
 
+	shellcheck, err := shellcheck.Run(document.Text)
+	if err != nil {
+		slog.Error("ERROR running shellcheck", "err", err)
+		return diagnostics
+	}
+	diagnostics = append(diagnostics, shellcheck.ToDiagnostic()...)
+
 	return diagnostics
 }
 
@@ -35,20 +43,17 @@ func diagnosticParseError(err error) lsp.Diagnostic {
 
 	switch e := err.(type) {
 	case syntax.ParseError:
-		slog.Info("PARSEERROR")
 		line = int(e.Pos.Line())
 		col = int(e.Pos.Col())
 		message = e.Text
 	case syntax.LangError:
-		slog.Info("LANGERROR")
 		line = int(e.Pos.Line())
 		col = int(e.Pos.Col())
 		message = e.Feature
 	case syntax.QuoteError:
-		slog.Info("LANGERROR")
 		message = e.Message
 	default:
-		slog.Info("OTHER ERROR", "err", err)
+		slog.Info("Unknown parser error", "err", err)
 
 	}
 

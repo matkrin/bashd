@@ -6,6 +6,7 @@
 
 - Check if sourced file exists
 - [Parser](https://github.com/mvdan/sh/) errors
+- [shellcheck](https://github.com/koalaman/shellcheck) integration
 
 ### Hover
 
@@ -59,6 +60,11 @@
 
 - Entire file
 - **TODO**: Range formatting
+
+### Code Actions
+
+- Add shebang if not exist
+- Put document on single line
 
 ## TODO
 

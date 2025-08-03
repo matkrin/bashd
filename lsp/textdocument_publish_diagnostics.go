@@ -1,5 +1,25 @@
 package lsp
 
+// type DiagnosticsRequest struct {
+// 	Request
+// 	Params DiagnosticsParams `json:"params"`
+// }
+//
+// type DiagnosticsParams struct {
+// 	TextDocument     TextDocumentIdentifier `json:"textDocument"`
+// 	Identifier       *string                `json:"identifier"`
+// 	PreviousResultID *string                `json:"previousResultId"`
+// }
+//
+// type DiagnosticResponse struct {
+// 	Response
+// 	Result DocumentDiagnosticReport `json:"result"`
+// }
+//
+// type DocumentDiagnosticReport struct  {
+//
+// }
+
 type DiagnosticNotification struct {
 	Notification
 	Params PublishDiagnosticsParams `json:"params"`

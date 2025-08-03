@@ -60,7 +60,7 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 
 		state.OpenDocument(request.Params.TextDocument.URI, request.Params.TextDocument.Text)
 
-		diagnostics := checkFile(request.Params.TextDocument.URI, state)
+		diagnostics := checkDiagnostics(request.Params.TextDocument.URI, state)
 		pushDiagnostic(writer, request.Params.TextDocument.URI, diagnostics)
 
 	case "textDocument/didChange":
@@ -75,7 +75,7 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 			state.UpdateDocument(request.Params.TextDocument.URI, change.Text)
 		}
 
-		diagnostics := checkFile(request.Params.TextDocument.URI, state)
+		diagnostics := checkDiagnostics(request.Params.TextDocument.URI, state)
 		pushDiagnostic(writer, request.Params.TextDocument.URI, diagnostics)
 
 	case "textDocument/hover":
