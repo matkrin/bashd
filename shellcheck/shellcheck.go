@@ -48,6 +48,32 @@ func (s *ShellCheckResult) ToDiagnostics() []lsp.Diagnostic {
 	return diagnostics
 }
 
+func (s *ShellCheckResult) ToCodeActionFlat(uri string) lsp.CodeAction {
+	textEdits := []lsp.TextEdit{}
+	for _, comment := range s.Comments {
+		if comment.Fix != nil {
+			textEdits = append(textEdits, comment.Fix.toTextEdits()...)
+		}
+	}
+	action := lsp.CodeAction{
+		Title: "Fix all auto-fixable lints",
+		Edit: lsp.WorkspaceEdit{
+			Changes: map[string][]lsp.TextEdit{
+				uri: textEdits,
+			},
+		},
+	}
+	return action
+}
+
+func (s *ShellCheckResult) ContainsFixable() bool {
+	for _, comment := range s.Comments {
+		if comment.Fix != nil {
+			return true
+		}
+	}
+	return false
+}
 
 func (c *Comment) ToDiagnostic() lsp.Diagnostic {
 	code := int(c.Code)
@@ -85,7 +111,7 @@ func (c *Comment) ToCodeAction(uri string) *lsp.CodeAction {
 
 	textEdits := c.Fix.toTextEdits()
 	action := &lsp.CodeAction{
-		Title: fmt.Sprintf("shellcheck: Fix lint %d", c.Code),
+		Title: fmt.Sprintf("Fix shellcheck lint %d", c.Code),
 		Edit: lsp.WorkspaceEdit{
 			Changes: map[string][]lsp.TextEdit{
 				uri: textEdits,

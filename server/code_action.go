@@ -27,9 +27,20 @@ func handleCodeAction(request *lsp.CodeActionRequest, state *State) *lsp.CodeAct
 
 	actions = append(actions, *singleLineCodeAction(documentText, uri))
 
+	shellcheck, err := shellcheck.Run(documentText)
+	if err != nil {
+		slog.Error("ERROR running shellcheck", "err", err)
+	}
+
+	// Fix all auto-fixable
+	if shellcheck.ContainsFixable() {
+		actions = append(actions, shellcheck.ToCodeActionFlat(uri))
+	}
+
+	// Fix for certain lint (position dependent)
 	context := request.Params.Context
 	if len(context.Diagnostics) != 0 {
-		actions = append(actions, shellCheckCodeActions(documentText, uri, context)...)
+		actions = append(actions, shellcheckCodeActions(shellcheck, uri, context)...)
 	}
 
 	response := &lsp.CodeActionResponse{
@@ -82,7 +93,7 @@ func singleLineCodeAction(document string, uri string) *lsp.CodeAction {
 	printer.Print(buffer, fileAst)
 
 	action := &lsp.CodeAction{
-		Title: "Single Line",
+		Title: "Try to put script on single line",
 		Edit: lsp.WorkspaceEdit{
 			Changes: map[string][]lsp.TextEdit{
 				uri: {
@@ -106,22 +117,16 @@ func singleLineCodeAction(document string, uri string) *lsp.CodeAction {
 	return action
 }
 
-func shellCheckCodeActions(documentText string, uri string, context lsp.CodeActionContext) []lsp.CodeAction {
+func shellcheckCodeActions(shellcheck *shellcheck.ShellCheckResult, uri string, context lsp.CodeActionContext) []lsp.CodeAction {
 	actions := []lsp.CodeAction{}
-	shellcheck, err := shellcheck.Run(documentText)
-	if err != nil {
-		slog.Error("ERROR running shellcheck", "err", err)
-	}
-	if shellcheck != nil {
-		for _, comment := range shellcheck.Comments {
-			shellcheckDiagnostic := comment.ToDiagnostic()
-			for _, contextDiagnostic := range context.Diagnostics {
-				if shellcheckDiagnostic.Range == contextDiagnostic.Range {
-					action := comment.ToCodeAction(uri)
-					if action != nil {
-						actions = append(actions, *action)
+	for _, comment := range shellcheck.Comments {
+		shellcheckDiagnostic := comment.ToDiagnostic()
+		for _, contextDiagnostic := range context.Diagnostics {
+			if shellcheckDiagnostic.Range == contextDiagnostic.Range {
+				action := comment.ToCodeAction(uri)
+				if action != nil {
+					actions = append(actions, *action)
 
-					}
 				}
 			}
 		}
