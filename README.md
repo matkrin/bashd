@@ -63,6 +63,8 @@
 
 ### Code Actions
 
+- Fix for shellcheck lints (position depenent)
+- Fix all auto-fixable lints (only when there are fixable lints)
 - Add shebang if not exist
 - Put document on single line
 
