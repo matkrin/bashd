@@ -2,8 +2,10 @@ package server
 
 import (
 	"bytes"
+	"log/slog"
 
 	"github.com/matkrin/bashd/lsp"
+	"github.com/matkrin/bashd/shellcheck"
 	"mvdan.cc/sh/v3/fileutil"
 	"mvdan.cc/sh/v3/syntax"
 )
@@ -11,9 +13,11 @@ import (
 var SHEBANG = "#!/usr/bin/env bash\n\n"
 
 func handleCodeAction(request *lsp.CodeActionRequest, state *State) *lsp.CodeActionResponse {
+	slog.Info("CODE ACTION", "range", request.Params.Range)
+	slog.Info("CODE ACTION", "context", request.Params.Context)
 	uri := request.Params.TextDocument.URI
-	document := state.Documents[uri].Text
-	hasShebang := fileutil.HasShebang([]byte(document))
+	documentText := state.Documents[uri].Text
+	hasShebang := fileutil.HasShebang([]byte(documentText))
 
 	actions := []lsp.CodeAction{}
 	if !hasShebang {
@@ -21,7 +25,12 @@ func handleCodeAction(request *lsp.CodeActionRequest, state *State) *lsp.CodeAct
 		actions = append(actions, *action)
 	}
 
-	actions = append(actions, *singleLineCodeAction(document, uri))
+	actions = append(actions, *singleLineCodeAction(documentText, uri))
+
+	context := request.Params.Context
+	if len(context.Diagnostics) != 0 {
+		actions = append(actions, shellCheckCodeActions(documentText, uri, context)...)
+	}
 
 	response := &lsp.CodeActionResponse{
 		Response: lsp.Response{
@@ -95,4 +104,28 @@ func singleLineCodeAction(document string, uri string) *lsp.CodeAction {
 		},
 	}
 	return action
+}
+
+func shellCheckCodeActions(documentText string, uri string, context lsp.CodeActionContext) []lsp.CodeAction {
+	actions := []lsp.CodeAction{}
+	shellcheck, err := shellcheck.Run(documentText)
+	if err != nil {
+		slog.Error("ERROR running shellcheck", "err", err)
+	}
+	if shellcheck != nil {
+		for _, comment := range shellcheck.Comments {
+			shellcheckDiagnostic := comment.ToDiagnostic()
+			for _, contextDiagnostic := range context.Diagnostics {
+				if shellcheckDiagnostic.Range == contextDiagnostic.Range {
+					action := comment.ToCodeAction(uri)
+					if action != nil {
+						actions = append(actions, *action)
+
+					}
+				}
+			}
+		}
+	}
+
+	return actions
 }

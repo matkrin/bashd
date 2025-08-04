@@ -3,14 +3,17 @@ package shellcheck
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"os/exec"
+	"strings"
 
 	"github.com/matkrin/bashd/lsp"
 )
 
-type ShCheckOutput struct {
+// https://github.com/koalaman/shellcheck/wiki/Integration
+type ShellCheckResult struct {
 	Comments []Comment `json:"comments"`
 }
 
@@ -23,33 +26,73 @@ type Comment struct {
 	Level     string `json:"level"`
 	Code      uint   `json:"code"`
 	Message   string `json:"message"`
-	// Fix ? `json:"fix"`
+	Fix       *Fix   `json:"fix"`
 }
 
-func (s *ShCheckOutput) ToDiagnostic() []lsp.Diagnostic {
+type Fix struct {
+	Replacements []struct {
+		Line           uint   `json:"line"`
+		Column         uint   `json:"column"`
+		EndColumn      uint   `json:"endColumn"`
+		InsertionPoint string `json:"insertionPoint"`
+		Replacement    string `json:"replacement"`
+		Precedence     uint   `json:"precedence"`
+	} `json:"replacements"`
+}
+
+func (s *ShellCheckResult) ToDiagnostics() []lsp.Diagnostic {
 	diagnostics := []lsp.Diagnostic{}
 	for _, comment := range s.Comments {
-		code := int(comment.Code)
-		severity := comment.levelToSeverity()
-		diagnostic := lsp.Diagnostic{
-			Range: lsp.Range{
-				Start: lsp.Position{
-					Line:      int(comment.Line) - 1,
-					Character: int(comment.Column) - 1,
-				},
-				End: lsp.Position{
-					Line:      int(comment.EndLine) - 1,
-					Character: int(comment.EndColumn) - 1,
-				},
-			},
-			Severity: severity,
-			Code:     &code,
-			Source:   "shellcheck",
-			Message:  comment.Message,
-		}
-		diagnostics = append(diagnostics, diagnostic)
+		diagnostics = append(diagnostics, comment.ToDiagnostic())
 	}
 	return diagnostics
+}
+
+
+func (c *Comment) ToDiagnostic() lsp.Diagnostic {
+	code := int(c.Code)
+	severity := c.levelToSeverity()
+	codeActionAvailable := ""
+
+	if c.Fix != nil {
+		// codeActionAvailable = " \U0001F4A1"
+		codeActionAvailable = " "
+	}
+	message := fmt.Sprintf("%s%s", c.Message, codeActionAvailable)
+
+	return lsp.Diagnostic{
+		Range: lsp.Range{
+			Start: lsp.Position{
+				Line:      int(c.Line) - 1,
+				Character: int(c.Column) - 1,
+			},
+			End: lsp.Position{
+				Line:      int(c.EndLine) - 1,
+				Character: int(c.EndColumn) - 1,
+			},
+		},
+		Severity: severity,
+		Code:     &code,
+		Source:   "shellcheck",
+		Message:  message,
+	}
+}
+
+func (c *Comment) ToCodeAction(uri string) *lsp.CodeAction {
+	if c.Fix == nil {
+		return nil
+	}
+
+	textEdits := c.Fix.toTextEdits()
+	action := &lsp.CodeAction{
+		Title: fmt.Sprintf("shellcheck: Fix lint %d", c.Code),
+		Edit: lsp.WorkspaceEdit{
+			Changes: map[string][]lsp.TextEdit{
+				uri: textEdits,
+			},
+		},
+	}
+	return action
 }
 
 func (c *Comment) levelToSeverity() lsp.DiagnosticSeverity {
@@ -61,6 +104,8 @@ func (c *Comment) levelToSeverity() lsp.DiagnosticSeverity {
 		severity = lsp.DiagnosticWarning
 	case "info":
 		severity = lsp.DiagnosticInformation
+	case "style":
+		severity = lsp.DiagnosticHint
 	default:
 		slog.Warn("Unknown shellcheck level", "level", c.Level)
 		severity = lsp.DiagnosticHint
@@ -68,8 +113,41 @@ func (c *Comment) levelToSeverity() lsp.DiagnosticSeverity {
 	return severity
 }
 
-func Run(filecontent string) (*ShCheckOutput, error) {
-	cmd := exec.Command("shellcheck", "--format=json1", "-")
+func (f *Fix) toTextEdits() []lsp.TextEdit {
+	textEdits := []lsp.TextEdit{}
+	for _, rep := range f.Replacements {
+		textEdit := lsp.TextEdit{
+			Range: lsp.Range{
+				Start: lsp.Position{
+					Line:      int(rep.Line) - 1,
+					Character: int(rep.Column) - 1,
+				},
+				End: lsp.Position{
+					Line:      int(rep.Line) - 1,
+					Character: int(rep.EndColumn) - 1,
+				},
+			},
+			NewText: rep.Replacement,
+		}
+		textEdits = append(textEdits, textEdit)
+
+	}
+	return textEdits
+}
+
+func Run(filecontent string) (*ShellCheckResult, error) {
+	optionalLints := []string{
+		"add-default-case",
+		"require-double-brackets",
+	}
+	cmd := exec.Command(
+		"shellcheck",
+		"--format=json1",
+		"--external-sources",
+		"--enable=add-default-case,require-double-brackets",
+		fmt.Sprintf("--enable=%s", strings.Join(optionalLints, ",")),
+		"-",
+	)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, errors.New("Could not acquire stdin")
@@ -83,10 +161,11 @@ func Run(filecontent string) (*ShCheckOutput, error) {
 	shOutput, err := cmd.CombinedOutput()
 	if err != nil {
 		// shellcheck exists with non-zero exit code if lints were founD
+		// https://github.com/koalaman/shellcheck/wiki/Integration#exit-codes
 		// return nil, errors.New("Could not get stdout from shellcheck")
 	}
 
-	var output ShCheckOutput
+	var output ShellCheckResult
 	if err = json.Unmarshal(shOutput, &output); err != nil {
 		return nil, errors.New("Could not unmarshal shellcheck output")
 	}

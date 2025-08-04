@@ -31,7 +31,7 @@ func checkDiagnostics(uri string, state *State) []lsp.Diagnostic {
 		slog.Error("ERROR running shellcheck", "err", err)
 		return diagnostics
 	}
-	diagnostics = append(diagnostics, shellcheck.ToDiagnostic()...)
+	diagnostics = append(diagnostics, shellcheck.ToDiagnostics()...)
 
 	return diagnostics
 }

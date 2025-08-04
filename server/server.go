@@ -13,8 +13,7 @@ import (
 )
 
 func HandleMessage(writer io.Writer, state *State, method string, contents []byte) {
-	// logger.Infof("Received msg with method: `%s`", method)
-	slog.Info("Received msg", "method", method)
+	slog.Info("Received message", "method", method)
 
 	switch method {
 	case "initialize":
