@@ -21,7 +21,7 @@ type DocumentSymbol struct {
 	// Tags
 	// Deprecated
 	Range         Range            `json:"range"`
-	SelctionRange Range            `json:"selectionRange"`
+	SelectionRange Range            `json:"selectionRange"`
 	Children      []DocumentSymbol `json:"children"`
 }
 

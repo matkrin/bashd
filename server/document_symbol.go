@@ -53,28 +53,12 @@ func handleDocumentSymbol(request *lsp.DocumentSymbolsRequest, state *State) lsp
 		}
 
 		documentSymbols = append(documentSymbols, lsp.DocumentSymbol{
-			Name: node.Name,
-			Kind: kind,
-			Range: lsp.Range{
-				Start: lsp.Position{
-					Line:      startLine,
-					Character: startCol,
-				},
-				End: lsp.Position{
-					Line:      endLine,
-					Character: endCol,
-				},
-			},
-			SelctionRange: lsp.Range{
-				Start: lsp.Position{
-					Line:      selectionStartLine,
-					Character: selectionStartCol,
-				},
-				End: lsp.Position{
-					Line:      selectionEndLine,
-					Character: selectionEndCol,
-				},
-			},
+			Name:  node.Name,
+			Kind:  kind,
+			Range: lsp.NewRange(startLine, startCol, endLine, endCol),
+			SelectionRange: lsp.NewRange(
+				selectionStartLine, selectionStartCol, selectionEndLine, selectionEndCol,
+			),
 			Children: []lsp.DocumentSymbol{},
 		})
 	}

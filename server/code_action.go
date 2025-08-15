@@ -60,16 +60,7 @@ func shebangCodeAction(uri string) *lsp.CodeAction {
 			Changes: map[string][]lsp.TextEdit{
 				uri: {
 					lsp.TextEdit{
-						Range: lsp.Range{
-							Start: lsp.Position{
-								Line:      0,
-								Character: 0,
-							},
-							End: lsp.Position{
-								Line:      0,
-								Character: 0,
-							},
-						},
+						Range:   lsp.NewRange(0, 0, 0, 0),
 						NewText: SHEBANG,
 					},
 				},

@@ -49,16 +49,12 @@ func handleWorkspaceSymbol(request *lsp.WorkspaceSymbolRequest, state *State) *l
 				Kind: kind,
 				Location: lsp.Location{
 					URI: pathToURI(shFile),
-					Range: lsp.Range{
-						Start: lsp.Position{
-							Line:      startLine,
-							Character: startCol,
-						},
-						End: lsp.Position{
-							Line:      endLine,
-							Character: endCol,
-						},
-					},
+					Range: lsp.NewRange(
+						startLine,
+						startCol,
+						endLine,
+						endCol,
+					),
 				},
 			})
 		}

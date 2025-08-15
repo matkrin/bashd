@@ -58,16 +58,7 @@ func diagnosticParseError(err error) lsp.Diagnostic {
 	}
 
 	return lsp.Diagnostic{
-		Range: lsp.Range{
-			Start: lsp.Position{
-				Line:      line,
-				Character: col,
-			},
-			End: lsp.Position{
-				Line:      line,
-				Character: col,
-			},
-		},
+		Range:    lsp.NewRange(line, col, line, col),
 		Severity: lsp.DiagnosticError,
 		Code:     nil,
 		Source:   "bashd",
@@ -77,16 +68,11 @@ func diagnosticParseError(err error) lsp.Diagnostic {
 
 func fileNotExistent(file SourcedFile) lsp.Diagnostic {
 	return lsp.Diagnostic{
-		Range: lsp.Range{
-			Start: lsp.Position{
-				Line:      file.Start.Line() - 1,
-				Character: file.Start.Col() - 1,
-			},
-			End: lsp.Position{
-				Line:      file.End.Line() - 1,
-				Character: file.End.Col() - 1,
-			},
-		},
+		Range: lsp.NewRange(file.Start.Line(),
+			file.Start.Col(),
+			file.End.Line(),
+			file.End.Col(),
+		),
 		Severity: lsp.DiagnosticError,
 		Code:     nil,
 		Source:   "bashd",

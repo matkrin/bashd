@@ -43,16 +43,12 @@ func handlePrepareRename(
 			RPC: "2.0",
 			ID:  &request.ID,
 		},
-		Result: lsp.Range{
-			Start: lsp.Position{
-				Line:      cursorNode.Pos().Line() - 1,
-				Character: cursorNode.Pos().Col() - 1,
-			},
-			End: lsp.Position{
-				Line:      cursorNode.End().Line() - 1,
-				Character: cursorNode.End().Col() - 1,
-			},
-		},
+		Result: lsp.NewRange(
+			cursorNode.Pos().Line()-1,
+			cursorNode.Pos().Col()-1,
+			cursorNode.End().Line()-1,
+			cursorNode.End().Col()-1,
+		),
 	}
 	return &response
 }
@@ -81,16 +77,12 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 	changes := map[string][]lsp.TextEdit{}
 	for _, node := range referenceNodes {
 		changes[uri] = append(changes[uri], lsp.TextEdit{
-			Range: lsp.Range{
-				Start: lsp.Position{
-					Line:      node.Start.Line() - 1,
-					Character: node.Start.Col() - 1,
-				},
-				End: lsp.Position{
-					Line:      node.End.Line() - 1,
-					Character: node.End.Col() - 1,
-				},
-			},
+			Range: lsp.NewRange(
+				node.Start.Line()-1,
+				node.Start.Col()-1,
+				node.End.Line()-1,
+				node.End.Col()-1,
+			),
 			NewText: params.NewName,
 		})
 	}
@@ -113,16 +105,12 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 		fileUri := pathToURI(file)
 		for _, node := range refNodes {
 			changes[fileUri] = append(changes[fileUri], lsp.TextEdit{
-				Range: lsp.Range{
-					Start: lsp.Position{
-						Line:      node.Start.Line() - 1,
-						Character: node.Start.Col() - 1,
-					},
-					End: lsp.Position{
-						Line:      node.End.Line() - 1,
-						Character: node.End.Col() - 1,
-					},
-				},
+				Range: lsp.NewRange(
+					node.Start.Line()-1,
+					node.Start.Col()-1,
+					node.End.Line()-1,
+					node.End.Col()-1,
+				),
 				NewText: params.NewName,
 			})
 		}

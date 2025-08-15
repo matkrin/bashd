@@ -30,16 +30,12 @@ func handleReferences(request *lsp.ReferencesRequest, state *State) *lsp.Referen
 	for _, node := range referenceNodes {
 		location := lsp.Location{
 			URI: uri,
-			Range: lsp.Range{
-				Start: lsp.Position{
-					Line:      node.Start.Line() - 1,
-					Character: node.Start.Col() - 1,
-				},
-				End: lsp.Position{
-					Line:      node.End.Line() - 1,
-					Character: node.End.Col() - 1,
-				},
-			},
+			Range: lsp.NewRange(
+				node.Start.Line()-1,
+				node.Start.Col()-1,
+				node.End.Line()-1,
+				node.End.Col()-1,
+			),
 		}
 		locations = append(locations, location)
 	}
@@ -62,16 +58,12 @@ func handleReferences(request *lsp.ReferencesRequest, state *State) *lsp.Referen
 		for _, node := range refNodes {
 			location := lsp.Location{
 				URI: pathToURI(file),
-				Range: lsp.Range{
-					Start: lsp.Position{
-						Line:      node.Start.Line() - 1,
-						Character: node.Start.Col() - 1,
-					},
-					End: lsp.Position{
-						Line:      node.End.Line() - 1,
-						Character: node.End.Col() - 1,
-					},
-				},
+				Range: lsp.NewRange(
+					node.Start.Line()-1,
+					node.Start.Col()-1,
+					node.End.Line()-1,
+					node.End.Col()-1,
+				),
 			}
 			locations = append(locations, location)
 		}

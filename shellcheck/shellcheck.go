@@ -87,16 +87,12 @@ func (c *Comment) ToDiagnostic() lsp.Diagnostic {
 	message := fmt.Sprintf("%s%s", c.Message, codeActionAvailable)
 
 	return lsp.Diagnostic{
-		Range: lsp.Range{
-			Start: lsp.Position{
-				Line:      c.Line - 1,
-				Character: c.Column - 1,
-			},
-			End: lsp.Position{
-				Line:      c.EndLine - 1,
-				Character: c.EndColumn - 1,
-			},
-		},
+		Range: lsp.NewRange(
+			c.Line-1,
+			c.Column-1,
+			c.EndLine-1,
+			c.EndColumn-1,
+		),
 		Severity: severity,
 		Code:     &code,
 		Source:   "shellcheck",
@@ -143,16 +139,12 @@ func (f *Fix) toTextEdits() []lsp.TextEdit {
 	textEdits := []lsp.TextEdit{}
 	for _, rep := range f.Replacements {
 		textEdit := lsp.TextEdit{
-			Range: lsp.Range{
-				Start: lsp.Position{
-					Line:      rep.Line - 1,
-					Character: rep.Column - 1,
-				},
-				End: lsp.Position{
-					Line:      rep.Line - 1,
-					Character: rep.EndColumn - 1,
-				},
-			},
+			Range: lsp.NewRange(
+				rep.Line-1,
+				rep.Column-1,
+				rep.Line-1,
+				rep.EndColumn-1,
+			),
 			NewText: rep.Replacement,
 		}
 		textEdits = append(textEdits, textEdit)

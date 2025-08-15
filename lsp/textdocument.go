@@ -31,6 +31,19 @@ type Range struct {
 	End   Position `json:"end"`
 }
 
+func NewRange(startLine, startChar, endLine, endChar uint) Range {
+	return Range{
+		Start: Position{
+			Line:      startLine,
+			Character: startChar,
+		},
+		End: Position{
+			Line:      endLine,
+			Character: endChar,
+		},
+	}
+}
+
 type Location struct {
 	URI   string `json:"uri"`
 	Range Range  `json:"range"`
