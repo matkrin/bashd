@@ -24,23 +24,23 @@ func handleWorkspaceSymbol(request *lsp.WorkspaceSymbolRequest, state *State) *l
 
 		for _, node := range defNodes(fileAst) {
 			var kind lsp.SymbolKind
-			var startLine, startCol, endLine, endCol int
+			var startLine, startCol, endLine, endCol uint
 			switch n := node.Node.(type) {
 			case *syntax.FuncDecl:
 				kind = lsp.SymbolFunction
 
-				startLine = int(n.Pos().Line()) - 1
-				startCol = int(n.Pos().Col()) - 1
-				endLine = int(n.Body.End().Line()) - 1
-				endCol = int(n.Body.End().Col()) - 1
+				startLine = n.Pos().Line() - 1
+				startCol = n.Pos().Col() - 1
+				endLine = n.Body.End().Line() - 1
+				endCol = n.Body.End().Col() - 1
 
 			case *syntax.Assign:
 				kind = lsp.SymbolVariable
 
-				startLine = int(n.Pos().Line()) - 1
-				startCol = int(n.Pos().Col()) - 1
-				endLine = int(n.End().Line()) - 1
-				endCol = int(n.End().Col()) - 1
+				startLine = n.Pos().Line() - 1
+				startCol = n.Pos().Col() - 1
+				endLine = n.End().Line() - 1
+				endCol = n.End().Col() - 1
 
 			}
 

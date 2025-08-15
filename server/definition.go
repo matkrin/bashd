@@ -73,10 +73,10 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 	response := lsp.NewDefinitionResponse(
 		request.ID,
 		uri,
-		int(definition.Start.Line())-1,
-		int(definition.Start.Col())-1,
-		int(definition.End.Line())-1,
-		int(definition.End.Col())-1,
+		definition.Start.Line()-1,
+		definition.Start.Col()-1,
+		definition.End.Line()-1,
+		definition.End.Col()-1,
 	)
 	return &response
 }

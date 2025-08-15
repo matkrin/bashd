@@ -22,7 +22,7 @@ type DefinitionResult struct {
 func NewDefinitionResponse(
 	id int,
 	documentURI string,
-	startLine, startChar, endLine, endChar int,
+	startLine, startChar, endLine, endChar uint,
 ) DefinitionResponse {
 	return DefinitionResponse{
 		Response: Response{

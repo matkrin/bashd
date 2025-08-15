@@ -9,12 +9,12 @@ import (
 )
 
 type Cursor struct {
-	Line int
-	Col  int
+	Line uint
+	Col  uint
 }
 
 // Otherwise I will mess that up for sure. In the LSP 0-based, in the parser 1-based
-func newCursor(lspLine, lspCol int) Cursor {
+func newCursor(lspLine, lspCol uint) Cursor {
 	return Cursor{Line: lspLine + 1, Col: lspCol + 1}
 }
 
@@ -147,10 +147,10 @@ func extractWord(word *syntax.Word, env map[string]string) string {
 }
 
 func isCursorInNode(cursor Cursor, start, end syntax.Pos) bool {
-	startLine := int(start.Line())
-	startCol := int(start.Col())
-	endLine := int(end.Line())
-	endCol := int(end.Col())
+	startLine := start.Line()
+	startCol := start.Col()
+	endLine := end.Line()
+	endCol := end.Col()
 
 	// Compare lines first
 	if cursor.Line < startLine || cursor.Line > endLine {

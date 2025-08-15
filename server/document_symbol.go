@@ -22,34 +22,34 @@ func handleDocumentSymbol(request *lsp.DocumentSymbolsRequest, state *State) lsp
 
 	for _, node := range defNodes(fileAst) {
 		var kind lsp.SymbolKind
-		var startLine, startCol, endLine, endCol int
-		var selectionStartLine, selectionStartCol, selectionEndLine, selectionEndCol int
+		var startLine, startCol, endLine, endCol uint
+		var selectionStartLine, selectionStartCol, selectionEndLine, selectionEndCol uint
 		switch n := node.Node.(type) {
 		case *syntax.FuncDecl:
 			kind = lsp.SymbolFunction
 
-			startLine = int(n.Pos().Line()) - 1
-			startCol = int(n.Pos().Col()) - 1
-			endLine = int(n.Body.End().Line()) - 1
-			endCol = int(n.Body.End().Col()) - 1
+			startLine = n.Pos().Line() - 1
+			startCol = n.Pos().Col() - 1
+			endLine = n.Body.End().Line() - 1
+			endCol = n.Body.End().Col() - 1
 
-			selectionStartLine = int(n.Pos().Line()) - 1
-			selectionStartCol = int(n.Pos().Col()) - 1
-			selectionEndLine = int(n.End().Line()) - 1
-			selectionEndCol = int(n.End().Col()) - 1
+			selectionStartLine = n.Pos().Line() - 1
+			selectionStartCol = n.Pos().Col() - 1
+			selectionEndLine = n.End().Line() - 1
+			selectionEndCol = n.End().Col() - 1
 
 		case *syntax.Assign:
 			kind = lsp.SymbolVariable
 
-			startLine = int(n.Pos().Line()) - 1
-			startCol = int(n.Pos().Col()) - 1
-			endLine = int(n.End().Line()) - 1
-			endCol = int(n.End().Col()) - 1
+			startLine = n.Pos().Line() - 1
+			startCol = n.Pos().Col() - 1
+			endLine = n.End().Line() - 1
+			endCol = n.End().Col() - 1
 
-			selectionStartLine = int(n.Name.Pos().Line()) - 1
-			selectionStartCol = int(n.Name.Pos().Col()) - 1
-			selectionEndLine = int(n.Name.End().Line()) - 1
-			selectionEndCol = int(n.Name.End().Col()) - 1
+			selectionStartLine = n.Name.Pos().Line() - 1
+			selectionStartCol = n.Name.Pos().Col() - 1
+			selectionEndLine = n.Name.End().Line() - 1
+			selectionEndCol = n.Name.End().Col() - 1
 		}
 
 		documentSymbols = append(documentSymbols, lsp.DocumentSymbol{

@@ -37,18 +37,18 @@ func checkDiagnostics(uri string, state *State) []lsp.Diagnostic {
 }
 
 func diagnosticParseError(err error) lsp.Diagnostic {
-	line := 0
-	col := 0
+	line := uint(0)
+	col := uint(0)
 	message := ""
 
 	switch e := err.(type) {
 	case syntax.ParseError:
-		line = int(e.Pos.Line())
-		col = int(e.Pos.Col())
+		line = e.Pos.Line()
+		col = e.Pos.Col()
 		message = e.Text
 	case syntax.LangError:
-		line = int(e.Pos.Line())
-		col = int(e.Pos.Col())
+		line = e.Pos.Line()
+		col = e.Pos.Col()
 		message = e.Feature
 	case syntax.QuoteError:
 		message = e.Message
@@ -79,12 +79,12 @@ func fileNotExistent(file SourcedFile) lsp.Diagnostic {
 	return lsp.Diagnostic{
 		Range: lsp.Range{
 			Start: lsp.Position{
-				Line:      int(file.Start.Line()) - 1,
-				Character: int(file.Start.Col()) - 1,
+				Line:      file.Start.Line() - 1,
+				Character: file.Start.Col() - 1,
 			},
 			End: lsp.Position{
-				Line:      int(file.End.Line()) - 1,
-				Character: int(file.End.Col()) - 1,
+				Line:      file.End.Line() - 1,
+				Character: file.End.Col() - 1,
 			},
 		},
 		Severity: lsp.DiagnosticError,

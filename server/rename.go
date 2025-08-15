@@ -45,12 +45,12 @@ func handlePrepareRename(
 		},
 		Result: lsp.Range{
 			Start: lsp.Position{
-				Line:      int(cursorNode.Pos().Line()) - 1,
-				Character: int(cursorNode.Pos().Col()) - 1,
+				Line:      cursorNode.Pos().Line() - 1,
+				Character: cursorNode.Pos().Col() - 1,
 			},
 			End: lsp.Position{
-				Line:      int(cursorNode.End().Line()) - 1,
-				Character: int(cursorNode.End().Col()) - 1,
+				Line:      cursorNode.End().Line() - 1,
+				Character: cursorNode.End().Col() - 1,
 			},
 		},
 	}
@@ -83,12 +83,12 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 		changes[uri] = append(changes[uri], lsp.TextEdit{
 			Range: lsp.Range{
 				Start: lsp.Position{
-					Line:      int(node.Start.Line()) - 1,
-					Character: int(node.Start.Col()) - 1,
+					Line:      node.Start.Line() - 1,
+					Character: node.Start.Col() - 1,
 				},
 				End: lsp.Position{
-					Line:      int(node.End.Line()) - 1,
-					Character: int(node.End.Col()) - 1,
+					Line:      node.End.Line() - 1,
+					Character: node.End.Col() - 1,
 				},
 			},
 			NewText: params.NewName,
@@ -115,12 +115,12 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 			changes[fileUri] = append(changes[fileUri], lsp.TextEdit{
 				Range: lsp.Range{
 					Start: lsp.Position{
-						Line:      int(node.Start.Line()) - 1,
-						Character: int(node.Start.Col()) - 1,
+						Line:      node.Start.Line() - 1,
+						Character: node.Start.Col() - 1,
 					},
 					End: lsp.Position{
-						Line:      int(node.End.Line()) - 1,
-						Character: int(node.End.Col()) - 1,
+						Line:      node.End.Line() - 1,
+						Character: node.End.Col() - 1,
 					},
 				},
 				NewText: params.NewName,

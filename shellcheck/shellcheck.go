@@ -89,12 +89,12 @@ func (c *Comment) ToDiagnostic() lsp.Diagnostic {
 	return lsp.Diagnostic{
 		Range: lsp.Range{
 			Start: lsp.Position{
-				Line:      int(c.Line) - 1,
-				Character: int(c.Column) - 1,
+				Line:      c.Line - 1,
+				Character: c.Column - 1,
 			},
 			End: lsp.Position{
-				Line:      int(c.EndLine) - 1,
-				Character: int(c.EndColumn) - 1,
+				Line:      c.EndLine - 1,
+				Character: c.EndColumn - 1,
 			},
 		},
 		Severity: severity,
@@ -145,12 +145,12 @@ func (f *Fix) toTextEdits() []lsp.TextEdit {
 		textEdit := lsp.TextEdit{
 			Range: lsp.Range{
 				Start: lsp.Position{
-					Line:      int(rep.Line) - 1,
-					Character: int(rep.Column) - 1,
+					Line:      rep.Line - 1,
+					Character: rep.Column - 1,
 				},
 				End: lsp.Position{
-					Line:      int(rep.Line) - 1,
-					Character: int(rep.EndColumn) - 1,
+					Line:      rep.Line - 1,
+					Character: rep.EndColumn - 1,
 				},
 			},
 			NewText: rep.Replacement,
