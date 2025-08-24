@@ -7,6 +7,8 @@
 - Check if sourced file exists
 - [Parser](https://github.com/mvdan/sh/) errors
 - [shellcheck](https://github.com/koalaman/shellcheck) integration
+- For document on document change
+- For workspace on initialize
 
 ### Hover
 
@@ -38,6 +40,7 @@
 - Executables in PATH
 - Resolve with `help` output as docs for keywords and builtins
 - Resolve with man page as docs for executables
+- **TODO**: on `${`
 
 ### Rename:
 
@@ -52,9 +55,10 @@
 
 ### Workspace symbols:
 
-- Variable assignment in workspace .sh files
-- Function declaration in workspace .sh files
-- **TODO**: Files without extension and check shebang??
+- Variable assignment in workspace .sh files and scripts without extension but
+  shebang
+- Function declaration in workspace .sh files and scripts without extension but
+  shebang
 
 ### Formatting
 

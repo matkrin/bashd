@@ -18,8 +18,8 @@ func checkDiagnostics(uri string, state *State) []lsp.Diagnostic {
 		diagnostics = append(diagnostics, diagnosticParseError(err))
 		return diagnostics
 	}
-	sourcedFiles := findSourceStatments(fileAst, state.EnvVars)
 
+	sourcedFiles := findSourceStatments(fileAst, state.EnvVars)
 	for _, sourcedFile := range sourcedFiles {
 		if _, err := os.Stat(sourcedFile.Name); err != nil {
 			diagnostics = append(diagnostics, fileNotExistent(sourcedFile))
@@ -34,6 +34,38 @@ func checkDiagnostics(uri string, state *State) []lsp.Diagnostic {
 	diagnostics = append(diagnostics, shellcheck.ToDiagnostics()...)
 
 	return diagnostics
+}
+
+func checkDiagnosticsWorkspace(state *State) map[string][]lsp.Diagnostic {
+	workspaceDiagnostics := map[string][]lsp.Diagnostic{}
+
+	for _, shFile := range state.WorkspaceShFiles() {
+		diagnostics := []lsp.Diagnostic{}
+		fileContent, err := os.ReadFile(shFile)
+		if err != nil {
+			diagnostics = append(diagnostics, diagnosticParseError(err))
+		}
+
+		fileAst, err := parseDocument(string(fileContent), shFile)
+		sourcedFiles := findSourceStatments(fileAst, state.EnvVars)
+		for _, sourcedFile := range sourcedFiles {
+			if _, err := os.Stat(sourcedFile.Name); err != nil {
+				diagnostics = append(diagnostics, fileNotExistent(sourcedFile))
+			}
+		}
+
+		shellcheck, err := shellcheck.Run(string(fileContent))
+		if err != nil {
+			slog.Error("ERROR running shellcheck", "err", err)
+		} else {
+			diagnostics = append(diagnostics, shellcheck.ToDiagnostics()...)
+		}
+
+		uri := pathToURI(shFile)
+		workspaceDiagnostics[uri] = diagnostics
+	}
+
+	return workspaceDiagnostics
 }
 
 func diagnosticParseError(err error) lsp.Diagnostic {
