@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/matkrin/bashd/lsp"
 	"github.com/matkrin/bashd/server"
@@ -52,7 +53,7 @@ func main() {
 	// testParser()
 
 	logLevel := "debug"
-	logFile := "/Users/matthias/Developer/bashd/bashd.log"
+	logFile := filepath.Join(os.Getenv("HOME"), "Developer", "bashd", "bashd.log")
 	initLogging(logLevel, logFile)
 	slog.Info("Logging initialized", "level", logLevel)
 

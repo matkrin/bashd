@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/matkrin/bashd/lsp"
+	"mvdan.cc/sh/v3/fileutil"
 )
 
 type Document struct {
@@ -64,7 +65,7 @@ func (s *State) WorkspaceShFiles() []string {
 				return fs.SkipDir
 			}
 			fileext := filepath.Ext(path)
-			if fileext == ".sh" {
+			if fileext == ".sh" || fileutil.CouldBeScript2(d) == fileutil.ConfIfShebang {
 				shFiles = append(shFiles, path)
 			}
 			return nil

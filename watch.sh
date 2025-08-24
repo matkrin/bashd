@@ -27,8 +27,8 @@ watch-go-files-mac() {
 
 watch-go-files-linux() {
     while true; do
-        echo "$WATCH_MSG"
         changed_file=$(inotifywait \
+            -q \
             -e modify,create,delete,move \
             -r --exclude '(^|/)\.git/' \
             --format '%w%f' \
@@ -37,14 +37,16 @@ watch-go-files-linux() {
 
         if [[ "$changed_file" == *.go ]]; then
             clear
-            echo "Change detected in $changed_file. Rebuilding..."
+            echo "$changed_file changed. Rebuilding..."
             $BUILD_CMD . && echo "$BUILD_MSG"
+            echo "$WATCH_MSG"
         fi
     done
 }
 
 if [[ $(uname) == "Linux" ]]; then
     command -v inotifywait &>/dev/null || (echo "'inotifywait' needs to be installed" && exit)
+    echo "$WATCH_MSG"
     watch-go-files-linux
 elif [[ $(uname) == "Darwin" ]]; then
     command -v fswatch &>/dev/null || (echo "'fswatch' needs to be installed" && exit)
