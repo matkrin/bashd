@@ -57,7 +57,12 @@ var excludeDirs = [...]string{
 func (s *State) WorkspaceShFiles() []string {
 	shFiles := []string{}
 	for _, folder := range s.WorkspaceFolders {
-		filepath.WalkDir(folder.Name, func(path string, d fs.DirEntry, err error) error {
+		dirpath, err := uriToPath(folder.URI)
+		if err != nil {
+			continue
+		}
+
+		filepath.WalkDir(dirpath, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}

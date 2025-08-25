@@ -154,6 +154,7 @@ func (f *Fix) toTextEdits() []lsp.TextEdit {
 }
 
 func Run(filecontent string) (*ShellCheckResult, error) {
+	slog.Info("SHELLCHECK", "filecontent", filecontent)
 	optionalLints := []string{
 		"add-default-case",
 		"require-double-brackets",
@@ -182,6 +183,7 @@ func Run(filecontent string) (*ShellCheckResult, error) {
 		// https://github.com/koalaman/shellcheck/wiki/Integration#exit-codes
 		// return nil, errors.New("Could not get stdout from shellcheck")
 	}
+	slog.Info("SHELLCHECK", "shOutput", shOutput)
 
 	var output ShellCheckResult
 	if err = json.Unmarshal(shOutput, &output); err != nil {

@@ -53,6 +53,7 @@ type ServerCapabilities struct {
 	DocumentFormattingProvider      bool              `json:"documentFormattingProvider"`
 	DocumentRangeFormattingProvider bool              `json:"documentRangeFormattingProvider"`
 	CodeActionProvider              bool              `json:"codeActionProvider"`
+	ColorProvider                   bool              `json:"colorProvider"`
 	RenameProvider                  RenameOptions     `json:"renameProvider"`
 	CompletionProvider              CompletionOptions `json:"completionProvider"`
 	DiagnosticProvider              DiagnosticOptions `json:"diagnosticProvider"`
@@ -90,6 +91,7 @@ func NewInitializeResponse(id int) InitializeResponse {
 				DocumentFormattingProvider:      true,
 				DocumentRangeFormattingProvider: true,
 				CodeActionProvider:              true,
+				ColorProvider:                   true,
 				RenameProvider: RenameOptions{
 					PrepareProvider: true,
 				},
