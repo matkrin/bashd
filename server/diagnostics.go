@@ -28,7 +28,6 @@ func checkDiagnostics(uri string, state *State) []lsp.Diagnostic {
 
 	shellcheck, err := shellcheck.Run(document.Text)
 	if err != nil {
-		slog.Error("ERROR running shellcheck", "err", err)
 		return diagnostics
 	}
 	diagnostics = append(diagnostics, shellcheck.ToDiagnostics()...)
@@ -47,6 +46,10 @@ func checkDiagnosticsWorkspace(state *State) map[string][]lsp.Diagnostic {
 		}
 
 		fileAst, err := parseDocument(string(fileContent), shFile)
+		if err != nil {
+			slog.Error("ERROR parsing", "file", shFile)
+			continue
+		}
 		sourcedFiles := findSourceStatments(fileAst, state.EnvVars)
 		for _, sourcedFile := range sourcedFiles {
 			if _, err := os.Stat(sourcedFile.Name); err != nil {
