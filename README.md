@@ -62,7 +62,7 @@
 ### Formatting
 
 - Entire file
-- **TODO**: Range formatting
+- Range formatting (as long as range covers nodes that can be formatted)
 
 ### Code Actions
 

@@ -26,6 +26,7 @@ type Position struct {
 	Character uint `json:"character"`
 }
 
+// 0-based
 type Range struct {
 	Start Position `json:"start"`
 	End   Position `json:"end"`
