@@ -92,7 +92,7 @@ func NewInitializeResponse(id int) InitializeResponse {
 					PrepareProvider: true,
 				},
 				CompletionProvider: CompletionOptions{
-					TriggerCharacters: []string{"$"},
+					TriggerCharacters: []string{"$", "{"},
 					ResolveProvider:   true,
 				},
 				DiagnosticProvider: DiagnosticOptions{

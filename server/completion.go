@@ -7,6 +7,7 @@ import (
 	"mvdan.cc/sh/v3/syntax"
 )
 
+// Handler for `textDocument/completion`
 func handleCompletion(request *lsp.CompletionRequest, state *State) *lsp.CompletionResponse {
 	completionList := []lsp.CompletionItem{}
 
@@ -19,7 +20,7 @@ func handleCompletion(request *lsp.CompletionRequest, state *State) *lsp.Complet
 	}
 
 	triggerChar := request.Params.Context.TriggerCharacter
-	if triggerChar != nil && *triggerChar == "$" {
+	if triggerChar != nil && (*triggerChar == "$" || *triggerChar == "{") {
 		completionList = append(completionList, completeDollar(fileAst, state)...)
 	} else {
 		completionList = append(completionList, completionKeywords()...)
@@ -31,6 +32,7 @@ func handleCompletion(request *lsp.CompletionRequest, state *State) *lsp.Complet
 	return &response
 }
 
+// Handler for `completionItem/resolve`
 func handleCompletionItemResolve(
 	request *lsp.CompletionItemResolveRequest,
 ) *lsp.CompletionItemResolveResponse {
@@ -53,7 +55,7 @@ func handleCompletionItemResolve(
 	return &response
 }
 
-// Variables defined in Document and Environment Variables
+// Completion for variables defined in Document and environment variables
 func completeDollar(file *syntax.File, state *State) []lsp.CompletionItem {
 	var result []lsp.CompletionItem
 
@@ -88,6 +90,7 @@ func completeDollar(file *syntax.File, state *State) []lsp.CompletionItem {
 	return result
 }
 
+// Completion for keywords
 func completionKeywords() []lsp.CompletionItem {
 	var result []lsp.CompletionItem
 	for _, keyword := range BASH_KEYWORDS {
@@ -103,6 +106,7 @@ func completionKeywords() []lsp.CompletionItem {
 	return result
 }
 
+// Completion for function names
 func completionFunctions(file *syntax.File) []lsp.CompletionItem {
 	var result []lsp.CompletionItem
 
@@ -127,6 +131,7 @@ func completionFunctions(file *syntax.File) []lsp.CompletionItem {
 	return result
 }
 
+// Completion for executables in PATH
 func completionPathItem(state *State) []lsp.CompletionItem {
 	var result []lsp.CompletionItem
 	for _, pathItem := range state.PathItems {

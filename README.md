@@ -33,14 +33,13 @@
 
 ### Completion:
 
-- Variables declared in document (on `$`)
+- Variables declared in document (on `$` and `{`)
 - Functions declared in document
-- Environment variables (on `$`)
+- Environment variables (on `$` and `{`)
 - Keywords
 - Executables in PATH
 - Resolve with `help` output as docs for keywords and builtins
 - Resolve with man page as docs for executables
-- **TODO**: on `${`
 
 ### Rename:
 
@@ -75,8 +74,9 @@
 ## TODO
 
 - Go to declaration: `declare` statements
+- documentsColors for ansi escapes
+- Inlay hint for ansi escapes
 - Maybe:
-  - Inlay hint
   - Code lens
   - Signature help
   - Find references: Variables, functions in sourced files (does this make
