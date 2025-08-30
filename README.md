@@ -69,7 +69,7 @@
 
 ### Inlay Hint
 
-- SGR ANSI escapes
+- [SGR][sgr] ANSI escapes
 
 ### Document Colors
 
@@ -93,6 +93,7 @@
     make sense? maybe for other scripts in workspace, would need to check if
     file is sourced there...)
 
+[sgr]: https://en.wikipedia.org/wiki/ANSI_escape_code#Select_Graphic_Rendition_parameters
 [8b-color]: https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
 [24b-color]: https://en.wikipedia.org/wiki/ANSI_escape_code#24-bit
 [3-4b-color]: https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit
