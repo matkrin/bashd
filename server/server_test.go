@@ -9,15 +9,9 @@ import (
 	"github.com/matkrin/bashd/server"
 )
 
-func mockState() *server.State {
+func mockState(documentText string) *server.State {
 	state := server.NewState()
-	state.OpenDocument("file://workspace/test.sh",
-		`#!/usr/bin/env bash
-
-echo "hello world"
-
-`,
-	)
+	state.OpenDocument("file://workspace/test.sh", documentText)
 	state.WorkspaceFolders = []lsp.WorkspaceFolder{
 		{URI: "file://workspace", Name: "workspace"},
 	}
@@ -51,7 +45,13 @@ func TestHandleMessage(t *testing.T) {
 			writer := &buf
 
 			// Create the mock State (you can extend this mock as needed for your specific methods)
-			state := mockState()
+			state := mockState(
+				`#!/usr/bin/env bash
+
+echo "hello world"
+
+`,
+			)
 
 			// Call the HandleMessage function with the mock writer, state, method, and contents
 			server.HandleMessage(writer, state, tt.method, tt.contents)
