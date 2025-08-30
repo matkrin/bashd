@@ -54,6 +54,7 @@ type ServerCapabilities struct {
 	DocumentRangeFormattingProvider bool              `json:"documentRangeFormattingProvider"`
 	CodeActionProvider              bool              `json:"codeActionProvider"`
 	ColorProvider                   bool              `json:"colorProvider"`
+	InlayHintProvider               bool              `json:"inlayHintProvider"`
 	RenameProvider                  RenameOptions     `json:"renameProvider"`
 	CompletionProvider              CompletionOptions `json:"completionProvider"`
 	DiagnosticProvider              DiagnosticOptions `json:"diagnosticProvider"`
@@ -92,6 +93,7 @@ func NewInitializeResponse(id int) InitializeResponse {
 				DocumentRangeFormattingProvider: true,
 				CodeActionProvider:              true,
 				ColorProvider:                   true,
+				InlayHintProvider:               true,
 				RenameProvider: RenameOptions{
 					PrepareProvider: true,
 				},

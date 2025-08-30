@@ -211,6 +211,16 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 			writeResponse(writer, response)
 		}
 
+	case "textDocument/inlayHint":
+		var request lsp.InlayHintRequest
+		if err := json.Unmarshal(contents, &request); err != nil {
+			slog.Error("Could not parse request", "method", method)
+		}
+		response := handleInlayHint(&request, state)
+		if response != nil {
+			writeResponse(writer, response)
+		}
+
 	}
 }
 
