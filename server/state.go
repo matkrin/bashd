@@ -17,21 +17,30 @@ type Document struct {
 	SourcedFiles []Document
 }
 
+type Config struct {
+	ExcludeDirs []string
+}
+
 type State struct {
 	Documents        map[string]Document
 	EnvVars          map[string]string
 	WorkspaceFolders []lsp.WorkspaceFolder
 	PathItems        []string
+	Config           Config
 }
 
-func NewState() State {
+func NewState(config Config) State {
 	envVars := getEnvVars()
-	pathItems := getPathItems(envVars)
+	pathItems := []string{}
+	if pathStr, ok := envVars["PATH"]; ok {
+		pathItems = getPathItems(pathStr)
+	}
 
 	return State{
 		Documents: map[string]Document{},
 		EnvVars:   envVars,
 		PathItems: pathItems,
+		Config:    config,
 	}
 }
 
@@ -48,12 +57,6 @@ func (s *State) UpdateDocument(uri, text string) {
 	}
 }
 
-var excludeDirs = [...]string{
-	".git",
-	".venv",
-	"node_modules",
-}
-
 func (s *State) WorkspaceShFiles() []string {
 	shFiles := []string{}
 	for _, folder := range s.WorkspaceFolders {
@@ -66,7 +69,7 @@ func (s *State) WorkspaceShFiles() []string {
 			if err != nil {
 				return err
 			}
-			if d.IsDir() && slices.Contains(excludeDirs[:], d.Name()) {
+			if d.IsDir() && slices.Contains(s.Config.ExcludeDirs, d.Name()) {
 				return fs.SkipDir
 			}
 			fileext := filepath.Ext(path)
@@ -97,8 +100,7 @@ func getEnvVars() map[string]string {
 	return envVars
 }
 
-func getPathItems(envVars map[string]string) []string {
-	pathStr := envVars["PATH"]
+func getPathItems(pathStr string) []string {
 	pathItems := []string{}
 	for pathPart := range strings.SplitSeq(pathStr, ":") {
 		entries, err := os.ReadDir(pathPart)
@@ -113,7 +115,7 @@ func getPathItems(envVars map[string]string) []string {
 
 			info, err := entry.Info()
 			if err != nil {
-				slog.Error("Error getting file into", "file", entry.Name())
+				slog.Error("Error getting file info", "file", entry.Name())
 				continue
 			}
 

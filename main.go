@@ -60,7 +60,11 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Split(lsp.Split)
 
-	state := server.NewState()
+	config := server.Config{
+		ExcludeDirs: []string{".git", ".venv", "node_modules"},
+	}
+
+	state := server.NewState(config)
 	writer := os.Stdout
 
 	for scanner.Scan() {

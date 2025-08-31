@@ -30,7 +30,7 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 		state.WorkspaceFolders = request.Params.WorkspaceFolders
 		slog.Info("Workspace folders set", "workerspaceFolders", state.WorkspaceFolders)
 
-		workspaceDiagnostics := checkDiagnosticsWorkspace(state)
+		workspaceDiagnostics := findDiagnosticsWorkspace(state)
 		for uri, diagnostics := range workspaceDiagnostics {
 			pushDiagnostic(writer, uri, diagnostics)
 		}
