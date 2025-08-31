@@ -55,7 +55,7 @@ func findAllSourcedFiles(
 ) []string {
 	var sourcedFiles []string
 	for _, sourcedFile := range findSourceStatments(file, env) {
-		path := sourcedFile.Name
+		path := sourcedFile.SourcedFile
 		resolved := path
 		if !filepath.IsAbs(path) {
 			resolved = filepath.Join(baseDir, path)
@@ -81,14 +81,16 @@ func findAllSourcedFiles(
 	return sourcedFiles
 }
 
-type SourcedFile struct {
-	Name  string
-	Start syntax.Pos
-	End   syntax.Pos
+type SourceStatement struct {
+	SourcedFile string
+	StartLine   uint
+	StartChar   uint
+	EndLine     uint
+	EndChar     uint
 }
 
-func findSourceStatments(file *syntax.File, env map[string]string) []SourcedFile {
-	sourcedFiles := []SourcedFile{}
+func findSourceStatments(file *syntax.File, env map[string]string) []SourceStatement {
+	sourcedFiles := []SourceStatement{}
 	syntax.Walk(file, func(node syntax.Node) bool {
 		call, ok := node.(*syntax.CallExpr)
 		if !ok || len(call.Args) < 2 {
@@ -104,10 +106,13 @@ func findSourceStatments(file *syntax.File, env map[string]string) []SourcedFile
 		if path == "" {
 			return true
 		}
-		sourcedFiles = append(sourcedFiles, SourcedFile{
-			Name:  path,
-			Start: node.Pos(),
-			End:   node.End(),
+
+		sourcedFiles = append(sourcedFiles, SourceStatement{
+			SourcedFile: path,
+			StartLine:   node.Pos().Line() - 1,
+			StartChar:   node.Pos().Col() - 1,
+			EndLine:     node.End().Line() - 1,
+			EndChar:     node.End().Col() - 1,
 		})
 		return true
 	})

@@ -21,3 +21,16 @@ type WorkspaceSymbol struct {
 	// ContainerName
 	Location Location `json:"location"`
 }
+
+func NewWorkspaceSymbolResponse(
+	id int,
+	workspaceSymbols []WorkspaceSymbol,
+) WorkspaceSymbolResponse {
+	return WorkspaceSymbolResponse{
+		Response: Response{
+			RPC: "2.0",
+			ID:  &id,
+		},
+		Result: workspaceSymbols,
+	}
+}

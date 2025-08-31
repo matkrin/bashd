@@ -14,15 +14,28 @@ type DocumentSymbolResponse struct {
 	Result []DocumentSymbol `json:"result"`
 }
 
+func NewDocumentSymbolResponse(
+	id int,
+	documentSymbols []DocumentSymbol,
+) DocumentSymbolResponse {
+	return DocumentSymbolResponse{
+		Response: Response{
+			RPC: "2.0",
+			ID:  &id,
+		},
+		Result: documentSymbols,
+	}
+}
+
 type DocumentSymbol struct {
 	Name string `json:"name"`
 	// Detail string `json:"detail"`
 	Kind SymbolKind `json:"kind"`
 	// Tags
 	// Deprecated
-	Range         Range            `json:"range"`
+	Range          Range            `json:"range"`
 	SelectionRange Range            `json:"selectionRange"`
-	Children      []DocumentSymbol `json:"children"`
+	Children       []DocumentSymbol `json:"children"`
 }
 
 type SymbolKind int

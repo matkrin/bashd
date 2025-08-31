@@ -60,11 +60,12 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 			slog.Error("Could not parse request", "method", method)
 		}
 
-		slog.Info("Opened", "URI", request.Params.TextDocument.URI)
+		uri := request.Params.TextDocument.URI
+		slog.Info("Opened document", "URI", uri)
+		documentText := request.Params.TextDocument.Text
+		state.OpenDocument(uri, documentText)
 
-		state.OpenDocument(request.Params.TextDocument.URI, request.Params.TextDocument.Text)
-
-		diagnostics := checkDiagnostics(request.Params.TextDocument.URI, state)
+		diagnostics := findDiagnostics(documentText, uri, state.EnvVars)
 		pushDiagnostic(writer, request.Params.TextDocument.URI, diagnostics)
 
 	case "textDocument/didChange":
@@ -73,13 +74,15 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 			slog.Error("Could not parse request", "method", method)
 		}
 
-		slog.Info("Changed", "URI", request.Params.TextDocument.URI)
+		uri := request.Params.TextDocument.URI
+		slog.Info("Changed document", "URI", uri)
 
 		for _, change := range request.Params.ContentChanges {
-			state.UpdateDocument(request.Params.TextDocument.URI, change.Text)
+			state.UpdateDocument(uri, change.Text)
 		}
 
-		diagnostics := checkDiagnostics(request.Params.TextDocument.URI, state)
+		documentText := state.Documents[uri].Text
+		diagnostics := findDiagnostics(documentText, uri, state.EnvVars)
 		pushDiagnostic(writer, request.Params.TextDocument.URI, diagnostics)
 
 	case "textDocument/hover":
@@ -139,7 +142,9 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 			slog.Error("Could not parse request", "method", method)
 		}
 		response := handleDocumentSymbol(&request, state)
-		writeResponse(writer, response)
+		if response != nil {
+			writeResponse(writer, response)
+		}
 
 	case "textDocument/prepareRename":
 		var request lsp.PrepareRenameRequest
