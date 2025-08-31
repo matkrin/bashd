@@ -97,11 +97,6 @@ func defNodes(file *syntax.File) []DefNode {
 		var pos, end syntax.Pos
 
 		switch n := node.(type) {
-		// case *syntax.ParamExp:
-		// 	if n.Param != nil {
-		// 		name = n.Param.Value
-		// 		pos, end = n.Pos(), n.End()
-		// 	}
 		case *syntax.Assign:
 			if n.Name != nil {
 				name = n.Name.Value

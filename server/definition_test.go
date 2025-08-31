@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/matkrin/bashd/lsp"
+	"mvdan.cc/sh/v3/syntax"
 )
 
 func mockState(documentText string) *State {
@@ -83,10 +84,80 @@ foo
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := handleDefinition(tt.request, state)
-			// TODO: update the condition below to compare got with tt.want.
 			if got.Result.Location != tt.want.Result.Location {
 				t.Errorf("handleDefinition() = %v, want %v", got.Result.Location, tt.want.Result.Location)
 			}
 		})
 	}
+}
+
+func Test_defNodes(t *testing.T) {
+	input := `#!/usr/bin/env bash
+
+a="test"
+echo "$a"
+
+foo() {
+	echo "bar"
+}
+
+foo
+`
+	fileAst, _ := parseDocument(input, "test.sh")
+	defNodes := defNodes(fileAst)
+	if len(defNodes) != 2 {
+		t.Errorf("length of defNodes not 2; got %v", len(defNodes))
+	}
+}
+
+func Test_findDefInFile(t *testing.T) {
+	input := `#!/usr/bin/env bash
+
+a="test"
+echo "$a"
+
+foo() {
+	echo "bar"
+}
+
+foo
+`
+	tests := []struct {
+		name   string
+		cursor Cursor
+		want   DefNode
+	}{
+		{
+			"Variable", newCursor(3, 7), DefNode{
+				Name:  "a",
+				Start: syntax.NewPos(21, 3, 1),
+				End:   syntax.NewPos(22, 3, 2),
+			},
+		},
+		{
+			"Function", newCursor(9, 0), DefNode{
+				Name:  "foo",
+				Start: syntax.NewPos(41, 6, 1),
+				End:   syntax.NewPos(44, 6, 4),
+			},
+		},
+	}
+
+	fileAst, _ := parseDocument(input, "test.sh")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cursorNode := findNodeUnderCursor(fileAst, tt.cursor)
+			got := findDefInFile(cursorNode, fileAst)
+			if (*got).Name != tt.want.Name {
+				t.Errorf("Name = %v, want %v", (*got).Name, tt.want.Name)
+			}
+			if (*got).Start != tt.want.Start {
+				t.Errorf("Start = %#v, want %#v", (*got).Start, tt.want.Start)
+			}
+			if (*got).End != tt.want.End {
+				t.Errorf("End = %#v, want %#v", (*got).End, tt.want.End)
+			}
+		})
+	}
+
 }
