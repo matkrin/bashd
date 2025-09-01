@@ -83,15 +83,15 @@
 
 ## TODO
 
+- Find references and rename: Variables, functions in files that source current
+  files (does this make sense? maybe for other scripts in workspace, would need
+  to check if file is sourced there...)
 - Refactoring!!!
 - Hover: function preview, variable preview?, flags parsing from man pages?
 - Go to declaration: `declare` statements
 - Maybe:
   - Code lens
   - Signature help
-  - Find references and rename: Variables, functions in sourced files (does this
-    make sense? maybe for other scripts in workspace, would need to check if
-    file is sourced there...)
 
 [sgr]: https://en.wikipedia.org/wiki/ANSI_escape_code#Select_Graphic_Rendition_parameters
 [8b-color]: https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit

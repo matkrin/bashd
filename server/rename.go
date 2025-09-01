@@ -32,7 +32,6 @@ func handlePrepareRename(
 		return nil
 	}
 
-	// Check if rename target is a executable in PATH or a builtin
 	identifier := extractIdentifier(cursorNode)
 	if slices.Contains(state.PathItems, identifier) || slices.Contains(BASH_BUILTINS[:], identifier) {
 		return nil
@@ -69,28 +68,13 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 	cursorNode := findNodeUnderCursor(fileAst, cursor)
 	referenceNodes := findRefsInFile(fileAst, cursorNode, true)
 
-	slog.Info("Handle rename", "referenceNodes", referenceNodes)
-	if len(referenceNodes) == 0 {
-		return nil
-	}
-
 	changes := map[string][]lsp.TextEdit{}
-	for _, node := range referenceNodes {
-		changes[uri] = append(changes[uri], lsp.TextEdit{
-			Range: lsp.NewRange(
-				node.Start.Line()-1,
-				node.Start.Col()-1,
-				node.End.Line()-1,
-				node.End.Col()-1,
-			),
-			NewText: params.NewName,
-		})
-	}
+	changes[uri] = findTextEditsInFile(referenceNodes, params.NewName)
 
 	// In sourced files
 	filename, err := uriToPath(uri)
 	if err != nil {
-		slog.Error(err.Error())
+		slog.Error("Could not transform URI to path", "err", err.Error())
 	}
 	baseDir := filepath.Dir(filename)
 	referenceNodesInSourcedFiles := findRefsinSourcedFile(
@@ -103,17 +87,10 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 
 	for file, refNodes := range referenceNodesInSourcedFiles {
 		fileUri := pathToURI(file)
-		for _, node := range refNodes {
-			changes[fileUri] = append(changes[fileUri], lsp.TextEdit{
-				Range: lsp.NewRange(
-					node.Start.Line()-1,
-					node.Start.Col()-1,
-					node.End.Line()-1,
-					node.End.Col()-1,
-				),
-				NewText: params.NewName,
-			})
-		}
+		changes[fileUri] = append(
+			changes[fileUri],
+			findTextEditsInFile(refNodes, params.NewName)...,
+		)
 	}
 
 	response := lsp.RenameResponse{
@@ -126,4 +103,12 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 		},
 	}
 	return &response
+}
+
+func findTextEditsInFile(referenceNodes []RefNode, newText string) []lsp.TextEdit {
+	textEdits := []lsp.TextEdit{}
+	for _, refNode := range referenceNodes {
+		textEdits = append(textEdits, refNode.toLspTextEdit(newText))
+	}
+	return textEdits
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func mockState(documentText string) *State {
-	state := NewState()
+	state := NewState(Config{ExcludeDirs: nil})
 	state.OpenDocument("file://workspace/test.sh", documentText)
 	state.WorkspaceFolders = []lsp.WorkspaceFolder{
 		{URI: "file://workspace", Name: "workspace"},

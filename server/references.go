@@ -27,17 +27,8 @@ func handleReferences(request *lsp.ReferencesRequest, state *State) *lsp.Referen
 
 	// In current file
 	locations := []lsp.Location{}
-	for _, node := range referenceNodes {
-		location := lsp.Location{
-			URI: uri,
-			Range: lsp.NewRange(
-				node.Start.Line()-1,
-				node.Start.Col()-1,
-				node.End.Line()-1,
-				node.End.Col()-1,
-			),
-		}
-		locations = append(locations, location)
+	for _, refNode := range referenceNodes {
+		locations = append(locations, refNode.toLspLocation(uri))
 	}
 
 	// In sourced files
@@ -55,17 +46,8 @@ func handleReferences(request *lsp.ReferencesRequest, state *State) *lsp.Referen
 	)
 
 	for file, refNodes := range referenceNodesInSourcedFiles {
-		for _, node := range refNodes {
-			location := lsp.Location{
-				URI: pathToURI(file),
-				Range: lsp.NewRange(
-					node.Start.Line()-1,
-					node.Start.Col()-1,
-					node.End.Line()-1,
-					node.End.Col()-1,
-				),
-			}
-			locations = append(locations, location)
+		for _, refNode := range refNodes {
+			locations = append(locations, refNode.toLspLocation(pathToURI(file)))
 		}
 	}
 
@@ -82,10 +64,36 @@ func handleReferences(request *lsp.ReferencesRequest, state *State) *lsp.Referen
 
 // Wraps a node that can be part of a reference.
 type RefNode struct {
-	Node  *syntax.Node
-	Name  string
-	Start syntax.Pos
-	End   syntax.Pos
+	Node      *syntax.Node
+	Name      string
+	StartLine uint
+	StartChar uint
+	EndLine   uint
+	EndChar   uint
+}
+
+func (r *RefNode) toLspLocation(uri string) lsp.Location {
+	return lsp.Location{
+		URI: uri,
+		Range: lsp.NewRange(
+			r.StartLine-1,
+			r.StartChar-1,
+			r.EndLine-1,
+			r.EndChar-1,
+		),
+	}
+}
+
+func (r *RefNode) toLspTextEdit(newText string) lsp.TextEdit {
+	return lsp.TextEdit{
+		Range: lsp.NewRange(
+			r.StartLine-1,
+			r.StartChar-1,
+			r.EndLine-1,
+			r.EndChar-1,
+		),
+		NewText: newText,
+	}
 }
 
 func refNodes(ast *syntax.File, includeDeclaration bool) []RefNode {
@@ -93,14 +101,15 @@ func refNodes(ast *syntax.File, includeDeclaration bool) []RefNode {
 
 	syntax.Walk(ast, func(node syntax.Node) bool {
 		var name string
-		var pos, end syntax.Pos
+		var startLine, startChar, endLine, endChar uint
 
 		switch n := node.(type) {
 		// Variable usage
 		case *syntax.ParamExp:
 			if n.Param != nil {
 				name = n.Param.Value
-				pos, end = n.Param.Pos(), n.Param.End()
+				startLine, startChar = n.Param.Pos().Line(), n.Param.Pos().Col()
+				endLine, endChar = n.Param.End().Line(), n.Param.End().Col()
 			}
 		// Function usage
 		case *syntax.Word:
@@ -108,29 +117,34 @@ func refNodes(ast *syntax.File, includeDeclaration bool) []RefNode {
 				switch p := n.Parts[0].(type) {
 				case *syntax.Lit:
 					name = p.Value
-					pos, end = p.Pos(), p.End()
+					startLine, startChar = p.Pos().Line(), p.Pos().Col()
+					endLine, endChar = p.End().Line(), p.End().Col()
 				}
 			}
 		// Funtion declaration
 		case *syntax.FuncDecl:
 			if n.Name != nil && includeDeclaration {
 				name = n.Name.Value
-				pos, end = n.Name.Pos(), n.Name.End()
+				startLine, startChar = n.Name.Pos().Line(), n.Name.Pos().Col()
+				endLine, endChar = n.Name.End().Line(), n.Name.End().Col()
 			}
 		// Variable assignement
 		case *syntax.Assign:
 			if n.Name != nil && includeDeclaration {
 				name = n.Name.Value
-				pos, end = n.Name.Pos(), n.Name.End()
+				startLine, startChar = n.Name.Pos().Line(), n.Name.Pos().Col()
+				endLine, endChar = n.Name.End().Line(), n.Name.End().Col()
 			}
 		}
 
 		if name != "" {
 			refNodes = append(refNodes, RefNode{
-				Node:  &node,
-				Name:  name,
-				Start: pos,
-				End:   end,
+				Node:      &node,
+				Name:      name,
+				StartLine: startLine,
+				StartChar: startChar,
+				EndLine:   endLine,
+				EndChar:   endChar,
 			})
 		}
 
