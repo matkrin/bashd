@@ -59,9 +59,11 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 			return nil
 		}
 		definition = &DefNode{
-			Node:  cursorNode,
-			Start: syntax.NewPos(0, 1, 1),
-			End:   syntax.NewPos(0, 1, 1),
+			Node:      cursorNode,
+			StartLine: 1,
+			StartChar: 1,
+			EndLine:   1,
+			EndChar:   1,
 		}
 		uri = pathToURI(sourcePath)
 	}
@@ -73,20 +75,22 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 	response := lsp.NewDefinitionResponse(
 		request.ID,
 		uri,
-		definition.Start.Line()-1,
-		definition.Start.Col()-1,
-		definition.End.Line()-1,
-		definition.End.Col()-1,
+		definition.StartLine-1,
+		definition.StartChar-1,
+		definition.EndLine-1,
+		definition.EndChar-1,
 	)
 	return &response
 }
 
 // Wraps a node that can be part of a definition or reference.
 type DefNode struct {
-	Node  syntax.Node
-	Name  string
-	Start syntax.Pos // Starting position of the node
-	End   syntax.Pos // End position of the node
+	Node      syntax.Node
+	Name      string
+	StartLine uint
+	StartChar uint
+	EndLine   uint
+	EndChar   uint
 }
 
 func defNodes(file *syntax.File) []DefNode {
@@ -94,27 +98,31 @@ func defNodes(file *syntax.File) []DefNode {
 
 	syntax.Walk(file, func(node syntax.Node) bool {
 		var name string
-		var pos, end syntax.Pos
+		var startLine, startChar, endLine, endChar uint
 
 		switch n := node.(type) {
 		case *syntax.Assign:
 			if n.Name != nil {
 				name = n.Name.Value
-				pos, end = n.Name.Pos(), n.Name.End()
+				startLine, startChar = n.Name.Pos().Line(), n.Name.Pos().Col()
+				endLine, endChar = n.Name.End().Line(), n.Name.End().Col()
 			}
 		case *syntax.FuncDecl:
 			if n.Name != nil {
 				name = n.Name.Value
-				pos, end = n.Name.Pos(), n.Name.End()
+				startLine, startChar = n.Name.Pos().Line(), n.Name.Pos().Col()
+				endLine, endChar = n.Name.End().Line(), n.Name.End().Col()
 			}
 		}
 
 		if name != "" {
 			defNodes = append(defNodes, DefNode{
-				Node:  node,
-				Name:  name,
-				Start: pos,
-				End:   end,
+				Node:      node,
+				Name:      name,
+				StartLine: startLine,
+				StartChar: startChar,
+				EndLine:   endLine,
+				EndChar:   endChar,
 			})
 		}
 
@@ -130,9 +138,9 @@ func findDefInFile(cursorNode syntax.Node, file *syntax.File) *DefNode {
 		return nil
 	}
 
-	for _, node := range defNodes(file) {
-		if node.Name == targetIdentifier {
-			return &node
+	for _, defNode := range defNodes(file) {
+		if defNode.Name == targetIdentifier {
+			return &defNode
 		}
 
 	}

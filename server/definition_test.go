@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/matkrin/bashd/lsp"
-	"mvdan.cc/sh/v3/syntax"
 )
 
 func mockState(documentText string) *State {
@@ -130,15 +129,19 @@ foo
 		{
 			"Variable", newCursor(3, 7), DefNode{
 				Name:  "a",
-				Start: syntax.NewPos(21, 3, 1),
-				End:   syntax.NewPos(22, 3, 2),
+				StartLine: 3,
+				StartChar: 1,
+				EndLine: 3,
+				EndChar: 2,
 			},
 		},
 		{
 			"Function", newCursor(9, 0), DefNode{
 				Name:  "foo",
-				Start: syntax.NewPos(41, 6, 1),
-				End:   syntax.NewPos(44, 6, 4),
+				StartLine: 6,
+				StartChar: 1,
+				EndLine: 6,
+				EndChar: 4,
 			},
 		},
 	}
@@ -151,11 +154,17 @@ foo
 			if (*got).Name != tt.want.Name {
 				t.Errorf("Name = %v, want %v", (*got).Name, tt.want.Name)
 			}
-			if (*got).Start != tt.want.Start {
-				t.Errorf("Start = %#v, want %#v", (*got).Start, tt.want.Start)
+			if (*got).StartLine != tt.want.StartLine {
+				t.Errorf("StartLine = %#v, want %#v", (*got).StartLine, tt.want.StartLine)
 			}
-			if (*got).End != tt.want.End {
-				t.Errorf("End = %#v, want %#v", (*got).End, tt.want.End)
+			if (*got).StartChar != tt.want.StartChar {
+				t.Errorf("StartChar = %#v, want %#v", (*got).StartChar, tt.want.StartChar)
+			}
+			if (*got).EndLine != tt.want.EndLine {
+				t.Errorf("EndLine = %#v, want %#v", (*got).EndLine, tt.want.EndLine)
+			}
+			if (*got).EndChar != tt.want.EndChar {
+				t.Errorf("EndChar = %#v, want %#v", (*got).EndChar, tt.want.EndChar)
 			}
 		})
 	}
