@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/matkrin/bashd/lsp"
 	"mvdan.cc/sh/v3/syntax"
@@ -17,15 +18,15 @@ func handleReferences(request *lsp.ReferencesRequest, state *State) *lsp.Referen
 		params.Position.Character,
 	)
 
-	document := state.Documents[uri].Text
-	fileAst, err := parseDocument(document, uri)
+	// In current file
+	documentText := state.Documents[uri].Text
+	fileAst, err := parseDocument(documentText, uri)
 	if err != nil {
 		slog.Error(err.Error())
 	}
 	cursorNode := findNodeUnderCursor(fileAst, cursor)
 	referenceNodes := findRefsInFile(fileAst, cursorNode, params.Context.IncludeDeclaration)
 
-	// In current file
 	locations := []lsp.Location{}
 	for _, refNode := range referenceNodes {
 		locations = append(locations, refNode.toLspLocation(uri))
@@ -48,6 +49,41 @@ func handleReferences(request *lsp.ReferencesRequest, state *State) *lsp.Referen
 	for file, refNodes := range referenceNodesInSourcedFiles {
 		for _, refNode := range refNodes {
 			locations = append(locations, refNode.toLspLocation(pathToURI(file)))
+		}
+	}
+
+	// In workspace files that source current file
+	for _, shFile := range state.WorkspaceShFiles() {
+		fileContent, err := os.ReadFile(shFile)
+		if err != nil {
+			slog.Error("ERROR: Could not read file", "file", shFile)
+			continue
+		}
+		workspaceFileAst, err := parseDocument(string(fileContent), shFile)
+		if err != nil {
+			slog.Error("ERROR: Could not parse file", "file", shFile)
+			continue
+		}
+		for _, sourceStatement := range findSourceStatments(workspaceFileAst, state.EnvVars) {
+			baseDir := filepath.Dir(shFile)
+			path := sourceStatement.SourcedFile
+			resolved := path
+			if !filepath.IsAbs(path) {
+				resolved = filepath.Join(baseDir, path)
+			}
+			resolved = filepath.Clean(resolved)
+			slog.Info("REFERENCES", "resolved", resolved)
+			if uri == pathToURI(resolved) {
+				refs := findRefsInFile(workspaceFileAst, cursorNode, params.Context.IncludeDeclaration)
+				slog.Info("REFERENCES", "refs", refs)
+				for _, refNode := range refs {
+					location := refNode.toLspLocation(pathToURI(shFile))
+					if !slices.Contains(locations, location) {
+						locations = append(locations, location)
+					}
+				}
+
+			}
 		}
 	}
 

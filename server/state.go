@@ -57,6 +57,7 @@ func (s *State) UpdateDocument(uri, text string) {
 	}
 }
 
+// Find sh-files and return their filepaths
 func (s *State) WorkspaceShFiles() []string {
 	shFiles := []string{}
 	for _, folder := range s.WorkspaceFolders {

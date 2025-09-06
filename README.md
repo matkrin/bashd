@@ -23,8 +23,10 @@
 
 ### References
 
-- Function calls in document
-- Variable usage in document
+- Function calls in current document and sourced files
+- Variable usage in current document and sourced files
+- Function calls in workspace file which source the current file
+- Variable usage in workspace file which source the current file
 - Depending on `ReferenceContext.includeDeclaration` function declarations and
   variable assignments
 
