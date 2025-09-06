@@ -53,36 +53,19 @@ func handleReferences(request *lsp.ReferencesRequest, state *State) *lsp.Referen
 	}
 
 	// In workspace files that source current file
-	for _, shFile := range state.WorkspaceShFiles() {
-		fileContent, err := os.ReadFile(shFile)
-		if err != nil {
-			slog.Error("ERROR: Could not read file", "file", shFile)
-			continue
-		}
-		workspaceFileAst, err := parseDocument(string(fileContent), shFile)
-		if err != nil {
-			slog.Error("ERROR: Could not parse file", "file", shFile)
-			continue
-		}
-		for _, sourceStatement := range findSourceStatments(workspaceFileAst, state.EnvVars) {
-			baseDir := filepath.Dir(shFile)
-			path := sourceStatement.SourcedFile
-			resolved := path
-			if !filepath.IsAbs(path) {
-				resolved = filepath.Join(baseDir, path)
-			}
-			resolved = filepath.Clean(resolved)
-			slog.Info("REFERENCES", "resolved", resolved)
-			if uri == pathToURI(resolved) {
-				refs := findRefsInFile(workspaceFileAst, cursorNode, params.Context.IncludeDeclaration)
-				slog.Info("REFERENCES", "refs", refs)
-				for _, refNode := range refs {
-					location := refNode.toLspLocation(pathToURI(shFile))
-					if !slices.Contains(locations, location) {
-						locations = append(locations, location)
-					}
-				}
+	refNodesInWorkspaceFile := findRefsInWorkspaceFiles(
+		uri,
+		state.WorkspaceShFiles(),
+		cursorNode,
+		state.EnvVars,
+		params.Context.IncludeDeclaration,
+	)
 
+	for file, refNodes := range refNodesInWorkspaceFile {
+		for _, refNode := range refNodes {
+			location := refNode.toLspLocation(pathToURI(file))
+			if !slices.Contains(locations, location) {
+				locations = append(locations, location)
 			}
 		}
 	}
@@ -233,4 +216,43 @@ func findRefsinSourcedFile(
 	}
 
 	return filesRefNodes
+}
+
+// Find reference nodes in all workspace files if they source the current file
+func findRefsInWorkspaceFiles(
+	uri string,
+	workspaceShFiles []string,
+	cursorNode syntax.Node,
+	env map[string]string,
+	includeDeclaration bool,
+) map[string][]RefNode {
+	referenceNodes := map[string][]RefNode{}
+	for _, shFile := range workspaceShFiles {
+		fileContent, err := os.ReadFile(shFile)
+		if err != nil {
+			slog.Error("ERROR: Could not read file", "file", shFile)
+			continue
+		}
+		workspaceFileAst, err := parseDocument(string(fileContent), shFile)
+		if err != nil {
+			slog.Error("ERROR: Could not parse file", "file", shFile)
+			continue
+		}
+		for _, sourceStatement := range findSourceStatments(workspaceFileAst, env) {
+			baseDir := filepath.Dir(shFile)
+			path := sourceStatement.SourcedFile
+			resolved := path
+			if !filepath.IsAbs(path) {
+				resolved = filepath.Join(baseDir, path)
+			}
+			resolved = filepath.Clean(resolved)
+			slog.Info("REFERENCES", "resolved", resolved)
+			if uri == pathToURI(resolved) {
+				refs := findRefsInFile(workspaceFileAst, cursorNode, includeDeclaration)
+				slog.Info("REFERENCES", "refs", refs)
+				referenceNodes[shFile] = append(referenceNodes[shFile], refs...)
+			}
+		}
+	}
+	return referenceNodes
 }

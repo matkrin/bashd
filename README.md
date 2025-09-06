@@ -44,6 +44,8 @@
 
 - Function declarations and calls in document and sourced files
 - Variable assignments and usage in document and sourced files
+- Function declarations and calls in workspace file which source the current file
+- Variable assignments and usage in workspace file which source the current file
 
 ### Document Symbols
 
@@ -85,9 +87,6 @@
 
 ## TODO
 
-- Find references and rename: Variables, functions in files that source current
-  files (does this make sense? maybe for other scripts in workspace, would need
-  to check if file is sourced there...)
 - Refactoring!!!
 - Hover: function preview, variable preview?, flags parsing from man pages?
 - Go to declaration: `declare` statements

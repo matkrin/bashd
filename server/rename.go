@@ -93,6 +93,25 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 		)
 	}
 
+	// In workspace files that source current file
+	refNodesInWorkspaceFile := findRefsInWorkspaceFiles(
+		uri,
+		state.WorkspaceShFiles(),
+		cursorNode,
+		state.EnvVars,
+		true,
+	)
+
+	for file, refNodes := range refNodesInWorkspaceFile {
+		for _, refNode := range refNodes {
+			fileUri := pathToURI(file)
+			textEdit := refNode.toLspTextEdit(params.NewName)
+			if !slices.Contains(changes[fileUri], textEdit) {
+				changes[fileUri] = append(changes[fileUri], textEdit)
+			}
+		}
+	}
+
 	response := lsp.RenameResponse{
 		Response: lsp.Response{
 			RPC: "2.0",
