@@ -14,6 +14,8 @@
 
 - Show `help` output as docs for keywords and builtins
 - Show man page as docs for executables
+- Show location of assignment for variables
+- Show location and body and functions
 
 ### Definition
 
@@ -44,7 +46,8 @@
 
 - Function declarations and calls in document and sourced files
 - Variable assignments and usage in document and sourced files
-- Function declarations and calls in workspace file which source the current file
+- Function declarations and calls in workspace file which source the current
+  file
 - Variable assignments and usage in workspace file which source the current file
 
 ### Document Symbols
@@ -88,9 +91,9 @@
 ## TODO
 
 - Refactoring!!!
-- Hover: function preview, variable preview?, flags parsing from man pages?
 - Go to declaration: `declare` statements
 - Maybe:
+  - Hover: flags parsing from man pages?
   - Code lens
   - Signature help
 
