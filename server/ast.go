@@ -90,7 +90,7 @@ type SourceStatement struct {
 }
 
 func findSourceStatments(file *syntax.File, env map[string]string) []SourceStatement {
-	sourcedFiles := []SourceStatement{}
+	sourcedStatements := []SourceStatement{}
 	syntax.Walk(file, func(node syntax.Node) bool {
 		call, ok := node.(*syntax.CallExpr)
 		if !ok || len(call.Args) < 2 {
@@ -107,7 +107,7 @@ func findSourceStatments(file *syntax.File, env map[string]string) []SourceState
 			return true
 		}
 
-		sourcedFiles = append(sourcedFiles, SourceStatement{
+		sourcedStatements = append(sourcedStatements, SourceStatement{
 			SourcedFile: path,
 			StartLine:   node.Pos().Line() - 1,
 			StartChar:   node.Pos().Col() - 1,
@@ -116,7 +116,7 @@ func findSourceStatments(file *syntax.File, env map[string]string) []SourceState
 		})
 		return true
 	})
-	return sourcedFiles
+	return sourcedStatements
 }
 
 func extractWord(word *syntax.Word, env map[string]string) string {

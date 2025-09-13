@@ -23,6 +23,11 @@
 - Function declaration in document and sourced files
 - Sourced file itself
 
+### Declaration
+
+- Variable declarations `declare`, `local`, `export`, `readonly`, `typeset`, or
+  `nameref` in document
+
 ### References
 
 - Function calls in current document and sourced files
