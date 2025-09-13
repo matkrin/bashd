@@ -2,6 +2,8 @@ package server
 
 import (
 	"log/slog"
+	"os"
+	"path/filepath"
 
 	"github.com/matkrin/bashd/lsp"
 	"mvdan.cc/sh/v3/syntax"
@@ -22,8 +24,26 @@ func handleDeclaration(request *lsp.DeclarationRequest, state *State) *lsp.Decla
 	}
 	cursorNode := findNodeUnderCursor(fileAst, cursor)
 	declaration := findDeclInFile(cursorNode, fileAst)
+
 	if declaration == nil {
-		return nil
+		// Check for the declaration in a sourced file
+		filename, err := uriToPath(uri)
+		if err != nil {
+			slog.Error(err.Error())
+			return nil
+		}
+		baseDir := filepath.Dir(filename)
+		sourcedFile := ""
+		sourcedFile, declaration = findDeclInSourcedFile(
+			fileAst,
+			cursorNode,
+			state.EnvVars,
+			baseDir,
+		)
+
+		if declaration != nil {
+			uri = pathToURI(sourcedFile)
+		}
 	}
 
 	return lsp.NewDeclarationResponse(
@@ -96,4 +116,33 @@ func declNodes(file *syntax.File) []DeclNode {
 	})
 
 	return declNodes
+}
+
+func findDeclInSourcedFile(
+	fileAst *syntax.File,
+	cursorNode syntax.Node,
+	env map[string]string,
+	baseDir string,
+) (string, *DeclNode) {
+	sourcedFiles := findAllSourcedFiles(fileAst, env, baseDir, map[string]bool{})
+
+	var declaration *DeclNode
+	for _, sourcedFile := range sourcedFiles {
+		fileContent, err := os.ReadFile(sourcedFile)
+		if err != nil {
+			slog.Error("Could not read file", "file", sourcedFile)
+			continue
+		}
+		sourcedFileAst, err := parseDocument(string(fileContent), sourcedFile)
+		if err != nil {
+			slog.Error(err.Error())
+			continue
+		}
+		declaration = findDeclInFile(cursorNode, sourcedFileAst)
+		if declaration != nil {
+			return sourcedFile, declaration
+		}
+	}
+
+	return "", nil
 }

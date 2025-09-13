@@ -25,8 +25,8 @@
 
 ### Declaration
 
-- Variable declarations `declare`, `local`, `export`, `readonly`, `typeset`, or
-  `nameref` in document
+- Variable declarations (`declare`, `local`, `export`, `readonly`, `typeset`, or
+  `nameref`) in document and sourced files
 
 ### References
 
@@ -95,12 +95,7 @@
 
 ## TODO
 
-- Refactoring!!!
-- Go to declaration: `declare` statements
-- Maybe:
-  - Hover: flags parsing from man pages?
-  - Code lens
-  - Signature help
+- Hover: flags parsing from man pages?
 
 [sgr]: https://en.wikipedia.org/wiki/ANSI_escape_code#Select_Graphic_Rendition_parameters
 [8b-color]: https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
