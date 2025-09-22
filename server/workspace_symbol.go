@@ -53,7 +53,7 @@ func findWorkSpaceSymbol(defNode *DefNode, filePath string) lsp.WorkspaceSymbol 
 		endLine = n.End().Line() - 1
 		endCol = n.End().Col() - 1
 
-	case *syntax.ForClause:
+	case *syntax.ForClause, *syntax.CallExpr:
 		kind = lsp.SymbolVariable
 
 		endLine = defNode.EndLine - 1

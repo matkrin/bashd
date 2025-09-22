@@ -101,18 +101,21 @@ func defNodes(file *syntax.File) []DefNode {
 		var startLine, startChar, endLine, endChar uint
 
 		switch n := node.(type) {
+		// Variable Assignment
 		case *syntax.Assign:
 			if n.Name != nil {
 				name = n.Name.Value
 				startLine, startChar = n.Name.Pos().Line(), n.Name.Pos().Col()
 				endLine, endChar = n.Name.End().Line(), n.Name.End().Col()
 			}
+		// Function Definition
 		case *syntax.FuncDecl:
 			if n.Name != nil {
 				name = n.Name.Value
 				startLine, startChar = n.Name.Pos().Line(), n.Name.Pos().Col()
 				endLine, endChar = n.Name.End().Line(), n.Name.End().Col()
 			}
+		// Iteration variable in for/select loops
 		case *syntax.ForClause:
 			switch loop := n.Loop.(type) {
 			case *syntax.WordIter:
@@ -140,6 +143,25 @@ func defNodes(file *syntax.File) []DefNode {
 								endLine, endChar = p.End().Line(), p.End().Col()
 							}
 						}
+					}
+				}
+			}
+		// Variable "assinment" in read statements
+		case *syntax.CallExpr:
+			if len(n.Args) == 0 {
+				return true
+			}
+			cmdName := extractIdentifier(n.Args[0])
+			if cmdName != "read" {
+				return true
+			}
+			for _, arg := range n.Args {
+				for _, wp := range arg.Parts {
+					switch p := wp.(type) {
+					case *syntax.Lit:
+						name = p.Value
+						startLine, startChar = p.Pos().Line(), p.Pos().Col()
+						endLine, endChar = p.End().Line(), p.End().Col()
 					}
 				}
 			}
