@@ -154,6 +154,17 @@ func refNodes(ast *syntax.File, includeDeclaration bool) []RefNode {
 				startLine, startChar = n.Name.Pos().Line(), n.Name.Pos().Col()
 				endLine, endChar = n.Name.End().Line(), n.Name.End().Col()
 			}
+		// Iteration variable in for/select loops
+		case *syntax.ForClause:
+			loop, ok := n.Loop.(*syntax.WordIter)
+			if !ok {
+				return true
+			}
+			if loop.Name != nil {
+				name = loop.Name.Value
+				startLine, startChar = loop.Name.Pos().Line(), loop.Name.Pos().Col()
+				endLine, endChar = loop.Name.End().Line(), loop.Name.End().Col()
+			}
 		}
 
 		if name != "" {
