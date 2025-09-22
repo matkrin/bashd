@@ -2,52 +2,49 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/matkrin/bashd/lsp"
 	"github.com/matkrin/bashd/server"
+	"mvdan.cc/sh/v3/syntax"
 )
 
-// func testParser() []*syntax.Lit {
-// 	script := `#!/bin/bash
-// a=5
-// echo "$a"
-// `
-// 	// b="hello"
-// 	// c=(1 2 3)
-// 	// declare -i d
-// 	// e=$((5 + 3))
-// 	// declare -A f
-// 	// f[red]=apple
-// 	// readonly g=3.14
-// 	// export h="var"
-// 	// i=$(date)
-// 	// j=""
-// 	// echo ${k:-"default_value"}
-// 	// echo 'hello world' | grep wo
-// 	// cat file.txt
-// 	// echo a
-//
-// 	reader := strings.NewReader(script)
-// 	parser := syntax.NewParser()
-// 	file, err := parser.Parse(reader, "test")
-// 	if err != nil {
-// 		fmt.Printf("%v\n", err)
-// 	}
-//
-// 	fmt.Printf("%v\n", file.Name)
-// 	fmt.Printf("%v\n", file.Last)
-//
-// 	// variables := ExtractVariableNames(file)
-// 	// for i, v := range variables {
-// 	// 	fmt.Printf("%v: ", i)
-// 	// 	syntax.DebugPrint(os.Stdout, v)
-// 	// }
-// 	//
-// 	return variables
-// }
+func testParser() {
+	script := `for ((i=0; i <10; i++));do
+	echo "$i"
+done
+`
+	// b="hello"
+	// c=(1 2 3)
+	// declare -i d
+	// e=$((5 + 3))
+	// declare -A f
+	// f[red]=apple
+	// readonly g=3.14
+	// export h="var"
+	// i=$(date)
+	// j=""
+	// echo ${k:-"default_value"}
+	// echo 'hello world' | grep wo
+	// cat file.txt
+	// echo a
+
+	reader := strings.NewReader(script)
+	parser := syntax.NewParser()
+	file, err := parser.Parse(reader, "test")
+	if err != nil {
+		fmt.Printf("%v\n", err)
+	}
+
+	syntax.Walk(file, func(node syntax.Node) bool {
+		syntax.DebugPrint(os.Stdout, node)
+		return true
+	})
+}
 
 func main() {
 	// testParser()

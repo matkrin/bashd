@@ -37,6 +37,14 @@
 - Depending on `ReferenceContext.includeDeclaration` function declarations and
   variable assignments
 
+### Rename
+
+- Function declarations and calls in document and sourced files
+- Variable assignments and usage in document and sourced files
+- Function declarations and calls in workspace file which source the current
+file
+- Variable assignments and usage in workspace file which source the current file
+
 ### Completion
 
 - Variables declared in document (on `$` and `{`)
@@ -46,14 +54,6 @@
 - Executables in PATH
 - Resolve with `help` output as docs for keywords and builtins
 - Resolve with man page as docs for executables
-
-### Rename
-
-- Function declarations and calls in document and sourced files
-- Variable assignments and usage in document and sourced files
-- Function declarations and calls in workspace file which source the current
-  file
-- Variable assignments and usage in workspace file which source the current file
 
 ### Document Symbols
 

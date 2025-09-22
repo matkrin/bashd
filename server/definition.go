@@ -113,6 +113,36 @@ func defNodes(file *syntax.File) []DefNode {
 				startLine, startChar = n.Name.Pos().Line(), n.Name.Pos().Col()
 				endLine, endChar = n.Name.End().Line(), n.Name.End().Col()
 			}
+		case *syntax.ForClause:
+			switch loop := n.Loop.(type) {
+			case *syntax.WordIter:
+				if loop.Name != nil {
+					name = loop.Name.Value
+					startLine, startChar = loop.Name.Pos().Line(), loop.Name.Pos().Col()
+					endLine, endChar = loop.Name.End().Line(), loop.Name.End().Col()
+				}
+			case *syntax.CStyleLoop:
+				if loop.Init != nil {
+					a, ok := loop.Init.(*syntax.BinaryArithm)
+					if !ok {
+						return true
+					}
+					if a.Op == syntax.Assgn {
+						word, ok := a.X.(*syntax.Word)
+						if !ok {
+							return true
+						}
+						for _, wp := range word.Parts {
+							switch p := wp.(type) {
+							case *syntax.Lit:
+								name = p.Value
+								startLine, startChar = p.Pos().Line(), p.Pos().Col()
+								endLine, endChar = p.End().Line(), p.End().Col()
+							}
+						}
+					}
+				}
+			}
 		}
 
 		if name != "" {

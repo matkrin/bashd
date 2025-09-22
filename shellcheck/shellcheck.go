@@ -154,7 +154,6 @@ func (f *Fix) toTextEdits() []lsp.TextEdit {
 }
 
 func Run(filecontent string) (*ShellCheckResult, error) {
-	slog.Info("SHELLCHECK", "filecontent", filecontent)
 	optionalLints := []string{
 		"add-default-case",
 		"require-double-brackets",
