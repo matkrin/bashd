@@ -19,7 +19,12 @@ func handleWorkspaceSymbol(request *lsp.WorkspaceSymbolRequest, state *State) *l
 			slog.Error("Could not read file", "file", shFile)
 			continue
 		}
+
 		fileAst, err := parseDocument(string(fileContent), shFile)
+		if err != nil {
+			slog.Error("Could not parse file", "file", shFile)
+			continue
+		}
 
 		for _, defNode := range defNodes(fileAst) {
 			workspaceSymbols = append(
@@ -47,6 +52,12 @@ func findWorkSpaceSymbol(defNode *DefNode, filePath string) lsp.WorkspaceSymbol 
 
 		endLine = n.End().Line() - 1
 		endCol = n.End().Col() - 1
+
+	case *syntax.ForClause:
+		kind = lsp.SymbolVariable
+
+		endLine = defNode.EndLine - 1
+		endCol = defNode.EndChar - 1
 
 	}
 
