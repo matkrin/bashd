@@ -10,8 +10,9 @@ import (
 
 // Wraps a node that can be part of a reference.
 type RefNode struct {
-	Node      *syntax.Node
+	Node      syntax.Node
 	Name      string
+	Scope     *syntax.FuncDecl
 	StartLine uint
 	StartChar uint
 	EndLine   uint
@@ -95,9 +96,13 @@ func (a *Ast) refNodes(includeDeclaration bool) []RefNode {
 		}
 
 		if name != "" {
+			cursor := Cursor{Line: startLine, Col: startChar}
+			scope := a.FindEnclosingFunction(cursor)
+
 			refNodes = append(refNodes, RefNode{
-				Node:      &node,
+				Node:      node,
 				Name:      name,
+				Scope:     scope,
 				StartLine: startLine,
 				StartChar: startChar,
 				EndLine:   endLine,
@@ -118,11 +123,20 @@ func (a *Ast) FindRefsInFile(cursorNode syntax.Node, includeDeclaration bool) []
 	}
 
 	references := []RefNode{}
-	for _, node := range a.refNodes(includeDeclaration) {
-		if node.Name == targetIdentifier {
-			references = append(references, node)
-		}
 
+	defNode := a.FindDefInFile(cursorNode)
+	if defNode != nil {
+		for _, refNode := range a.refNodes(includeDeclaration) {
+			if defNode.Scope == refNode.Scope && refNode.Name == targetIdentifier {
+				references = append(references, refNode)
+			}
+		}
+	} else {
+		for _, refNode := range a.refNodes(includeDeclaration) {
+			if refNode.Name == targetIdentifier {
+				references = append(references, refNode)
+			}
+		}
 	}
 
 	return references
