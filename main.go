@@ -14,10 +14,10 @@ import (
 )
 
 func testParser() {
-	script := `for ((i=0; i <10; i++));do
-	echo "$i"
-done
-`
+	script := `f () {
+	local a b c
+}`
+
 	// b="hello"
 	// c=(1 2 3)
 	// declare -i d
@@ -40,14 +40,14 @@ done
 		fmt.Printf("%v\n", err)
 	}
 
-	syntax.Walk(file, func(node syntax.Node) bool {
-		syntax.DebugPrint(os.Stdout, node)
-		return true
-	})
+	syntax.DebugPrint(os.Stdout, file)
+	// syntax.Walk(file, func(node syntax.Node) bool {
+	// 	return true
+	// })
 }
 
 func main() {
-	// testParser()
+	testParser()
 
 	logLevel := "debug"
 	logFile := filepath.Join(os.Getenv("HOME"), "Developer", "bashd", "bashd.log")

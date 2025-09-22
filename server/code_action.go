@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"log/slog"
 
+	"github.com/matkrin/bashd/ast"
 	"github.com/matkrin/bashd/lsp"
 	"github.com/matkrin/bashd/shellcheck"
 	"mvdan.cc/sh/v3/fileutil"
@@ -71,7 +72,7 @@ func shebangCodeAction(uri string) *lsp.CodeAction {
 }
 
 func singleLineCodeAction(document string, uri string) *lsp.CodeAction {
-	fileAst, err := parseDocument(document, uri)
+	fileAst, err := ast.ParseDocument(document, uri)
 	if err != nil {
 		return nil
 	}
@@ -81,7 +82,7 @@ func singleLineCodeAction(document string, uri string) *lsp.CodeAction {
 	printer := syntax.NewPrinter(singleLine)
 
 	buffer := bytes.NewBuffer([]byte{})
-	printer.Print(buffer, fileAst)
+	printer.Print(buffer, fileAst.File)
 
 	action := &lsp.CodeAction{
 		Title: "Try to put script on single line",

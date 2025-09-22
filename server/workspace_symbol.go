@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/matkrin/bashd/ast"
 	"github.com/matkrin/bashd/lsp"
 	"mvdan.cc/sh/v3/syntax"
 )
@@ -20,13 +21,13 @@ func handleWorkspaceSymbol(request *lsp.WorkspaceSymbolRequest, state *State) *l
 			continue
 		}
 
-		fileAst, err := parseDocument(string(fileContent), shFile)
+		fileAst, err := ast.ParseDocument(string(fileContent), shFile)
 		if err != nil {
 			slog.Error("Could not parse file", "file", shFile)
 			continue
 		}
 
-		for _, defNode := range defNodes(fileAst) {
+		for _, defNode := range fileAst.DefNodes() {
 			workspaceSymbols = append(
 				workspaceSymbols,
 				findWorkSpaceSymbol(&defNode, shFile),
@@ -37,7 +38,7 @@ func handleWorkspaceSymbol(request *lsp.WorkspaceSymbolRequest, state *State) *l
 	return &response
 }
 
-func findWorkSpaceSymbol(defNode *DefNode, filePath string) lsp.WorkspaceSymbol {
+func findWorkSpaceSymbol(defNode *ast.DefNode, filePath string) lsp.WorkspaceSymbol {
 	var kind lsp.SymbolKind
 	var  endLine, endCol uint
 	switch n := defNode.Node.(type) {

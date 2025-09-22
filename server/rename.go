@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"slices"
 
+	"github.com/matkrin/bashd/ast"
 	"github.com/matkrin/bashd/lsp"
 )
 
@@ -14,25 +15,25 @@ func handlePrepareRename(
 ) *lsp.PrepareRenameResponse {
 	params := request.Params
 	uri := params.TextDocument.URI
-	cursor := newCursor(
+	cursor := ast.NewCursor(
 		params.Position.Line,
 		params.Position.Character,
 	)
 
 	document := state.Documents[uri].Text
-	fileAst, err := parseDocument(document, uri)
+	fileAst, err := ast.ParseDocument(document, uri)
 	if err != nil {
 		slog.Error(err.Error())
 	}
-	cursorNode := findNodeUnderCursor(fileAst, cursor)
-	referenceNodes := findRefsInFile(fileAst, cursorNode, true)
+	cursorNode := fileAst.FindNodeUnderCursor(cursor)
+	referenceNodes := fileAst.FindRefsInFile(cursorNode, true)
 
 	slog.Info("Prepare rename", "referenceNodes", referenceNodes)
 	if len(referenceNodes) == 0 {
 		return nil
 	}
 
-	identifier := extractIdentifier(cursorNode)
+	identifier := ast.ExtractIdentifier(cursorNode)
 	if slices.Contains(state.PathItems, identifier) || slices.Contains(BASH_BUILTINS[:], identifier) {
 		return nil
 	}
@@ -55,18 +56,18 @@ func handlePrepareRename(
 func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse {
 	params := request.Params
 	uri := params.TextDocument.URI
-	cursor := newCursor(
+	cursor := ast.NewCursor(
 		params.Position.Line,
 		params.Position.Character,
 	)
 
 	document := state.Documents[uri].Text
-	fileAst, err := parseDocument(document, uri)
+	fileAst, err := ast.ParseDocument(document, uri)
 	if err != nil {
 		slog.Error(err.Error())
 	}
-	cursorNode := findNodeUnderCursor(fileAst, cursor)
-	referenceNodes := findRefsInFile(fileAst, cursorNode, true)
+	cursorNode := fileAst.FindNodeUnderCursor( cursor)
+	referenceNodes := fileAst.FindRefsInFile(cursorNode, true)
 
 	changes := map[string][]lsp.TextEdit{}
 	changes[uri] = findTextEditsInFile(referenceNodes, params.NewName)
@@ -77,8 +78,7 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 		slog.Error("Could not transform URI to path", "err", err.Error())
 	}
 	baseDir := filepath.Dir(filename)
-	referenceNodesInSourcedFiles := findRefsinSourcedFile(
-		fileAst,
+	referenceNodesInSourcedFiles := fileAst.FindRefsinSourcedFile(
 		cursorNode,
 		state.EnvVars,
 		baseDir,
@@ -105,7 +105,7 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 	for file, refNodes := range refNodesInWorkspaceFile {
 		for _, refNode := range refNodes {
 			fileUri := pathToURI(file)
-			textEdit := refNode.toLspTextEdit(params.NewName)
+			textEdit := refNode.ToLspTextEdit(params.NewName)
 			if !slices.Contains(changes[fileUri], textEdit) {
 				changes[fileUri] = append(changes[fileUri], textEdit)
 			}
@@ -124,10 +124,10 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 	return &response
 }
 
-func findTextEditsInFile(referenceNodes []RefNode, newText string) []lsp.TextEdit {
+func findTextEditsInFile(referenceNodes []ast.RefNode, newText string) []lsp.TextEdit {
 	textEdits := []lsp.TextEdit{}
 	for _, refNode := range referenceNodes {
-		textEdits = append(textEdits, refNode.toLspTextEdit(newText))
+		textEdits = append(textEdits, refNode.ToLspTextEdit(newText))
 	}
 	return textEdits
 }

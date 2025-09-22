@@ -3,6 +3,7 @@ package server
 import (
 	"testing"
 
+	"github.com/matkrin/bashd/ast"
 	"github.com/matkrin/bashd/lsp"
 )
 
@@ -102,8 +103,8 @@ foo() {
 
 foo
 `
-	fileAst, _ := parseDocument(input, "test.sh")
-	defNodes := defNodes(fileAst)
+	fileAst, _ := ast.ParseDocument(input, "test.sh")
+	defNodes := fileAst.DefNodes()
 	if len(defNodes) != 2 {
 		t.Errorf("length of defNodes not 2; got %v", len(defNodes))
 	}
@@ -123,11 +124,11 @@ foo
 `
 	tests := []struct {
 		name   string
-		cursor Cursor
-		want   DefNode
+		cursor ast.Cursor
+		want   ast.DefNode
 	}{
 		{
-			"Variable", newCursor(3, 7), DefNode{
+			"Variable", ast.NewCursor(3, 7), ast.DefNode{
 				Name:  "a",
 				StartLine: 3,
 				StartChar: 1,
@@ -136,7 +137,7 @@ foo
 			},
 		},
 		{
-			"Function", newCursor(9, 0), DefNode{
+			"Function", ast.NewCursor(9, 0), ast.DefNode{
 				Name:  "foo",
 				StartLine: 6,
 				StartChar: 1,
@@ -146,11 +147,11 @@ foo
 		},
 	}
 
-	fileAst, _ := parseDocument(input, "test.sh")
+	fileAst, _ := ast.ParseDocument(input, "test.sh")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cursorNode := findNodeUnderCursor(fileAst, tt.cursor)
-			got := findDefInFile(cursorNode, fileAst)
+			cursorNode := fileAst.FindNodeUnderCursor(tt.cursor)
+			got := fileAst.FindDefInFile(cursorNode)
 			if (*got).Name != tt.want.Name {
 				t.Errorf("Name = %v, want %v", (*got).Name, tt.want.Name)
 			}

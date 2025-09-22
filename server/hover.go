@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/matkrin/bashd/ast"
 	"github.com/matkrin/bashd/lsp"
 	"mvdan.cc/sh/v3/syntax"
 )
@@ -14,25 +15,25 @@ import (
 func handleHover(request *lsp.HoverRequest, state *State) *lsp.HoverResponse {
 
 	uri := request.Params.TextDocument.URI
-	cursor := newCursor(
+	cursor := ast.NewCursor(
 		request.Params.Position.Line,
 		request.Params.Position.Character,
 	)
 	documentText := state.Documents[uri].Text
-	fileAst, err := parseDocument(documentText, uri)
+	fileAst, err := ast.ParseDocument(documentText, uri)
 	if err != nil {
 		slog.Error(err.Error())
 		return nil
 	}
 
-	cursorNode := findNodeUnderCursor(fileAst, cursor)
+	cursorNode := fileAst.FindNodeUnderCursor(cursor)
 	if cursorNode == nil {
 		return nil
 	}
 
 	hoverResultValue := hoverFromDefinition(fileAst, cursorNode, state, uri)
 
-	identifier := extractIdentifier(cursorNode)
+	identifier := ast.ExtractIdentifier(cursorNode)
 	documentation := getDocumentation(identifier)
 	if strings.Trim(documentation, "\n") != "" {
 		hoverResultValue = fmt.Sprintf("```man\n%s\n```", documentation)
@@ -57,8 +58,8 @@ func handleHover(request *lsp.HoverRequest, state *State) *lsp.HoverResponse {
 	return &response
 }
 
-func (d *DefNode) toHoverString(documentText string, documentName string) string {
-	switch n := d.Node.(type) {
+func defNodeToHoverString(defNode *ast.DefNode, documentText string, documentName string) string {
+	switch n := defNode.Node.(type) {
 	case *syntax.FuncDecl:
 		lines := strings.Split(documentText, "\n")
 		functionSnippet := strings.Join(lines[n.Pos().Line()-1:n.End().Line()], "\n")
@@ -82,15 +83,15 @@ func (d *DefNode) toHoverString(documentText string, documentName string) string
 }
 
 func hoverFromDefinition(
-	fileAst *syntax.File,
+	ast *ast.Ast,
 	cursorNode syntax.Node,
 	state *State,
 	uri string,
 ) string {
-	defNode := findDefInFile(cursorNode, fileAst)
+	defNode := ast.FindDefInFile(cursorNode)
 	if defNode != nil {
 		documentText := state.Documents[uri].Text
-		return defNode.toHoverString(documentText, "")
+		return defNodeToHoverString(defNode, documentText, "")
 	}
 
 	filename, err := uriToPath(uri)
@@ -99,8 +100,7 @@ func hoverFromDefinition(
 		return ""
 	}
 	baseDir := filepath.Dir(filename)
-	sourcedFile, definition := findDefInSourcedFile(
-		fileAst,
+	sourcedFile, definition := ast.FindDefInSourcedFile(
 		cursorNode,
 		state.EnvVars,
 		baseDir,
@@ -110,5 +110,5 @@ func hoverFromDefinition(
 		slog.Error("ERROR: Could not read file", "file", sourcedFile)
 		return ""
 	}
-	return definition.toHoverString(string(fileContent), sourcedFile)
+	return defNodeToHoverString(definition, string(fileContent), sourcedFile)
 }

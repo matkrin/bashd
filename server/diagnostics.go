@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/matkrin/bashd/ast"
 	"github.com/matkrin/bashd/lsp"
 	"github.com/matkrin/bashd/shellcheck"
 	"mvdan.cc/sh/v3/syntax"
@@ -24,13 +25,13 @@ func findDiagnostics(
 		diagnostics = append(diagnostics, shellcheck.ToDiagnostics()...)
 	}
 
-	fileAst, err := parseDocument(documentText, uri)
+	fileAst, err := ast.ParseDocument(documentText, uri)
 	if err != nil {
 		diagnostics = append(diagnostics, diagnosticParseError(err))
 		return diagnostics
 	}
 
-	for _, sourceStatement := range findSourceStatments(fileAst, envVars) {
+	for _, sourceStatement := range fileAst.FindSourceStatments(envVars) {
 		if _, err := os.Stat(sourceStatement.SourcedFile); err != nil {
 			diagnostics = append(diagnostics, fileNotExistentError(sourceStatement))
 		}
@@ -86,7 +87,7 @@ func diagnosticParseError(err error) lsp.Diagnostic {
 	}
 }
 
-func fileNotExistentError(file SourceStatement) lsp.Diagnostic {
+func fileNotExistentError(file ast.SourceStatement) lsp.Diagnostic {
 	return lsp.Diagnostic{
 		Range: lsp.NewRange(file.StartLine,
 			file.StartChar,

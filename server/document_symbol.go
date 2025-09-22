@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/matkrin/bashd/ast"
 	"github.com/matkrin/bashd/lsp"
 	"mvdan.cc/sh/v3/syntax"
 )
@@ -9,12 +10,12 @@ func handleDocumentSymbol(request *lsp.DocumentSymbolsRequest, state *State) *ls
 	uri := request.Params.TextDocument.URI
 	document := state.Documents[uri]
 	documentSymbols := []lsp.DocumentSymbol{}
-	fileAst, err := parseDocument(document.Text, uri)
+	fileAst, err := ast.ParseDocument(document.Text, uri)
 	if err != nil {
 		return nil
 	}
 
-	for _, defNode := range defNodes(fileAst) {
+	for _, defNode := range fileAst.DefNodes() {
 		documentSymbols = append(documentSymbols, findDocumentSymbol(&defNode))
 	}
 
@@ -22,7 +23,7 @@ func handleDocumentSymbol(request *lsp.DocumentSymbolsRequest, state *State) *ls
 	return &response
 }
 
-func findDocumentSymbol(defNode *DefNode) lsp.DocumentSymbol {
+func findDocumentSymbol(defNode *ast.DefNode) lsp.DocumentSymbol {
 	var kind lsp.SymbolKind
 	var endLine, endCol uint
 	var selectionStartLine, selectionStartCol, selectionEndLine, selectionEndCol uint

@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/matkrin/bashd/ast"
 	"github.com/matkrin/bashd/lsp"
 	"mvdan.cc/sh/v3/syntax"
 )
@@ -14,7 +15,7 @@ func handleFormatting(request *lsp.FormattingRequest, state *State) *lsp.Formatt
 	slog.Info("FORMATTING", "params", request.Params)
 	uri := request.Params.TextDocument.URI
 	document := state.Documents[uri].Text
-	fileAst, err := parseDocument(document, uri)
+	fileAst, err := ast.ParseDocument(document, uri)
 	if err != nil {
 		return nil
 	}
@@ -30,7 +31,7 @@ func handleFormatting(request *lsp.FormattingRequest, state *State) *lsp.Formatt
 	printer := syntax.NewPrinter(indent)
 
 	buffer := bytes.NewBuffer([]byte{})
-	printer.Print(buffer, fileAst)
+	printer.Print(buffer, fileAst.File)
 
 	textedit := lsp.TextEdit{
 		Range: lsp.Range{
@@ -70,7 +71,7 @@ func handleRangeFormatting(request *lsp.RangeFormattingRequest, state *State) *l
 	rangeLines := lines[startLine : endLine+1]
 	rangeString := strings.Join(rangeLines, "\n")
 
-	rangeAst, err := parseDocument(rangeString, uri)
+	rangeAst, err := ast.ParseDocument(rangeString, uri)
 	if err != nil {
 		return nil
 	}
@@ -86,7 +87,7 @@ func handleRangeFormatting(request *lsp.RangeFormattingRequest, state *State) *l
 	printer := syntax.NewPrinter(indent)
 
 	buffer := bytes.NewBuffer([]byte{})
-	err = printer.Print(buffer, rangeAst)
+	err = printer.Print(buffer, rangeAst.File)
 	if err != nil {
 		return nil
 	}

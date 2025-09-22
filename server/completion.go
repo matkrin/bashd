@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 
+	"github.com/matkrin/bashd/ast"
 	"github.com/matkrin/bashd/lsp"
 	"mvdan.cc/sh/v3/syntax"
 )
@@ -13,7 +14,7 @@ func handleCompletion(request *lsp.CompletionRequest, state *State) *lsp.Complet
 
 	uri := request.Params.TextDocument.URI
 	document := state.Documents[uri].Text
-	fileAst, err := parseDocument(document, uri)
+	fileAst, err := ast.ParseDocument(document, uri)
 	if err != nil {
 		response := lsp.NewCompletionResponse(request.ID, completionList)
 		return &response
@@ -56,11 +57,11 @@ func handleCompletionItemResolve(
 }
 
 // Completion for variables defined in Document and environment variables
-func completeDollar(file *syntax.File, state *State) []lsp.CompletionItem {
+func completeDollar(ast *ast.Ast, state *State) []lsp.CompletionItem {
 	var result []lsp.CompletionItem
 
 	// Variables
-	syntax.Walk(file, func(node syntax.Node) bool {
+	syntax.Walk(ast.File, func(node syntax.Node) bool {
 		assign, ok := node.(*syntax.Assign)
 		if !ok {
 			return true
@@ -107,10 +108,10 @@ func completionKeywords() []lsp.CompletionItem {
 }
 
 // Completion for function names
-func completionFunctions(file *syntax.File) []lsp.CompletionItem {
+func completionFunctions(ast *ast.Ast) []lsp.CompletionItem {
 	var result []lsp.CompletionItem
 
-	syntax.Walk(file, func(node syntax.Node) bool {
+	syntax.Walk(ast.File, func(node syntax.Node) bool {
 		funcDecl, ok := node.(*syntax.FuncDecl)
 		if !ok {
 			return true

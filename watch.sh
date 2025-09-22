@@ -16,11 +16,12 @@ BUILD_MSG=$(black-on-green "✓ Build successful")
 
 watch-go-files-mac() {
     echo "$WATCH_MSG"
-    fswatch --exclude ".*" --include "\\.go$" $WATCH_DIR |
+    # fswatch --exclude ".*" --include "\\.go$" $WATCH_DIR |
+    fswatch ./*.go ./**/*.go |
         while read -r changed_file; do
             clear
             echo "$WATCH_MSG"
-            echo "Change detected in $changed_file. Rebuilding..."
+            echo "$changed_file changed. Rebuilding..."
             go build . && echo "$BUILD_MSG"
         done
 }

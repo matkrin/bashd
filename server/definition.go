@@ -5,24 +5,24 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/matkrin/bashd/ast"
 	"github.com/matkrin/bashd/lsp"
-	"mvdan.cc/sh/v3/syntax"
 )
 
 func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.DefinitionResponse {
 	uri := request.Params.TextDocument.URI
-	cursor := newCursor(
+	cursor := ast.NewCursor(
 		request.Params.Position.Line,
 		request.Params.Position.Character,
 	)
 
 	document := state.Documents[uri].Text
-	fileAst, err := parseDocument(document, uri)
+	fileAst, err := ast.ParseDocument(document, uri)
 	if err != nil {
 		slog.Error(err.Error())
 	}
-	cursorNode := findNodeUnderCursor(fileAst, cursor)
-	definition := findDefInFile(cursorNode, fileAst)
+	cursorNode := fileAst.FindNodeUnderCursor(cursor)
+	definition := fileAst.FindDefInFile(cursorNode)
 
 	if definition == nil {
 		// Check for the definition in a sourced file
@@ -33,8 +33,7 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 		}
 		baseDir := filepath.Dir(filename)
 		sourcedFile := ""
-		sourcedFile, definition = findDefInSourcedFile(
-			fileAst,
+		sourcedFile, definition = fileAst.FindDefInSourcedFile(
 			cursorNode,
 			state.EnvVars,
 			baseDir,
@@ -53,12 +52,12 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 			return nil
 		}
 		baseDir := filepath.Dir(filename)
-		sourcePath := findSourcedFile(fileAst, cursor, state.EnvVars, baseDir)
+		sourcePath := fileAst.FindSourcedFile(cursor, state.EnvVars, baseDir)
 		// Check if file exists
 		if _, err := os.Stat(sourcePath); err != nil {
 			return nil
 		}
-		definition = &DefNode{
+		definition = &ast.DefNode{
 			Node:      cursorNode,
 			StartLine: 1,
 			StartChar: 1,
@@ -83,188 +82,3 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 	return &response
 }
 
-// Wraps a node that can be part of a definition or reference.
-type DefNode struct {
-	Node      syntax.Node
-	Name      string
-	StartLine uint
-	StartChar uint
-	EndLine   uint
-	EndChar   uint
-}
-
-func defNodes(file *syntax.File) []DefNode {
-	defNodes := []DefNode{}
-
-	syntax.Walk(file, func(node syntax.Node) bool {
-		var name string
-		var startLine, startChar, endLine, endChar uint
-
-		switch n := node.(type) {
-		// Variable Assignment
-		case *syntax.Assign:
-			if n.Name != nil {
-				name = n.Name.Value
-				startLine, startChar = n.Name.Pos().Line(), n.Name.Pos().Col()
-				endLine, endChar = n.Name.End().Line(), n.Name.End().Col()
-			}
-		// Function Definition
-		case *syntax.FuncDecl:
-			if n.Name != nil {
-				name = n.Name.Value
-				startLine, startChar = n.Name.Pos().Line(), n.Name.Pos().Col()
-				endLine, endChar = n.Name.End().Line(), n.Name.End().Col()
-			}
-		// Iteration variable in for/select loops
-		case *syntax.ForClause:
-			switch loop := n.Loop.(type) {
-			case *syntax.WordIter:
-				if loop.Name != nil {
-					name = loop.Name.Value
-					startLine, startChar = loop.Name.Pos().Line(), loop.Name.Pos().Col()
-					endLine, endChar = loop.Name.End().Line(), loop.Name.End().Col()
-				}
-			case *syntax.CStyleLoop:
-				if loop.Init != nil {
-					a, ok := loop.Init.(*syntax.BinaryArithm)
-					if !ok {
-						return true
-					}
-					if a.Op == syntax.Assgn {
-						word, ok := a.X.(*syntax.Word)
-						if !ok {
-							return true
-						}
-						for _, wp := range word.Parts {
-							switch p := wp.(type) {
-							case *syntax.Lit:
-								name = p.Value
-								startLine, startChar = p.Pos().Line(), p.Pos().Col()
-								endLine, endChar = p.End().Line(), p.End().Col()
-							}
-						}
-					}
-				}
-			}
-		// Variable "assinment" in read statements
-		case *syntax.CallExpr:
-			if len(n.Args) == 0 {
-				return true
-			}
-			cmdName := extractIdentifier(n.Args[0])
-			if cmdName != "read" {
-				return true
-			}
-			for _, arg := range n.Args {
-				for _, wp := range arg.Parts {
-					switch p := wp.(type) {
-					case *syntax.Lit:
-						name = p.Value
-						startLine, startChar = p.Pos().Line(), p.Pos().Col()
-						endLine, endChar = p.End().Line(), p.End().Col()
-					}
-				}
-			}
-		}
-
-		if name != "" {
-			defNodes = append(defNodes, DefNode{
-				Node:      node,
-				Name:      name,
-				StartLine: startLine,
-				StartChar: startChar,
-				EndLine:   endLine,
-				EndChar:   endChar,
-			})
-		}
-
-		return true
-	})
-
-	return defNodes
-}
-
-func findDefInFile(cursorNode syntax.Node, file *syntax.File) *DefNode {
-	targetIdentifier := extractIdentifier(cursorNode)
-	if targetIdentifier == "" {
-		return nil
-	}
-
-	for _, defNode := range defNodes(file) {
-		if defNode.Name == targetIdentifier {
-			return &defNode
-		}
-
-	}
-
-	return nil
-}
-
-// Find a definition in a sourced file.
-func findDefInSourcedFile(
-	fileAst *syntax.File,
-	cursorNode syntax.Node,
-	env map[string]string,
-	baseDir string,
-) (string, *DefNode) {
-	sourcedFiles := findAllSourcedFiles(fileAst, env, baseDir, map[string]bool{})
-
-	var definition *DefNode
-	for _, sourcedFile := range sourcedFiles {
-		fileContent, err := os.ReadFile(sourcedFile)
-		if err != nil {
-			slog.Error("Could not read file", "file", sourcedFile)
-			continue
-		}
-		sourcedFileAst, err := parseDocument(string(fileContent), sourcedFile)
-		if err != nil {
-			slog.Error(err.Error())
-			continue
-		}
-		definition = findDefInFile(cursorNode, sourcedFileAst)
-		if definition != nil {
-			return sourcedFile, definition
-		}
-	}
-
-	return "", nil
-}
-
-// Find a sourced file itself (cursor over filepath).
-func findSourcedFile(
-	file *syntax.File,
-	cursor Cursor,
-	env map[string]string,
-	baseDir string,
-) string {
-	found := ""
-
-	syntax.Walk(file, func(node syntax.Node) bool {
-		call, ok := node.(*syntax.CallExpr)
-		if !ok || len(call.Args) < 2 {
-			return true
-		}
-
-		cmdName := extractWord(call.Args[0], env)
-		if cmdName != "source" && cmdName != "." {
-			return true
-		}
-
-		argNode := call.Args[1]
-		start, end := argNode.Pos(), argNode.End()
-		if isCursorInNode(cursor, start, end) {
-			path := extractWord(argNode, env)
-
-			if !filepath.IsAbs(path) {
-				path = filepath.Join(baseDir, path)
-			}
-			path = filepath.Clean(path)
-			found = path
-
-			return false // stop walking
-		}
-		return true
-	})
-
-	return found
-}
