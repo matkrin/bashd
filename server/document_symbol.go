@@ -48,9 +48,20 @@ func findDocumentSymbol(defNode *DefNode) lsp.DocumentSymbol {
 		selectionStartCol = n.Name.Pos().Col() - 1
 		selectionEndLine = n.Name.End().Line() - 1
 		selectionEndCol = n.Name.End().Col() - 1
+
+	case *syntax.ForClause:
+		kind = lsp.SymbolVariable
+
+		endLine = n.End().Line() - 1
+		endCol = n.End().Col() - 1
+
+		selectionStartLine = defNode.StartLine - 1
+		selectionStartCol = defNode.StartChar - 1
+		selectionEndLine = defNode.EndLine - 1
+		selectionEndCol = defNode.EndChar - 1
 	}
 
-	startLine := defNode.Node.Pos().Line() -1
+	startLine := defNode.Node.Pos().Line() - 1
 	startCol := defNode.Node.Pos().Col() - 1
 
 	return lsp.DocumentSymbol{
