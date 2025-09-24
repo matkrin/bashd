@@ -87,7 +87,7 @@ func NewInitializeResponse(id int) InitializeResponse {
 				TextDocumentSync:                1,
 				HoverProvider:                   true,
 				DefinitionProvider:              true,
-				DeclarationProvider:             true,
+				DeclarationProvider:             false,
 				ReferencesProvider:              true,
 				DocumentSymbolProvider:          true,
 				WorkspaceSymbolProvider:         true,

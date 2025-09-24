@@ -2,7 +2,6 @@ package ast
 
 import (
 	"os"
-	"path/filepath"
 	"strings"
 
 	"mvdan.cc/sh/v3/syntax"
@@ -16,6 +15,37 @@ type Cursor struct {
 // Otherwise I will mess that up for sure. In the LSP 0-based, in the parser 1-based
 func NewCursor(lspLine, lspCol uint) Cursor {
 	return Cursor{Line: lspLine + 1, Col: lspCol + 1}
+}
+
+func (c *Cursor) isCursorInNode(node syntax.Node) bool {
+	startLine := node.Pos().Line()
+	startCol := node.Pos().Col()
+	endLine := node.End().Line()
+	endCol := node.End().Col()
+
+	// Compare lines first
+	if c.Line < startLine || c.Line > endLine {
+		return false
+	}
+
+	if startLine == endLine {
+		// Node is on a single line
+		return c.Line == startLine &&
+			c.Col >= startCol && c.Col <= endCol
+	}
+
+	// Multi-line node
+	switch c.Line {
+	case startLine:
+		// On first line of node: col must be >= start.Col()
+		return c.Col >= startCol
+	case endLine:
+		// On last line of node: col must be <= end.Col()
+		return c.Col <= endCol
+	default:
+		// Any line in between start and end line is inside
+		return true
+	}
 }
 
 type Ast struct {
@@ -39,8 +69,7 @@ func (a *Ast) FindNodeUnderCursor(cursor Cursor) syntax.Node {
 		if node == nil {
 			return true
 		}
-		start, end := node.Pos(), node.End()
-		if isCursorInNode(cursor, start, end) {
+		if cursor.isCursorInNode(node) {
 			found = node
 			// Continue walking to find deepest node containing cursor
 			return true
@@ -51,68 +80,6 @@ func (a *Ast) FindNodeUnderCursor(cursor Cursor) syntax.Node {
 	return found
 }
 
-func isCursorInNode(cursor Cursor, start, end syntax.Pos) bool {
-	startLine := start.Line()
-	startCol := start.Col()
-	endLine := end.Line()
-	endCol := end.Col()
-
-	// Compare lines first
-	if cursor.Line < startLine || cursor.Line > endLine {
-		return false
-	}
-
-	if start.Line() == end.Line() {
-		// Node is on a single line
-		return cursor.Line == startLine &&
-			cursor.Col >= startCol && cursor.Col <= endCol
-	}
-
-	// Multi-line node
-	switch cursor.Line {
-	case startLine:
-		// On first line of node: col must be >= start.Col()
-		return cursor.Col >= startCol
-	case endLine:
-		// On last line of node: col must be <= end.Col()
-		return cursor.Col <= endCol
-	default:
-		// Any line in between start and end line is inside
-		return true
-	}
-}
-
-func (a *Ast) FindAllSourcedFiles(
-	env map[string]string,
-	baseDir string,
-	visited map[string]bool,
-) []string {
-	var sourcedFiles []string
-	for _, sourcedFile := range a.FindSourceStatments(env) {
-		path := sourcedFile.SourcedFile
-		resolved := path
-		if !filepath.IsAbs(path) {
-			resolved = filepath.Join(baseDir, path)
-		}
-		resolved = filepath.Clean(resolved)
-
-		if visited[resolved] {
-			continue
-		}
-		visited[resolved] = true
-
-		sourcedFiles = append(sourcedFiles, resolved)
-
-		// Recurse
-		if content, err := os.ReadFile(resolved); err == nil {
-			if parsed, err := ParseDocument(string(content), ""); err == nil {
-				subFiles := parsed.FindAllSourcedFiles(env, filepath.Dir(resolved), visited)
-				sourcedFiles = append(sourcedFiles, subFiles...)
-			}
-		}
-	}
-	return sourcedFiles
-}
 
 func ExtractIdentifier(node syntax.Node) string {
 	switch n := node.(type) {
@@ -171,4 +138,22 @@ func extractAndExpandWord(word *syntax.Word, env map[string]string) string {
 	return os.Expand(b.String(), func(key string) string {
 		return env[key]
 	})
+}
+
+// Functions are the only contructs with scope
+func (a *Ast) findEnclosingFunction(cursor Cursor) *syntax.FuncDecl {
+	var enclosingFunc *syntax.FuncDecl
+
+	syntax.Walk(a.File, func(node syntax.Node) bool {
+		fn, ok := node.(*syntax.FuncDecl)
+		if !ok {
+			return true
+		}
+		if cursor.isCursorInNode(fn) {
+			enclosingFunc = fn
+		}
+		return true
+	})
+
+	return enclosingFunc
 }
