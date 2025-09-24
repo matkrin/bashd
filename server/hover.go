@@ -59,27 +59,23 @@ func handleHover(request *lsp.HoverRequest, state *State) *lsp.HoverResponse {
 }
 
 func defNodeToHoverString(defNode *ast.DefNode, documentText string, documentName string) string {
-	switch n := defNode.Node.(type) {
-	case *syntax.FuncDecl:
+	if n, ok := defNode.Node.(*syntax.FuncDecl); ok {
 		lines := strings.Split(documentText, "\n")
 		functionSnippet := strings.Join(lines[n.Pos().Line()-1:n.End().Line()], "\n")
 
 		defLocation := fmt.Sprintf("defined at `%s` line **%d**", documentName, n.Pos().Line())
 		if documentName == "" {
-			defLocation = fmt.Sprintf("defined at line **%d**", n.Pos().Line())
+		defLocation = fmt.Sprintf("defined at line **%d**", n.Pos().Line())
 		}
 
 		return fmt.Sprintf("```sh\n%s\n```\n\n(%s)", functionSnippet, defLocation)
-
-	case *syntax.Assign:
-		if documentName == "" {
-			return fmt.Sprintf("defined at line **%d**", n.Pos().Line())
-		}
-
-		return fmt.Sprintf("defined at `%s` line **%d**", documentName, n.Pos().Line())
 	}
 
-	return ""
+	if documentName == "" {
+		return fmt.Sprintf("defined at line **%d**", defNode.StartLine)
+	}
+
+	return fmt.Sprintf("defined at `%s` line **%d**", documentName, defNode.StartLine)
 }
 
 func hoverFromDefinition(
