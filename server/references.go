@@ -89,18 +89,58 @@ func findRefsInWorkspaceFiles(
 	env map[string]string,
 	includeDeclaration bool,
 ) map[string][]ast.RefNode {
+	// First, extract the identifier we're looking for
+	targetIdentifier := ast.ExtractIdentifier(cursorNode)
+	if targetIdentifier == "" {
+		return map[string][]ast.RefNode{}
+	}
+
+	// Get the original file path from URI for definition resolution
+	originalFilePath, err := uriToPath(uri)
+	if err != nil {
+		slog.Error("Could not transform URI to path", "file", originalFilePath)
+		return map[string][]ast.RefNode{}
+	}
+
+	// Load the original file to find the definition
+	originalFileContent, err := os.ReadFile(originalFilePath)
+	if err != nil {
+		slog.Error("Could not read original file", "file", originalFilePath)
+		return map[string][]ast.RefNode{}
+	}
+
+	originalAst, err := ast.ParseDocument(string(originalFileContent), originalFilePath)
+	if err != nil {
+		slog.Error("Could not parse original file", "file", originalFilePath)
+		return map[string][]ast.RefNode{}
+	}
+
+	// Find the definition in the original file using cross-file logic
+	baseDir := filepath.Dir(originalFilePath)
+	targetFile, defNode := originalAst.FindDefinitionAcrossFiles(cursorNode, env, baseDir)
+
+	slog.Info("WORKSPACE_REFS", "targetIdentifier", targetIdentifier, "targetFile", targetFile, "defNode", defNode)
+
 	referenceNodes := map[string][]ast.RefNode{}
+
+	// Search through all workspace files
 	for _, shFile := range workspaceShFiles {
 		fileContent, err := os.ReadFile(shFile)
 		if err != nil {
-			slog.Error("ERROR: Could not read file", "file", shFile)
+			slog.Error("Could not read file", "file", shFile)
 			continue
 		}
+
 		workspaceFileAst, err := ast.ParseDocument(string(fileContent), shFile)
 		if err != nil {
-			slog.Error("ERROR: Could not parse file", "file", shFile)
+			slog.Error("Could not parse file", "file", shFile)
 			continue
 		}
+
+		// Check if this file sources the target file (where the definition is)
+		shouldIncludeFile := false
+
+		// Method 1: Check if this file sources the target file
 		for _, sourceStatement := range workspaceFileAst.FindSourceStatments(env) {
 			baseDir := filepath.Dir(shFile)
 			path := sourceStatement.SourcedFile
@@ -109,13 +149,65 @@ func findRefsInWorkspaceFiles(
 				resolved = filepath.Join(baseDir, path)
 			}
 			resolved = filepath.Clean(resolved)
-			slog.Info("REFERENCES", "resolved", resolved)
+
 			if uri == pathToURI(resolved) {
-				refs := workspaceFileAst.FindRefsInFile(cursorNode, includeDeclaration)
-				slog.Info("REFERENCES", "refs", refs)
-				referenceNodes[shFile] = append(referenceNodes[shFile], refs...)
+				shouldIncludeFile = true
+				slog.Info("File sources target", "file", shFile, "target", resolved)
+				break
 			}
 		}
+
+		// Method 2: Also include the file if it's the target file itself
+		if shFile == targetFile {
+			shouldIncludeFile = true
+			slog.Info("File is target file", "file", shFile)
+		}
+
+		// Method 3: Include if both files are in the same sourcing chain
+		if !shouldIncludeFile {
+			// Check if the workspace file is in the same sourcing chain
+			sourcedFiles := originalAst.FindAllSourcedFiles(env, baseDir, map[string]bool{})
+			if slices.Contains(sourcedFiles, shFile) {
+					shouldIncludeFile = true
+					slog.Info("File in sourcing chain", "file", shFile)
+				}
+		}
+
+		if !shouldIncludeFile {
+			continue
+		}
+
+		// Find references in this file
+		var refs []ast.RefNode
+
+		if defNode == nil {
+			// No definition found - fall back to simple name matching
+			slog.Info("No definition found, using name matching", "file", shFile)
+			for _, refNode := range workspaceFileAst.RefNodes(includeDeclaration) {
+				if refNode.Name == targetIdentifier {
+					refs = append(refs, refNode)
+				}
+			}
+		} else {
+			// Definition found - use proper scoping logic
+			slog.Info("Using scoped reference finding", "file", shFile)
+			for _, refNode := range workspaceFileAst.RefNodes(includeDeclaration) {
+				if refNode.Name != targetIdentifier {
+					continue
+				}
+
+				// Use cross-file resolution logic
+				if workspaceFileAst.WouldResolveToSameDefinitionAcrossFiles(refNode.Node, defNode, targetFile, shFile) {
+					refs = append(refs, refNode)
+				}
+			}
+		}
+
+		if len(refs) > 0 {
+			referenceNodes[shFile] = refs
+			slog.Info("Found references", "file", shFile, "count", len(refs))
+		}
 	}
+
 	return referenceNodes
 }

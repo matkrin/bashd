@@ -106,17 +106,6 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 			writeResponse(writer, response)
 		}
 
-	case "textDocument/declaration":
-		var request lsp.DeclarationRequest
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-
-		}
-		response := handleDeclaration(&request, state)
-		if response != nil {
-			writeResponse(writer, response)
-		}
-
 	case "textDocument/references":
 		var request lsp.ReferencesRequest
 		if err := json.Unmarshal(contents, &request); err != nil {
