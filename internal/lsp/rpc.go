@@ -8,6 +8,8 @@ import (
 	"strconv"
 )
 
+var RPC_VERSION = "2.0"
+
 func EncodeMessage(msg any) string {
 	content, err := json.Marshal(msg)
 	if err != nil {

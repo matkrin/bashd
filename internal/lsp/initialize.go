@@ -76,43 +76,15 @@ type RenameOptions struct {
 	PrepareProvider bool `json:"prepareProvider"`
 }
 
-func NewInitializeResponse(id int) InitializeResponse {
+func NewInitializeResponse(id int, capabilities *ServerCapabilities, info *ServerInfo) InitializeResponse {
 	return InitializeResponse{
 		Response: Response{
-			RPC: "2.0",
+			RPC: RPC_VERSION,
 			ID:  &id,
 		},
 		Result: InitializeResult{
-			Capabilities: ServerCapabilities{
-				TextDocumentSync:                1,
-				HoverProvider:                   true,
-				DefinitionProvider:              true,
-				DeclarationProvider:             false,
-				ReferencesProvider:              true,
-				DocumentSymbolProvider:          true,
-				WorkspaceSymbolProvider:         true,
-				DocumentFormattingProvider:      true,
-				DocumentRangeFormattingProvider: true,
-				CodeActionProvider:              true,
-				ColorProvider:                   true,
-				InlayHintProvider:               true,
-				RenameProvider: RenameOptions{
-					PrepareProvider: true,
-				},
-				CompletionProvider: CompletionOptions{
-					TriggerCharacters: []string{"$", "{"},
-					ResolveProvider:   true,
-				},
-				DiagnosticProvider: DiagnosticOptions{
-					Identifier:            nil,
-					InterFileDependencies: false,
-					WorkspaceDiagnostics:  false,
-				},
-			},
-			ServerInfo: ServerInfo{
-				Name:    "bashd",
-				Version: "0.1.0a1",
-			},
+			Capabilities: *capabilities,
+			ServerInfo:   *info,
 		},
 	}
 }

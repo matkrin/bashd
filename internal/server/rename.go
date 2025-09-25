@@ -41,7 +41,7 @@ func handlePrepareRename(
 
 	response := lsp.PrepareRenameResponse{
 		Response: lsp.Response{
-			RPC: "2.0",
+			RPC: lsp.RPC_VERSION,
 			ID:  &request.ID,
 		},
 		Result: lsp.NewRange(
@@ -114,7 +114,7 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 
 	response := lsp.RenameResponse{
 		Response: lsp.Response{
-			RPC: "2.0",
+			RPC: lsp.RPC_VERSION,
 			ID:  &request.ID,
 		},
 		Result: &lsp.WorkspaceEdit{

@@ -47,7 +47,9 @@ func testParser() {
 }
 
 func main() {
-	testParser()
+	// testParser()
+	name := "bashd"
+	version := "0.1.0a1"
 
 	logLevel := "debug"
 	logFile := filepath.Join(os.Getenv("HOME"), "Developer", "bashd", "bashd.log")
@@ -63,6 +65,7 @@ func main() {
 
 	state := server.NewState(config)
 	writer := os.Stdout
+	server := server.NewServer(name, version, state, writer)
 
 	for scanner.Scan() {
 		msg := scanner.Bytes()
@@ -70,7 +73,7 @@ func main() {
 		if err != nil {
 			slog.Error("ERROR decoding message", "err", err)
 		}
-		server.HandleMessage(writer, &state, method, contents)
+		server.HandleMessage(method, contents)
 	}
 }
 

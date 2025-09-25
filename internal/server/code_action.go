@@ -46,7 +46,7 @@ func handleCodeAction(request *lsp.CodeActionRequest, state *State) *lsp.CodeAct
 
 	response := &lsp.CodeActionResponse{
 		Response: lsp.Response{
-			RPC: "2.0",
+			RPC: lsp.RPC_VERSION,
 			ID:  &request.ID,
 		},
 		Result: actions,

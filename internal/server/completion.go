@@ -48,7 +48,7 @@ func handleCompletionItemResolve(
 
 	response := lsp.CompletionItemResolveResponse{
 		Response: lsp.Response{
-			RPC: "2.0",
+			RPC: lsp.RPC_VERSION,
 			ID:  &request.ID,
 		},
 		Result: completionItem,

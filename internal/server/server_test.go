@@ -54,7 +54,8 @@ echo "hello world"
 			)
 
 			// Call the HandleMessage function with the mock writer, state, method, and contents
-			server.HandleMessage(writer, state, tt.method, tt.contents)
+			server := server.NewServer("", "", *state, writer)
+			server.HandleMessage(tt.method, tt.contents)
 
 			// Example checks (depending on what you're testing)
 			switch tt.method {

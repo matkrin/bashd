@@ -70,7 +70,7 @@ func handleReferences(request *lsp.ReferencesRequest, state *State) *lsp.Referen
 
 	response := lsp.ReferencesResponse{
 		Response: lsp.Response{
-			RPC: "2.0",
+			RPC: lsp.RPC_VERSION,
 			ID:  &request.ID,
 		},
 		Result: locations,

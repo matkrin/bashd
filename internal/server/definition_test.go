@@ -20,7 +20,7 @@ func mockState(documentText string) *State {
 func mockRequest(position lsp.Position) *lsp.DefinitionRequest {
 	return &lsp.DefinitionRequest{
 		Request: lsp.Request{
-			RPC:    "2.0",
+			RPC:    lsp.RPC_VERSION,
 			ID:     0,
 			Method: "textdocument/definition",
 		},
@@ -38,7 +38,7 @@ func mockResponse(_range lsp.Range) *lsp.DefinitionResponse {
 	id := 0
 	return &lsp.DefinitionResponse{
 		Response: lsp.Response{
-			RPC: "2.0",
+			RPC: lsp.RPC_VERSION,
 			ID:  &id,
 		},
 		Result: lsp.DefinitionResult{

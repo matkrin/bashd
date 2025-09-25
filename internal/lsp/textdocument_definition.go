@@ -26,7 +26,7 @@ func NewDefinitionResponse(
 ) DefinitionResponse {
 	return DefinitionResponse{
 		Response: Response{
-			RPC: "2.0",
+			RPC: RPC_VERSION,
 			ID:  &id,
 		},
 		Result: DefinitionResult{

@@ -46,7 +46,7 @@ func handleHover(request *lsp.HoverRequest, state *State) *lsp.HoverResponse {
 
 	response := lsp.HoverResponse{
 		Response: lsp.Response{
-			RPC: "2.0",
+			RPC: lsp.RPC_VERSION,
 			ID:  &request.ID,
 		},
 		Result: lsp.HoverResult{

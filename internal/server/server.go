@@ -8,7 +8,23 @@ import (
 	"github.com/matkrin/bashd/internal/lsp"
 )
 
-func HandleMessage(writer io.Writer, state *State, method string, contents []byte) {
+type Server struct {
+	name    string
+	version string
+	state   State
+	writer  io.Writer
+}
+
+func NewServer(name, version string, state State, writer io.Writer) *Server {
+	return &Server{
+		name:    name,
+		version: version,
+		state:   state,
+		writer:  writer,
+	}
+}
+
+func (s *Server) HandleMessage(method string, contents []byte) {
 	slog.Info("Received message", "method", method)
 
 	switch method {
@@ -23,16 +39,47 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 			"version", request.Params.ClientInfo.Version,
 		)
 
-		state.WorkspaceFolders = request.Params.WorkspaceFolders
-		slog.Info("Workspace folders set", "workerspaceFolders", state.WorkspaceFolders)
+		s.state.WorkspaceFolders = request.Params.WorkspaceFolders
+		slog.Info("Workspace folders set", "workerspaceFolders", s.state.WorkspaceFolders)
 
-		workspaceDiagnostics := findDiagnosticsWorkspace(state)
+		workspaceDiagnostics := findDiagnosticsWorkspace(&s.state)
 		for uri, diagnostics := range workspaceDiagnostics {
-			pushDiagnostic(writer, uri, diagnostics)
+			pushDiagnostic(s.writer, uri, diagnostics)
 		}
 
-		msg := lsp.NewInitializeResponse(request.ID)
-		writeResponse(writer, msg)
+		capabilities := lsp.ServerCapabilities{
+			TextDocumentSync:                1,
+			HoverProvider:                   true,
+			DefinitionProvider:              true,
+			DeclarationProvider:             false,
+			ReferencesProvider:              true,
+			DocumentSymbolProvider:          true,
+			WorkspaceSymbolProvider:         true,
+			DocumentFormattingProvider:      true,
+			DocumentRangeFormattingProvider: true,
+			CodeActionProvider:              true,
+			ColorProvider:                   true,
+			InlayHintProvider:               true,
+			RenameProvider: lsp.RenameOptions{
+				PrepareProvider: true,
+			},
+			CompletionProvider: lsp.CompletionOptions{
+				TriggerCharacters: []string{"$", "{"},
+				ResolveProvider:   true,
+			},
+			DiagnosticProvider: lsp.DiagnosticOptions{
+				Identifier:            nil,
+				InterFileDependencies: false,
+				WorkspaceDiagnostics:  false,
+			},
+		}
+		info := lsp.ServerInfo{
+			Name:    "bashd",
+			Version: "0.1.0a1",
+		}
+
+		msg := lsp.NewInitializeResponse(request.ID, &capabilities, &info)
+		writeResponse(s.writer, msg)
 
 	case "shutdown":
 		var request lsp.ShutdownRequest
@@ -43,12 +90,12 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 		slog.Info("Shutdown server")
 		response := lsp.ShutdownResponse{
 			Response: lsp.Response{
-				RPC: "2.0",
+				RPC: lsp.RPC_VERSION,
 				ID:  &request.ID,
 			},
 			Result: nil,
 		}
-		writeResponse(writer, response)
+		writeResponse(s.writer, response)
 
 	case "textDocument/didOpen":
 		var request lsp.DidOpenTextDocumentNotification
@@ -59,10 +106,10 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 		uri := request.Params.TextDocument.URI
 		slog.Info("Opened document", "URI", uri)
 		documentText := request.Params.TextDocument.Text
-		state.OpenDocument(uri, documentText)
+		s.state.OpenDocument(uri, documentText)
 
-		diagnostics := findDiagnostics(documentText, uri, state.EnvVars)
-		pushDiagnostic(writer, request.Params.TextDocument.URI, diagnostics)
+		diagnostics := findDiagnostics(documentText, uri, s.state.EnvVars)
+		pushDiagnostic(s.writer, request.Params.TextDocument.URI, diagnostics)
 
 	case "textDocument/didChange":
 		var request lsp.TextDocumentDidChangeNotification
@@ -74,21 +121,21 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 		slog.Info("Changed document", "URI", uri)
 
 		for _, change := range request.Params.ContentChanges {
-			state.UpdateDocument(uri, change.Text)
+			s.state.UpdateDocument(uri, change.Text)
 		}
 
-		documentText := state.Documents[uri].Text
-		diagnostics := findDiagnostics(documentText, uri, state.EnvVars)
-		pushDiagnostic(writer, request.Params.TextDocument.URI, diagnostics)
+		documentText := s.state.Documents[uri].Text
+		diagnostics := findDiagnostics(documentText, uri, s.state.EnvVars)
+		pushDiagnostic(s.writer, request.Params.TextDocument.URI, diagnostics)
 
 	case "textDocument/hover":
 		var request lsp.HoverRequest
 		if err := json.Unmarshal(contents, &request); err != nil {
 			slog.Error("Could not parse request", "method", method)
 		}
-		response := handleHover(&request, state)
+		response := handleHover(&request, &s.state)
 		if response != nil {
-			writeResponse(writer, response)
+			writeResponse(s.writer, response)
 		}
 
 	case "textDocument/definition":
@@ -97,9 +144,9 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 			slog.Error("Could not parse request", "method", method)
 
 		}
-		response := handleDefinition(&request, state)
+		response := handleDefinition(&request, &s.state)
 		if response != nil {
-			writeResponse(writer, response)
+			writeResponse(s.writer, response)
 		}
 
 	case "textDocument/references":
@@ -107,9 +154,9 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 		if err := json.Unmarshal(contents, &request); err != nil {
 			slog.Error("Could not parse request", "method", method)
 		}
-		response := handleReferences(&request, state)
+		response := handleReferences(&request, &s.state)
 		if response != nil {
-			writeResponse(writer, response)
+			writeResponse(s.writer, response)
 		}
 
 	case "textDocument/completion":
@@ -117,9 +164,9 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 		if err := json.Unmarshal(contents, &request); err != nil {
 			slog.Error("Could not parse request", "method", method)
 		}
-		response := handleCompletion(&request, state)
+		response := handleCompletion(&request, &s.state)
 		if response != nil {
-			writeResponse(writer, response)
+			writeResponse(s.writer, response)
 		}
 
 	case "completionItem/resolve":
@@ -129,7 +176,7 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 		}
 		response := handleCompletionItemResolve(&request)
 		if response != nil {
-			writeResponse(writer, response)
+			writeResponse(s.writer, response)
 		}
 
 	case "textDocument/documentSymbol":
@@ -137,9 +184,9 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 		if err := json.Unmarshal(contents, &request); err != nil {
 			slog.Error("Could not parse request", "method", method)
 		}
-		response := handleDocumentSymbol(&request, state)
+		response := handleDocumentSymbol(&request, &s.state)
 		if response != nil {
-			writeResponse(writer, response)
+			writeResponse(s.writer, response)
 		}
 
 	case "textDocument/prepareRename":
@@ -147,9 +194,9 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 		if err := json.Unmarshal(contents, &request); err != nil {
 			slog.Error("Could not parse request", "method", method)
 		}
-		response := handlePrepareRename(&request, state)
+		response := handlePrepareRename(&request, &s.state)
 		if response != nil {
-			writeResponse(writer, response)
+			writeResponse(s.writer, response)
 		}
 
 	case "textDocument/rename":
@@ -157,9 +204,9 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 		if err := json.Unmarshal(contents, &request); err != nil {
 			slog.Error("Could not parse request", "method", method)
 		}
-		response := handleRename(&request, state)
+		response := handleRename(&request, &s.state)
 		if response != nil {
-			writeResponse(writer, response)
+			writeResponse(s.writer, response)
 		}
 
 	case "workspace/symbol":
@@ -167,9 +214,9 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 		if err := json.Unmarshal(contents, &request); err != nil {
 			slog.Error("Could not parse request", "method", method)
 		}
-		response := handleWorkspaceSymbol(&request, state)
+		response := handleWorkspaceSymbol(&request, &s.state)
 		if response != nil {
-			writeResponse(writer, response)
+			writeResponse(s.writer, response)
 		}
 
 	case "textDocument/formatting":
@@ -177,9 +224,9 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 		if err := json.Unmarshal(contents, &request); err != nil {
 			slog.Error("Could not parse request", "method", method)
 		}
-		response := handleFormatting(&request, state)
+		response := handleFormatting(&request, &s.state)
 		if response != nil {
-			writeResponse(writer, response)
+			writeResponse(s.writer, response)
 		}
 
 	case "textDocument/rangeFormatting":
@@ -187,9 +234,9 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 		if err := json.Unmarshal(contents, &request); err != nil {
 			slog.Error("Could not parse request", "method", method)
 		}
-		response := handleRangeFormatting(&request, state)
+		response := handleRangeFormatting(&request, &s.state)
 		if response != nil {
-			writeResponse(writer, response)
+			writeResponse(s.writer, response)
 		}
 
 	case "textDocument/codeAction":
@@ -197,9 +244,9 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 		if err := json.Unmarshal(contents, &request); err != nil {
 			slog.Error("Could not parse request", "method", method)
 		}
-		response := handleCodeAction(&request, state)
+		response := handleCodeAction(&request, &s.state)
 		if response != nil {
-			writeResponse(writer, response)
+			writeResponse(s.writer, response)
 		}
 
 	case "textDocument/documentColor":
@@ -207,9 +254,9 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 		if err := json.Unmarshal(contents, &request); err != nil {
 			slog.Error("Could not parse request", "method", method)
 		}
-		response := handleDocumentColor(&request, state)
+		response := handleDocumentColor(&request, &s.state)
 		if response != nil {
-			writeResponse(writer, response)
+			writeResponse(s.writer, response)
 		}
 
 	case "textDocument/inlayHint":
@@ -217,9 +264,9 @@ func HandleMessage(writer io.Writer, state *State, method string, contents []byt
 		if err := json.Unmarshal(contents, &request); err != nil {
 			slog.Error("Could not parse request", "method", method)
 		}
-		response := handleInlayHint(&request, state)
+		response := handleInlayHint(&request, &s.state)
 		if response != nil {
-			writeResponse(writer, response)
+			writeResponse(s.writer, response)
 		}
 
 	}

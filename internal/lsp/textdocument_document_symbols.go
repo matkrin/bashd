@@ -20,7 +20,7 @@ func NewDocumentSymbolResponse(
 ) DocumentSymbolResponse {
 	return DocumentSymbolResponse{
 		Response: Response{
-			RPC: "2.0",
+			RPC: RPC_VERSION,
 			ID:  &id,
 		},
 		Result: documentSymbols,

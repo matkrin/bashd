@@ -25,7 +25,7 @@ func NewDeclarationResponse(
 ) *DeclarationResponse {
 	return &DeclarationResponse{
 		Response: Response{
-			RPC: "2.0",
+			RPC: RPC_VERSION,
 			ID:  &id,
 		},
 		Result: DeclarationResult{

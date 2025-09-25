@@ -28,7 +28,7 @@ type DiagnosticNotification struct {
 func NewDiagnosticNotification(uri string, diagnostics []Diagnostic) DiagnosticNotification {
 	return DiagnosticNotification{
 		Notification: Notification{
-			RPC:    "2.0",
+			RPC:    RPC_VERSION,
 			Method: "textDocument/publishDiagnostics",
 		},
 		Params: PublishDiagnosticsParams{

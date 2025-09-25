@@ -49,7 +49,7 @@ func handleFormatting(request *lsp.FormattingRequest, state *State) *lsp.Formatt
 
 	response := lsp.FormattingResponse{
 		Response: lsp.Response{
-			RPC: "2.0",
+			RPC: lsp.RPC_VERSION,
 			ID:  &request.ID,
 		},
 		Result: []lsp.TextEdit{textedit},
@@ -110,7 +110,7 @@ func handleRangeFormatting(request *lsp.RangeFormattingRequest, state *State) *l
 
 	response := lsp.RangeFormattingResponse{
 		Response: lsp.Response{
-			RPC: "2.0",
+			RPC: lsp.RPC_VERSION,
 			ID:  &request.ID,
 		},
 		Result: []lsp.TextEdit{textEdit},

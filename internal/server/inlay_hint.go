@@ -16,7 +16,7 @@ func handleInlayHint(request *lsp.InlayHintRequest, state *State) *lsp.InlayHint
 
 	response := &lsp.InlayHintResponse{
 		Response: lsp.Response{
-			RPC: "2.0",
+			RPC: lsp.RPC_VERSION,
 			ID:  &request.ID,
 		},
 

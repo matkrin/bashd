@@ -31,7 +31,7 @@ type CompletionResponse struct {
 func NewCompletionResponse(id int, completionList []CompletionItem) CompletionResponse {
 	return CompletionResponse{
 		Response: Response{
-			RPC: "2.0",
+			RPC: RPC_VERSION,
 			ID:  &id,
 		},
 		Result: completionList,

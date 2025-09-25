@@ -73,6 +73,7 @@ Bash language server
 
 - Fix for shellcheck lints (position depenent)
 - Fix all auto-fixable lints (only when there are fixable lints)
+- Add ignore comment for shellcheck lints
 - Add shebang if not exist
 - Put document on single line
 
