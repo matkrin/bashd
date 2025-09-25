@@ -9,17 +9,16 @@ import (
 
 // Find a definition in a sourced file with proper scoping
 func (a *Ast) FindDefInSourcedFile(
-	cursorNode syntax.Node,
+	cursor Cursor,
 	env map[string]string,
 	baseDir string,
 ) (string, *DefNode) {
+	cursorNode := a.FindNodeUnderCursor(cursor)
 	targetIdentifier := ExtractIdentifier(cursorNode)
 	if targetIdentifier == "" {
 		return "", nil
 	}
 
-	pos := cursorNode.Pos()
-	cursor := Cursor{Line: pos.Line(), Col: pos.Col()}
 	cursorScope := a.findEnclosingFunction(cursor)
 
 	sourcedFiles := a.FindAllSourcedFiles(env, baseDir, map[string]bool{})
@@ -54,17 +53,17 @@ func (a *Ast) FindDefInSourcedFile(
 
 // Updated unified definition search that combines current file + sourced files
 func (a *Ast) FindDefinitionAcrossFiles(
-	cursorNode syntax.Node,
+	cursor Cursor,
 	env map[string]string,
 	baseDir string,
 ) (string, *DefNode) {
 	// First, try to find in current file
-	if def := a.FindDefInFile(cursorNode); def != nil {
+	if def := a.FindDefInFile(cursor); def != nil {
 		return "", def // Empty string means current file
 	}
 
 	// Then search in sourced files
-	return a.FindDefInSourcedFile(cursorNode, env, baseDir)
+	return a.FindDefInSourcedFile(cursor, env, baseDir)
 }
 
 // Find local variable in a sourced file within the same function name

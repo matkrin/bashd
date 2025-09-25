@@ -4,8 +4,9 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/matkrin/bashd/ast"
-	"github.com/matkrin/bashd/lsp"
+	"github.com/matkrin/bashd/internal/ast"
+	"github.com/matkrin/bashd/internal/lsp"
+	"github.com/matkrin/bashd/internal/utils"
 	"mvdan.cc/sh/v3/syntax"
 )
 
@@ -69,7 +70,7 @@ func findWorkSpaceSymbol(defNode *ast.DefNode, filePath string) lsp.WorkspaceSym
 		Name: defNode.Name,
 		Kind: kind,
 		Location: lsp.Location{
-			URI: pathToURI(filePath),
+			URI: utils.PathToURI(filePath),
 			Range: lsp.NewRange(
 				startLine,
 				startCol,

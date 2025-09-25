@@ -3,8 +3,8 @@ package server
 import (
 	"testing"
 
-	"github.com/matkrin/bashd/ast"
-	"github.com/matkrin/bashd/lsp"
+	"github.com/matkrin/bashd/internal/ast"
+	"github.com/matkrin/bashd/internal/lsp"
 )
 
 func mockState(documentText string) *State {
@@ -150,8 +150,7 @@ foo
 	fileAst, _ := ast.ParseDocument(input, "test.sh")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cursorNode := fileAst.FindNodeUnderCursor(tt.cursor)
-			got := fileAst.FindDefInFile(cursorNode)
+			got := fileAst.FindDefInFile(tt.cursor)
 			if (*got).Name != tt.want.Name {
 				t.Errorf("Name = %v, want %v", (*got).Name, tt.want.Name)
 			}

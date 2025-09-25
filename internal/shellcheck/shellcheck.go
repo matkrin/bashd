@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/matkrin/bashd/lsp"
+	"github.com/matkrin/bashd/internal/lsp"
 )
 
 // https://github.com/koalaman/shellcheck/wiki/Integration

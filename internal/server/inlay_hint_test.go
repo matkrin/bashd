@@ -3,7 +3,7 @@ package server
 import (
 	"testing"
 
-	"github.com/matkrin/bashd/lsp"
+	"github.com/matkrin/bashd/internal/lsp"
 )
 
 func Test_extractInlayHints(t *testing.T) {

@@ -5,9 +5,10 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/matkrin/bashd/ast"
-	"github.com/matkrin/bashd/lsp"
-	"github.com/matkrin/bashd/shellcheck"
+	"github.com/matkrin/bashd/internal/ast"
+	"github.com/matkrin/bashd/internal/lsp"
+	"github.com/matkrin/bashd/internal/shellcheck"
+	"github.com/matkrin/bashd/internal/utils"
 	"mvdan.cc/sh/v3/syntax"
 )
 
@@ -49,7 +50,7 @@ func findDiagnosticsWorkspace(state *State) map[string][]lsp.Diagnostic {
 			slog.Error("ERROR could not read file content", "file", shFile)
 		}
 
-		uri := pathToURI(shFile)
+		uri := utils.PathToURI(shFile)
 		diagnostics := findDiagnostics(string(fileContent), uri, state.EnvVars)
 		workspaceDiagnostics[uri] = diagnostics
 	}

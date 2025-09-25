@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/matkrin/bashd/lsp"
+	"github.com/matkrin/bashd/internal/lsp"
 )
 
 var ansiRegex = regexp.MustCompile(`(\\e|\\033|\\x1b|\x1b)\[[0-9;]*m`)

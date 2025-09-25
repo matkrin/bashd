@@ -2,14 +2,10 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log/slog"
-	"net/url"
-	"path/filepath"
-	"strings"
 
-	"github.com/matkrin/bashd/lsp"
+	"github.com/matkrin/bashd/internal/lsp"
 )
 
 func HandleMessage(writer io.Writer, state *State, method string, contents []byte) {
@@ -238,20 +234,4 @@ func writeResponse(writer io.Writer, msg any) {
 	reply := lsp.EncodeMessage(msg)
 	// logger.Info(reply)
 	writer.Write([]byte(reply))
-}
-
-func uriToPath(uri string) (string, error) {
-	if !strings.HasPrefix(uri, "file://") {
-		return "", fmt.Errorf("unsupported URI scheme")
-	}
-	u, err := url.Parse(uri)
-	if err != nil {
-		return "", err
-	}
-	return u.Path, nil
-}
-
-func pathToURI(path string) string {
-	uri := url.URL{Scheme: "file", Path: filepath.ToSlash(path)}
-	return uri.String()
 }

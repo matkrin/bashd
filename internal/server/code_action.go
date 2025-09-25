@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"log/slog"
 
-	"github.com/matkrin/bashd/ast"
-	"github.com/matkrin/bashd/lsp"
-	"github.com/matkrin/bashd/shellcheck"
+	"github.com/matkrin/bashd/internal/ast"
+	"github.com/matkrin/bashd/internal/lsp"
+	"github.com/matkrin/bashd/internal/shellcheck"
 	"mvdan.cc/sh/v3/fileutil"
 	"mvdan.cc/sh/v3/syntax"
 )

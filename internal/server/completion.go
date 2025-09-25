@@ -3,8 +3,8 @@ package server
 import (
 	"fmt"
 
-	"github.com/matkrin/bashd/ast"
-	"github.com/matkrin/bashd/lsp"
+	"github.com/matkrin/bashd/internal/ast"
+	"github.com/matkrin/bashd/internal/lsp"
 	"mvdan.cc/sh/v3/syntax"
 )
 

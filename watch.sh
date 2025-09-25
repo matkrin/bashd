@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
+shopt -s globstar
+
 WATCH_DIR="."
-BUILD_CMD="go build"
+BUILD_CMD="make build"
 
 black-on-green() {
     printf "\e[30;42m%s\e[0m" "$1"
@@ -16,13 +18,12 @@ BUILD_MSG=$(black-on-green "✓ Build successful")
 
 watch-go-files-mac() {
     echo "$WATCH_MSG"
-    # fswatch --exclude ".*" --include "\\.go$" $WATCH_DIR |
-    fswatch ./*.go ./**/*.go |
+    fswatch ./**/*.go |
         while read -r changed_file; do
             clear
             echo "$WATCH_MSG"
             echo "$changed_file changed. Rebuilding..."
-            go build . && echo "$BUILD_MSG"
+            $BUILD_CMD && echo "$BUILD_MSG"
         done
 }
 

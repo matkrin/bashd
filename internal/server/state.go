@@ -8,7 +8,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/matkrin/bashd/lsp"
+	"github.com/matkrin/bashd/internal/lsp"
+	"github.com/matkrin/bashd/internal/utils"
 	"mvdan.cc/sh/v3/fileutil"
 )
 
@@ -61,7 +62,7 @@ func (s *State) UpdateDocument(uri, text string) {
 func (s *State) WorkspaceShFiles() []string {
 	shFiles := []string{}
 	for _, folder := range s.WorkspaceFolders {
-		dirpath, err := uriToPath(folder.URI)
+		dirpath, err := utils.UriToPath(folder.URI)
 		if err != nil {
 			continue
 		}

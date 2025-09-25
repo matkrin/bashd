@@ -286,14 +286,13 @@ func (a *Ast) findEnclosingFunctionForNode(targetNode syntax.Node) *syntax.FuncD
 // }
 
 // Updated FindDefInFile that uses the unified DefNodes
-func (a *Ast) FindDefInFile(cursorNode syntax.Node) *DefNode {
+func (a *Ast) FindDefInFile(cursor Cursor) *DefNode {
+	cursorNode := a.FindNodeUnderCursor(cursor)
 	targetIdentifier := ExtractIdentifier(cursorNode)
 	if targetIdentifier == "" {
 		return nil
 	}
 
-	pos := cursorNode.Pos()
-	cursor := Cursor{Line: pos.Line(), Col: pos.Col()}
 	cursorScope := a.findEnclosingFunction(cursor)
 
 	// Find scoped variables in the same function scope as cursor

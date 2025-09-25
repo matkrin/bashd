@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/matkrin/bashd/lsp"
-	"github.com/matkrin/bashd/server"
+	"github.com/matkrin/bashd/internal/lsp"
+	"github.com/matkrin/bashd/internal/server"
 )
 
 func mockState(documentText string) *server.State {

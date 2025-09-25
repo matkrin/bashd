@@ -5,8 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/matkrin/bashd/ast"
-	"github.com/matkrin/bashd/lsp"
+	"github.com/matkrin/bashd/internal/ast"
+	"github.com/matkrin/bashd/internal/lsp"
+	"github.com/matkrin/bashd/internal/utils"
 )
 
 func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.DefinitionResponse {
@@ -22,11 +23,11 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 		slog.Error(err.Error())
 	}
 	cursorNode := fileAst.FindNodeUnderCursor(cursor)
-	definition := fileAst.FindDefInFile(cursorNode)
+	definition := fileAst.FindDefInFile(cursor)
 
 	if definition == nil {
 		// Check for the definition in a sourced file
-		filename, err := uriToPath(uri)
+		filename, err := utils.UriToPath(uri)
 		if err != nil {
 			slog.Error(err.Error())
 			return nil
@@ -34,19 +35,19 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 		baseDir := filepath.Dir(filename)
 		sourcedFile := ""
 		sourcedFile, definition = fileAst.FindDefInSourcedFile(
-			cursorNode,
+			cursor,
 			state.EnvVars,
 			baseDir,
 		)
 
 		if definition != nil {
-			uri = pathToURI(sourcedFile)
+			uri = utils.PathToURI(sourcedFile)
 		}
 	}
 
 	if definition == nil {
 		// Check if the cursor is over a filename in a source statement
-		filename, err := uriToPath(uri)
+		filename, err := utils.UriToPath(uri)
 		if err != nil {
 			slog.Error(err.Error())
 			return nil
@@ -64,7 +65,7 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 			EndLine:   1,
 			EndChar:   1,
 		}
-		uri = pathToURI(sourcePath)
+		uri = utils.PathToURI(sourcePath)
 	}
 
 	if definition == nil {

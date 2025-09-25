@@ -5,8 +5,9 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/matkrin/bashd/ast"
-	"github.com/matkrin/bashd/lsp"
+	"github.com/matkrin/bashd/internal/ast"
+	"github.com/matkrin/bashd/internal/lsp"
+	"github.com/matkrin/bashd/internal/utils"
 )
 
 func handlePrepareRename(
@@ -26,7 +27,7 @@ func handlePrepareRename(
 		slog.Error(err.Error())
 	}
 	cursorNode := fileAst.FindNodeUnderCursor(cursor)
-	referenceNodes := fileAst.FindRefsInFile(cursorNode, true)
+	referenceNodes := fileAst.FindRefsInFile(cursor, true)
 
 	slog.Info("Prepare rename", "referenceNodes", referenceNodes)
 	if len(referenceNodes) == 0 {
@@ -66,27 +67,26 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 	if err != nil {
 		slog.Error(err.Error())
 	}
-	cursorNode := fileAst.FindNodeUnderCursor( cursor)
-	referenceNodes := fileAst.FindRefsInFile(cursorNode, true)
+	referenceNodes := fileAst.FindRefsInFile(cursor, true)
 
 	changes := map[string][]lsp.TextEdit{}
 	changes[uri] = findTextEditsInFile(referenceNodes, params.NewName)
 
 	// In sourced files
-	filename, err := uriToPath(uri)
+	filename, err := utils.UriToPath(uri)
 	if err != nil {
 		slog.Error("Could not transform URI to path", "err", err.Error())
 	}
 	baseDir := filepath.Dir(filename)
 	referenceNodesInSourcedFiles := fileAst.FindRefsinSourcedFile(
-		cursorNode,
+		cursor,
 		state.EnvVars,
 		baseDir,
 		true,
 	)
 
 	for file, refNodes := range referenceNodesInSourcedFiles {
-		fileUri := pathToURI(file)
+		fileUri := utils.PathToURI(file)
 		changes[fileUri] = append(
 			changes[fileUri],
 			findTextEditsInFile(refNodes, params.NewName)...,
@@ -94,17 +94,17 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 	}
 
 	// In workspace files that source current file
-	refNodesInWorkspaceFile := findRefsInWorkspaceFiles(
+	refNodesInWorkspaceFile := fileAst.FindRefsInWorkspaceFiles(
 		uri,
 		state.WorkspaceShFiles(),
-		cursorNode,
+		cursor,
 		state.EnvVars,
 		true,
 	)
 
 	for file, refNodes := range refNodesInWorkspaceFile {
 		for _, refNode := range refNodes {
-			fileUri := pathToURI(file)
+			fileUri := utils.PathToURI(file)
 			textEdit := refNode.ToLspTextEdit(params.NewName)
 			if !slices.Contains(changes[fileUri], textEdit) {
 				changes[fileUri] = append(changes[fileUri], textEdit)

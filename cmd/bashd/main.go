@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/matkrin/bashd/lsp"
-	"github.com/matkrin/bashd/server"
+	"github.com/matkrin/bashd/internal/lsp"
+	"github.com/matkrin/bashd/internal/server"
 	"mvdan.cc/sh/v3/syntax"
 )
 

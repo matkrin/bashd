@@ -10,18 +10,19 @@ import (
 
 // Enhanced cross-file references with proper scoping
 func (a *Ast) FindRefsinSourcedFile(
-	cursorNode syntax.Node,
+	cursor Cursor,
 	env map[string]string,
 	baseDir string,
 	includeDeclaration bool,
 ) map[string][]RefNode {
+	cursorNode := a.FindNodeUnderCursor(cursor)
 	targetIdentifier := ExtractIdentifier(cursorNode)
 	if targetIdentifier == "" {
 		return map[string][]RefNode{}
 	}
 
 	// First, find the definition using cross-file definition resolution
-	targetFile, defNode := a.FindDefinitionAcrossFiles(cursorNode, env, baseDir)
+	targetFile, defNode := a.FindDefinitionAcrossFiles(cursor, env, baseDir)
 
 	sourcedFiles := a.FindAllSourcedFiles(env, baseDir, map[string]bool{})
 	filesRefNodes := map[string][]RefNode{}
@@ -208,14 +209,15 @@ func isSameDefinitionAcrossFiles(def1 *DefNode, def2 *DefNode, file1, file2 stri
 
 // Debug method for cross-file reference resolution
 func (a *Ast) DebugCrossFileReferenceResolution(
-	cursorNode syntax.Node,
+	cursor Cursor,
 	env map[string]string,
 	baseDir string,
 ) {
+	cursorNode := a.FindNodeUnderCursor(cursor)
 	targetIdentifier := ExtractIdentifier(cursorNode)
 	fmt.Printf("=== Cross-File Reference Resolution for '%s' ===\n", targetIdentifier)
 
-	targetFile, defNode := a.FindDefinitionAcrossFiles(cursorNode, env, baseDir)
+	targetFile, defNode := a.FindDefinitionAcrossFiles(cursor, env, baseDir)
 
 	if defNode == nil {
 		fmt.Printf("No definition found\n")

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/matkrin/bashd/lsp"
+	"github.com/matkrin/bashd/internal/lsp"
 )
 
 func handleInlayHint(request *lsp.InlayHintRequest, state *State) *lsp.InlayHintResponse {

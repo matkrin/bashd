@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/matkrin/bashd/ast"
-	"github.com/matkrin/bashd/lsp"
+	"github.com/matkrin/bashd/internal/ast"
+	"github.com/matkrin/bashd/internal/lsp"
+	"github.com/matkrin/bashd/internal/utils"
 	"mvdan.cc/sh/v3/syntax"
 )
 
@@ -31,7 +32,7 @@ func handleHover(request *lsp.HoverRequest, state *State) *lsp.HoverResponse {
 		return nil
 	}
 
-	hoverResultValue := hoverFromDefinition(fileAst, cursorNode, state, uri)
+	hoverResultValue := hoverFromDefinition(fileAst, cursor, state, uri)
 
 	identifier := ast.ExtractIdentifier(cursorNode)
 	documentation := getDocumentation(identifier)
@@ -80,24 +81,24 @@ func defNodeToHoverString(defNode *ast.DefNode, documentText string, documentNam
 
 func hoverFromDefinition(
 	ast *ast.Ast,
-	cursorNode syntax.Node,
+	cursor ast.Cursor,
 	state *State,
 	uri string,
 ) string {
-	defNode := ast.FindDefInFile(cursorNode)
+	defNode := ast.FindDefInFile(cursor)
 	if defNode != nil {
 		documentText := state.Documents[uri].Text
 		return defNodeToHoverString(defNode, documentText, "")
 	}
 
-	filename, err := uriToPath(uri)
+	filename, err := utils.UriToPath(uri)
 	if err != nil {
 		slog.Error("ERROR: Could not convert uri to path", "uri", uri)
 		return ""
 	}
 	baseDir := filepath.Dir(filename)
 	sourcedFile, definition := ast.FindDefInSourcedFile(
-		cursorNode,
+		cursor,
 		state.EnvVars,
 		baseDir,
 	)

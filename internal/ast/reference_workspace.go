@@ -1,4 +1,4 @@
-package server
+package ast
 
 import (
 	"log/slog"
@@ -6,122 +6,51 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/matkrin/bashd/ast"
-	"github.com/matkrin/bashd/lsp"
-	"mvdan.cc/sh/v3/syntax"
+	"github.com/matkrin/bashd/internal/utils"
 )
 
-func handleReferences(request *lsp.ReferencesRequest, state *State) *lsp.ReferencesResponse {
-	params := request.Params
-	uri := params.TextDocument.URI
-	cursor := ast.NewCursor(
-		params.Position.Line,
-		params.Position.Character,
-	)
-
-	// In current file
-	documentText := state.Documents[uri].Text
-	fileAst, err := ast.ParseDocument(documentText, uri)
-	if err != nil {
-		slog.Error(err.Error())
-	}
-	cursorNode := fileAst.FindNodeUnderCursor(cursor)
-	referenceNodes := fileAst.FindRefsInFile(cursorNode, params.Context.IncludeDeclaration)
-
-	locations := []lsp.Location{}
-	for _, refNode := range referenceNodes {
-		locations = append(locations, refNode.ToLspLocation(uri))
-	}
-
-	// In sourced files
-	filename, err := uriToPath(uri)
-	if err != nil {
-		slog.Error(err.Error())
-	}
-	baseDir := filepath.Dir(filename)
-	referenceNodesInSourcedFiles := fileAst.FindRefsinSourcedFile(
-		cursorNode,
-		state.EnvVars,
-		baseDir,
-		params.Context.IncludeDeclaration,
-	)
-
-	for file, refNodes := range referenceNodesInSourcedFiles {
-		for _, refNode := range refNodes {
-			locations = append(locations, refNode.ToLspLocation(pathToURI(file)))
-		}
-	}
-
-	// In workspace files that source current file
-	refNodesInWorkspaceFile := findRefsInWorkspaceFiles(
-		uri,
-		state.WorkspaceShFiles(),
-		cursorNode,
-		state.EnvVars,
-		params.Context.IncludeDeclaration,
-	)
-
-	for file, refNodes := range refNodesInWorkspaceFile {
-		for _, refNode := range refNodes {
-			location := refNode.ToLspLocation(pathToURI(file))
-			if !slices.Contains(locations, location) {
-				locations = append(locations, location)
-			}
-		}
-	}
-
-	response := lsp.ReferencesResponse{
-		Response: lsp.Response{
-			RPC: "2.0",
-			ID:  &request.ID,
-		},
-		Result: locations,
-	}
-
-	return &response
-}
-
 // Find reference nodes in all workspace files if they source the current file
-func findRefsInWorkspaceFiles(
+func (a *Ast) FindRefsInWorkspaceFiles(
 	uri string,
 	workspaceShFiles []string,
-	cursorNode syntax.Node,
+	cursor Cursor,
 	env map[string]string,
 	includeDeclaration bool,
-) map[string][]ast.RefNode {
+) map[string][]RefNode {
 	// First, extract the identifier we're looking for
-	targetIdentifier := ast.ExtractIdentifier(cursorNode)
+	cursorNode := a.FindNodeUnderCursor(cursor)
+	targetIdentifier := ExtractIdentifier(cursorNode)
 	if targetIdentifier == "" {
-		return map[string][]ast.RefNode{}
+		return map[string][]RefNode{}
 	}
 
 	// Get the original file path from URI for definition resolution
-	originalFilePath, err := uriToPath(uri)
+	originalFilePath, err := utils.UriToPath(uri)
 	if err != nil {
 		slog.Error("Could not transform URI to path", "file", originalFilePath)
-		return map[string][]ast.RefNode{}
+		return map[string][]RefNode{}
 	}
 
 	// Load the original file to find the definition
 	originalFileContent, err := os.ReadFile(originalFilePath)
 	if err != nil {
 		slog.Error("Could not read original file", "file", originalFilePath)
-		return map[string][]ast.RefNode{}
+		return map[string][]RefNode{}
 	}
 
-	originalAst, err := ast.ParseDocument(string(originalFileContent), originalFilePath)
+	originalAst, err := ParseDocument(string(originalFileContent), originalFilePath)
 	if err != nil {
 		slog.Error("Could not parse original file", "file", originalFilePath)
-		return map[string][]ast.RefNode{}
+		return map[string][]RefNode{}
 	}
 
 	// Find the definition in the original file using cross-file logic
 	baseDir := filepath.Dir(originalFilePath)
-	targetFile, defNode := originalAst.FindDefinitionAcrossFiles(cursorNode, env, baseDir)
+	targetFile, defNode := originalAst.FindDefinitionAcrossFiles(cursor, env, baseDir)
 
 	slog.Info("WORKSPACE_REFS", "targetIdentifier", targetIdentifier, "targetFile", targetFile, "defNode", defNode)
 
-	referenceNodes := map[string][]ast.RefNode{}
+	referenceNodes := map[string][]RefNode{}
 
 	// Search through all workspace files
 	for _, shFile := range workspaceShFiles {
@@ -131,7 +60,7 @@ func findRefsInWorkspaceFiles(
 			continue
 		}
 
-		workspaceFileAst, err := ast.ParseDocument(string(fileContent), shFile)
+		workspaceFileAst, err := ParseDocument(string(fileContent), shFile)
 		if err != nil {
 			slog.Error("Could not parse file", "file", shFile)
 			continue
@@ -150,7 +79,7 @@ func findRefsInWorkspaceFiles(
 			}
 			resolved = filepath.Clean(resolved)
 
-			if uri == pathToURI(resolved) {
+			if uri == utils.PathToURI(resolved) {
 				shouldIncludeFile = true
 				slog.Info("File sources target", "file", shFile, "target", resolved)
 				break
@@ -178,7 +107,7 @@ func findRefsInWorkspaceFiles(
 		}
 
 		// Find references in this file
-		var refs []ast.RefNode
+		var refs []RefNode
 
 		if defNode == nil {
 			// No definition found - fall back to simple name matching

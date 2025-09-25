@@ -1,5 +1,7 @@
 # bashd
 
+Bash language server
+
 ## Features
 
 ### Diagnostics
@@ -23,11 +25,6 @@
 - Function declaration in document and sourced files
 - Sourced file itself
 
-### Declaration
-
-- Variable declarations (`declare`, `local`, `export`, `readonly`, `typeset`, or
-  `nameref`) in document and sourced files
-
 ### References
 
 - Function calls in current document and sourced files
@@ -42,7 +39,7 @@
 - Function declarations and calls in document and sourced files
 - Variable assignments and usage in document and sourced files
 - Function declarations and calls in workspace file which source the current
-file
+  file
 - Variable assignments and usage in workspace file which source the current file
 
 ### Completion
@@ -96,6 +93,57 @@ file
 ## TODO
 
 - Hover: flags parsing from man pages?
+- Improve ANSI parsing
+
+## Installation
+
+## Setup
+
+### Neovim
+
+With Neovim version 0.11+, you can use bashd without plugins:
+
+```lua
+vim.lsp.config.bashd = {
+    cmd = { "bashd" },
+    filetypes = { "bash", "sh" },
+    root_markers = { ".git" },
+}
+
+vim.lsp.enable("bashd")
+```
+
+With [lspconfig](https://github.com/neovim/nvim-lspconfig):
+
+```lua
+local lspconfig = require("lspconfig")
+local configs = require("lspconfig.configs")
+
+configs.bashd = {
+    default_config = {
+        name = "bashd",
+        cmd = { "bashd" },
+        filetypes = { "bash", "sh" },
+        root_dir = lspconfig.util.root_pattern(".git"),
+    },
+}
+
+lspconfig.bashd.setup({})
+```
+
+### Helix
+
+In languages.toml:
+
+```toml
+[language-server.bashd]
+command = "bashd"
+roots = [".git"]
+
+[[language]]
+name = "bash"
+language-servers = [{ name = "bashd" }]
+```
 
 [sgr]: https://en.wikipedia.org/wiki/ANSI_escape_code#Select_Graphic_Rendition_parameters
 [8b-color]: https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/matkrin/bashd/lsp"
+	"github.com/matkrin/bashd/internal/lsp"
 	"mvdan.cc/sh/v3/syntax"
 )
 
@@ -211,7 +211,8 @@ func (a *Ast) RefNodes(includeDeclaration bool) []RefNode {
 
 // Enhanced FindRefsInFile with proper scoping logic
 // Fixed FindRefsInFile with proper scoping logic
-func (a *Ast) FindRefsInFile(cursorNode syntax.Node, includeDeclaration bool) []RefNode {
+func (a *Ast) FindRefsInFile(cursor Cursor, includeDeclaration bool) []RefNode {
+	cursorNode := a.FindNodeUnderCursor(cursor)
 	targetIdentifier := ExtractIdentifier(cursorNode)
 	if targetIdentifier == "" {
 		return nil
@@ -221,7 +222,7 @@ func (a *Ast) FindRefsInFile(cursorNode syntax.Node, includeDeclaration bool) []
 	references := []RefNode{}
 
 	// Find the definition that the cursor is pointing to
-	defNode := a.FindDefInFile(cursorNode)
+	defNode := a.FindDefInFile(cursor)
 
 	slog.Info("FINDREFS", "DEFNODE", defNode)
 
