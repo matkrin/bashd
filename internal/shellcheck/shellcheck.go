@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/matkrin/bashd/internal/lsp"
+	"github.com/matkrin/bashd/internal/utils"
 )
 
 // https://github.com/koalaman/shellcheck/wiki/Integration
@@ -76,7 +77,7 @@ func (s *ShellCheckResult) ContainsFixable() bool {
 }
 
 func (c *Comment) ToDiagnostic() lsp.Diagnostic {
-	code := int(c.Code)
+	code := fmt.Sprintf("SC%d", c.Code)
 	severity := c.levelToSeverity()
 	codeActionAvailable := ""
 
@@ -100,7 +101,7 @@ func (c *Comment) ToDiagnostic() lsp.Diagnostic {
 	}
 }
 
-func (c *Comment) ToCodeAction(uri string) *lsp.CodeAction {
+func (c *Comment) ToCodeActionFixLint(uri string) *lsp.CodeAction {
 	if c.Fix == nil {
 		return nil
 	}
@@ -108,6 +109,27 @@ func (c *Comment) ToCodeAction(uri string) *lsp.CodeAction {
 	textEdits := c.Fix.toTextEdits()
 	action := &lsp.CodeAction{
 		Title: fmt.Sprintf("Fix shellcheck lint %d", c.Code),
+		Edit: lsp.WorkspaceEdit{
+			Changes: map[string][]lsp.TextEdit{
+				uri: textEdits,
+			},
+		},
+	}
+	return action
+}
+
+func (c *Comment) ToCodeActionIgnore(uri, documentText string, diagnosticRange *lsp.Range) *lsp.CodeAction {
+	startLine := diagnosticRange.Start.Line
+	diagnosticLine := strings.Split(documentText, "\n")[startLine]
+	indentation := utils.GetIndentation(diagnosticLine)
+	textEdits := []lsp.TextEdit{
+		{
+			Range: lsp.NewRange(startLine, 0, startLine, 0),
+			NewText: fmt.Sprintf("%s# shellcheck disable=SC%d\n", indentation, c.Code),
+		},
+	}
+	action := &lsp.CodeAction{
+		Title: fmt.Sprintf("Add ignore comment for lint SC%d", c.Code),
 		Edit: lsp.WorkspaceEdit{
 			Changes: map[string][]lsp.TextEdit{
 				uri: textEdits,

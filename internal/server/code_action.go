@@ -41,7 +41,7 @@ func handleCodeAction(request *lsp.CodeActionRequest, state *State) *lsp.CodeAct
 	// Fix for certain lint (position dependent)
 	context := request.Params.Context
 	if len(context.Diagnostics) != 0 {
-		actions = append(actions, shellcheckCodeActions(shellcheck, uri, context)...)
+		actions = append(actions, shellcheckCodeActions(shellcheck, uri, documentText, context)...)
 	}
 
 	response := &lsp.CodeActionResponse{
@@ -109,16 +109,24 @@ func singleLineCodeAction(document string, uri string) *lsp.CodeAction {
 	return action
 }
 
-func shellcheckCodeActions(shellcheck *shellcheck.ShellCheckResult, uri string, context lsp.CodeActionContext) []lsp.CodeAction {
+func shellcheckCodeActions(
+	shellcheck *shellcheck.ShellCheckResult,
+	uri string,
+	documentText string,
+	context lsp.CodeActionContext,
+) []lsp.CodeAction {
 	actions := []lsp.CodeAction{}
 	for _, comment := range shellcheck.Comments {
 		shellcheckDiagnostic := comment.ToDiagnostic()
 		for _, contextDiagnostic := range context.Diagnostics {
 			if shellcheckDiagnostic.Range == contextDiagnostic.Range {
-				action := comment.ToCodeAction(uri)
-				if action != nil {
-					actions = append(actions, *action)
-
+				actionFixLint := comment.ToCodeActionFixLint(uri)
+				if actionFixLint != nil {
+					actions = append(actions, *actionFixLint)
+				}
+				actionIgnore := comment.ToCodeActionIgnore(uri, documentText, &contextDiagnostic.Range)
+				if actionIgnore != nil {
+					actions = append(actions, *actionIgnore)
 				}
 			}
 		}
