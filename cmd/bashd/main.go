@@ -5,23 +5,43 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"path/filepath"
 
 	"github.com/matkrin/bashd/internal/lsp"
 	"github.com/matkrin/bashd/internal/server"
+	"github.com/spf13/pflag"
 )
 
 // Set at compile time
 var VERSION string
 
 func main() {
-	fmt.Println(VERSION)
 	name := "bashd"
 
-	logLevel := "debug"
-	logFile := filepath.Join(os.Getenv("HOME"), "Developer", "bashd", "bashd.log")
-	initLogging(logLevel, logFile)
-	slog.Info("Logging initialized", "level", logLevel)
+	logFileOpt := pflag.StringP("logfile", "l", "", "Log to FILE instead of stderr")
+	jsonOpt := pflag.BoolP("json", "j", false, "Log in JSON format")
+	verbosityOpt := pflag.CountP("verbose", "v", "Increase log message verbosity")
+	versionOpt := pflag.BoolP("version", "V", false, "Print version")
+
+	pflag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "bashd - Bash language server\n\n")
+		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", name)
+		fmt.Fprintf(os.Stderr, "Options:\n")
+		pflag.PrintDefaults()
+	}
+
+	pflag.Parse()
+	if *versionOpt {
+		fmt.Println(VERSION)
+	}
+
+	logFile, err := initLogging(*verbosityOpt, *logFileOpt, *jsonOpt)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to initialize logging: %v\n", err)
+		os.Exit(1)
+	}
+	if logFile != nil {
+		defer logFile.Close()
+	}
 
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Split(lsp.Split)
@@ -44,36 +64,48 @@ func main() {
 	}
 }
 
-func initLogging(levelStr string, filename string) {
-
-	var logger *slog.Logger
+func initLogging(verbosity int, filename string, json bool) (*os.File, error) {
 	level := new(slog.LevelVar)
-
 	var l slog.Level
-	switch levelStr {
-	case "debug":
+	switch verbosity {
+	case 3:
 		l = slog.LevelDebug
-	case "info":
+	case 2:
 		l = slog.LevelInfo
-	case "warn":
+	case 1:
 		l = slog.LevelWarn
-	case "error":
-		l = slog.LevelError
 	default:
-		l = slog.LevelInfo
+		l = slog.LevelError
 	}
 
 	level.Set(l)
-
-	logfile, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
-	if err != nil {
-		panic("No log file")
+	handlerOptions := &slog.HandlerOptions{
+		Level: level,
 	}
 
-	handler := slog.NewTextHandler(logfile, &slog.HandlerOptions{
-		Level: level,
-	})
+	var handler slog.Handler
+	var logfile *os.File
+	var err error
 
-	logger = slog.New(handler)
+	if filename != "" {
+		logfile, err = os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
+		if err != nil {
+			return nil, fmt.Errorf("ERROR: failed to open log file: %w", err)
+		}
+		if json {
+			handler = slog.NewJSONHandler(logfile, handlerOptions)
+		} else {
+			handler = slog.NewTextHandler(logfile, handlerOptions)
+		}
+	} else {
+		if json {
+			handler = slog.NewJSONHandler(os.Stderr, handlerOptions)
+		} else {
+			handler = slog.NewTextHandler(os.Stderr, handlerOptions)
+		}
+	}
+
+	logger := slog.New(handler)
 	slog.SetDefault(logger)
+	return logfile, nil
 }
