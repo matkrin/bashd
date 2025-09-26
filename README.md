@@ -17,7 +17,7 @@ Bash language server
 - Show `help` output as docs for keywords and builtins
 - Show man page as docs for executables
 - Show location of assignment for variables
-- Show location and body and functions
+- Show location and body for functions
 
 ### Definition
 

@@ -6,50 +6,17 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/matkrin/bashd/internal/lsp"
 	"github.com/matkrin/bashd/internal/server"
-	"mvdan.cc/sh/v3/syntax"
 )
 
-func testParser() {
-	script := `f () {
-	local a b c
-}`
-
-	// b="hello"
-	// c=(1 2 3)
-	// declare -i d
-	// e=$((5 + 3))
-	// declare -A f
-	// f[red]=apple
-	// readonly g=3.14
-	// export h="var"
-	// i=$(date)
-	// j=""
-	// echo ${k:-"default_value"}
-	// echo 'hello world' | grep wo
-	// cat file.txt
-	// echo a
-
-	reader := strings.NewReader(script)
-	parser := syntax.NewParser()
-	file, err := parser.Parse(reader, "test")
-	if err != nil {
-		fmt.Printf("%v\n", err)
-	}
-
-	syntax.DebugPrint(os.Stdout, file)
-	// syntax.Walk(file, func(node syntax.Node) bool {
-	// 	return true
-	// })
-}
+// Set at compile time
+var VERSION string
 
 func main() {
-	// testParser()
+	fmt.Println(VERSION)
 	name := "bashd"
-	version := "0.1.0a1"
 
 	logLevel := "debug"
 	logFile := filepath.Join(os.Getenv("HOME"), "Developer", "bashd", "bashd.log")
@@ -65,7 +32,7 @@ func main() {
 
 	state := server.NewState(config)
 	writer := os.Stdout
-	server := server.NewServer(name, version, state, writer)
+	server := server.NewServer(name, VERSION, state, writer)
 
 	for scanner.Scan() {
 		msg := scanner.Bytes()
