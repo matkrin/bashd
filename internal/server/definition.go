@@ -21,6 +21,7 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 	fileAst, err := ast.ParseDocument(document, uri)
 	if err != nil {
 		slog.Error(err.Error())
+		return nil
 	}
 	cursorNode := fileAst.FindNodeUnderCursor(cursor)
 	definition := fileAst.FindDefInFile(cursor)
