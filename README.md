@@ -71,11 +71,11 @@ Bash language server
 
 ### Code Actions
 
-- Fix for shellcheck lints (position depenent)
+- Fix for shellcheck lints (position dependent)
+- Add ignore comment for shellcheck lints (position dependent)
 - Fix all auto-fixable lints (only when there are fixable lints)
-- Add ignore comment for shellcheck lints
 - Add shebang if not exist
-- Put document on single line
+- Minify script
 
 ### Inlay Hint
 
@@ -91,10 +91,6 @@ Bash language server
   [90,97]) and background (`\x1b[<n>m`; n ∈ [40,47] ∪ [100,107])
 - Also alternative escapes `\e` and `\033`
 
-## TODO
-
-- Hover: flags parsing from man pages?
-- Improve ANSI parsing
 
 ## Installation
 

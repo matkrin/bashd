@@ -85,7 +85,7 @@ func singleLineCodeAction(document string, uri string) *lsp.CodeAction {
 	printer.Print(buffer, fileAst.File)
 
 	action := &lsp.CodeAction{
-		Title: "Try to put script on single line",
+		Title: "Minify script",
 		Edit: lsp.WorkspaceEdit{
 			Changes: map[string][]lsp.TextEdit{
 				uri: {
