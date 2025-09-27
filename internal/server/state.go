@@ -23,11 +23,12 @@ type Config struct {
 }
 
 type State struct {
-	Documents        map[string]Document
-	EnvVars          map[string]string
-	WorkspaceFolders []lsp.WorkspaceFolder
-	PathItems        []string
-	Config           Config
+	Documents         map[string]Document
+	EnvVars           map[string]string
+	WorkspaceFolders  []lsp.WorkspaceFolder
+	PathItems         []string
+	Config            Config
+	ShutdownRequested bool
 }
 
 func NewState(config Config) State {
@@ -38,10 +39,11 @@ func NewState(config Config) State {
 	}
 
 	return State{
-		Documents: map[string]Document{},
-		EnvVars:   envVars,
-		PathItems: pathItems,
-		Config:    config,
+		Documents:         map[string]Document{},
+		EnvVars:           envVars,
+		PathItems:         pathItems,
+		Config:            config,
+		ShutdownRequested: false,
 	}
 }
 

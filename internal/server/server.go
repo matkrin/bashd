@@ -4,27 +4,58 @@ import (
 	"encoding/json"
 	"io"
 	"log/slog"
+	"os"
+	"sync"
 
 	"github.com/matkrin/bashd/internal/lsp"
 )
 
+type queuedMessage struct {
+	method   string
+	contents []byte
+}
+
 type Server struct {
-	name    string
-	version string
-	state   State
-	writer  io.Writer
+	name         string
+	version      string
+	state        State
+	writer       io.Writer
+	messageQueue chan queuedMessage
+	wg           sync.WaitGroup
 }
 
 func NewServer(name, version string, state State, writer io.Writer) *Server {
-	return &Server{
-		name:    name,
-		version: version,
-		state:   state,
-		writer:  writer,
+	s := &Server{
+		name:         name,
+		version:      version,
+		state:        state,
+		writer:       writer,
+		messageQueue: make(chan queuedMessage),
+	}
+
+	s.wg.Add(1)
+	go s.run()
+
+	return s
+}
+
+func (s *Server) run() {
+	defer s.wg.Done()
+	for msg := range s.messageQueue {
+		s.dispatchMessage(msg.method, msg.contents)
 	}
 }
 
 func (s *Server) HandleMessage(method string, contents []byte) {
+	s.messageQueue <- queuedMessage{method: method, contents: contents}
+}
+
+func (s *Server) Stop() {
+	close(s.messageQueue)
+	s.wg.Wait()
+}
+
+func (s *Server) dispatchMessage(method string, contents []byte) {
 	slog.Info("Received message", "method", method)
 
 	switch method {
@@ -87,7 +118,9 @@ func (s *Server) HandleMessage(method string, contents []byte) {
 			slog.Error("Could not parse request", "method", method)
 		}
 
-		slog.Info("Shutdown server")
+		slog.Info("Received shutdown request")
+		s.state.ShutdownRequested = true
+
 		response := lsp.ShutdownResponse{
 			Response: lsp.Response{
 				RPC: lsp.RPC_VERSION,
@@ -96,6 +129,15 @@ func (s *Server) HandleMessage(method string, contents []byte) {
 			Result: nil,
 		}
 		writeResponse(s.writer, response)
+
+	case "exit":
+		slog.Info("Exiting")
+		if s.state.ShutdownRequested {
+			os.Exit(0)
+		} else {
+			slog.Warn("Exiting without shutdown preceding shutdown request")
+			os.Exit(1)
+		}
 
 	case "textDocument/didOpen":
 		var request lsp.DidOpenTextDocumentNotification
@@ -282,3 +324,4 @@ func writeResponse(writer io.Writer, msg any) {
 	// logger.Info(reply)
 	writer.Write([]byte(reply))
 }
+
