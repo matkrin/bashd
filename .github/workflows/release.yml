@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*.*.*a*'
+
+jobs:
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        run: |
+          gh release create ${{ github.ref_name }} --draft --verify-tag --title "${{ github.ref_name }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    name: Build and Upload Binaries
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+          - os: ubuntu-latest
+            goos: linux
+            goarch: arm64
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+          - os: windows-latest
+            goos: windows
+            goarch: 386
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+
+    env:
+      RELEASE_FOLDER: "${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.goos }}-${{ matrix.goarch }}"
+      BINARY_NAME: "${{ github.event.repository.name }}${{ matrix.os == 'windows-latest' && '.exe' || '' }}"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Install make (for Windows)
+        if: matrix.os == 'windows-latest'
+        run: choco install make
+
+      - name: Set environment variables
+        run: |
+          echo "GOOS=${{ matrix.goos }}" >> $GITHUB_ENV
+          echo "GOARCH=${{ matrix.goarch }}" >> $GITHUB_ENV
+
+      - name: Build with Makefile
+        run: make build
+
+      - name: Prepare Release Folder
+        run: |
+          mkdir -p "${{ env.RELEASE_FOLDER }}"
+          cp bin/${{ env.BINARY_NAME }} "${{ env.RELEASE_FOLDER }}/"
+          cp LICENSE "${{ env.RELEASE_FOLDER }}/" || true
+          cp README.md "${{ env.RELEASE_FOLDER }}/" || true
+
+      - name: Compress Release Folder
+        run: |
+          if [[ "${{ matrix.goos }}" == "windows" ]]; then
+            7z a "${{ env.RELEASE_FOLDER }}.zip" "${{ env.RELEASE_FOLDER }}"
+          else
+            tar -czvf "${{ env.RELEASE_FOLDER }}.tar.gz" "${{ env.RELEASE_FOLDER }}"
+          fi
+
+      - name: Upload Release Asset
+        run: |
+          if [[ "${{ matrix.goos }}" == "windows" ]]; then
+            gh release upload ${{ github.ref_name }} "${{ env.RELEASE_FOLDER }}.zip"
+          else
+            gh release upload ${{ github.ref_name }} "${{ env.RELEASE_FOLDER }}.tar.gz"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
