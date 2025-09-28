@@ -71,6 +71,7 @@ jobs:
         run: make build
 
       - name: Prepare Release Folder
+        shell: bash
         run: |
           mkdir -p "${{ env.RELEASE_FOLDER }}"
           cp bin/${{ env.BINARY_NAME }} "${{ env.RELEASE_FOLDER }}/"
@@ -78,6 +79,7 @@ jobs:
           cp README.md "${{ env.RELEASE_FOLDER }}/" || true
 
       - name: Compress Release Folder
+        shell: bash
         run: |
           if [[ "${{ matrix.goos }}" == "windows" ]]; then
             7z a "${{ env.RELEASE_FOLDER }}.zip" "${{ env.RELEASE_FOLDER }}"
@@ -86,6 +88,7 @@ jobs:
           fi
 
       - name: Upload Release Asset
+        shell: bash
         run: |
           if [[ "${{ matrix.goos }}" == "windows" ]]; then
             gh release upload ${{ github.ref_name }} "${{ env.RELEASE_FOLDER }}.zip"
