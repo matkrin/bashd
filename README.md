@@ -96,8 +96,6 @@ linting.
 
 ## Installation
 
-### Install via go install
-
 If you have Go installed (v1.17+), you can install bashd directly with:
 
 ```sh
@@ -111,20 +109,8 @@ This will download, build, and install the binary to your `GOBIN` directory
 export PATH="$PATH:$(go env GOPATH)/bin"
 ```
 
-### Download Prebuilt Binary
-
-Precompiled binaries are available for Linux, macOS, and Windows in the Releases
-section.
-
-1. Go to: https://github.com/matkrin/bashd/releases
-2. Download the binary for your platform.
-3. Make it executable (if needed):
-
-```sh
-chmod +x bashd
-```
-
-4. Make sure to move it into a directory in your systems's `PATH`.
+Additionally, precompiled binaries are available for Linux, macOS, and Windows
+in the [releases section](https://github.com/matkrin/bashd/releases).
 
 ## Setup
 

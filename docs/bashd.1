@@ -1,0 +1,207 @@
+.TH "BASHD" "1" "2025-09-28" "bashd Manual" "User Commands"
+.SH NAME
+.PD
+.PP
+\fBbashd\fP \- Bash language server
+.SH SYNOPSIS
+.PD
+.PP
+bashd [\fIOPTIONS\fP]
+.SH DESCRIPTION
+.PD
+.PP
+bashd is a Language Server Protocol (LSP) implementation for Bash, built using
+the Go sh package and featuring ShellCheck integration for real\-time linting\&.
+.SH OPTIONS
+.TP
+\fB-j\fP, \fB--json\fP
+Log in JSON format\&.
+
+.TP
+\fB-l\fP, \fB--logfile\fP \fIFILE\fP
+Log to \fIFILE\fP instead of stderr\&.
+
+.TP
+\fB-v\fP, \fB--verbose\fP
+Increase log message verbosity with repeated usage up to \fB-vvv\fP\&.
+
+.TP
+\fB-h\fP, \fB--help\fP
+Print a help message\&.
+
+.TP
+\fB-V\fP, \fB--version\fP
+Print the version\&.
+
+.SH FEATURES
+.SS Diagnostics
+
+.RS 2
+.PD 0
+.IP \(bu 2
+Check if sourced file exists
+.IP \(bu 2
+Parser errors
+.IP \(bu 2
+ShellCheck lints
+.IP \(bu 2
+For document on document change
+.IP \(bu 2
+For workspace on initialize
+
+.RE
+.SS Hover
+
+.RS 2
+.PD 0
+.IP \(bu 2
+Show \fBhelp\fP output as docs for keywords and builtins
+.IP \(bu 2
+Show man page as docs for executables
+.IP \(bu 2
+Show location of assignment for variables
+.IP \(bu 2
+Show location and body for functions
+
+.RE
+.SS Definition
+
+.RS 2
+.PD 0
+.IP \(bu 2
+Variable assignment in document and sourced files
+.IP \(bu 2
+Function declaration in document and sourced files
+.IP \(bu 2
+Sourced file itself
+
+.RE
+.SS References
+
+.RS 2
+.PD 0
+.IP \(bu 2
+Function calls in current document and sourced files
+.IP \(bu 2
+Variable usage in current document and sourced files
+.IP \(bu 2
+Function calls in workspace file which source the current file
+.IP \(bu 2
+Variable usage in workspace file which source the current file
+.IP \(bu 2
+Depending on \fCReferenceContext.includeDeclaration\fP function declarations and
+variable assignments
+
+.RE
+.SS Rename
+
+.RS 2
+.PD 0
+.IP \(bu 2
+Function declarations and calls in document and sourced files
+.IP \(bu 2
+Variable assignments and usage in document and sourced files
+.IP \(bu 2
+Function declarations and calls in workspace file which source the current
+file
+.IP \(bu 2
+Variable assignments and usage in workspace file which source the current file
+
+.RE
+.SS Completion
+
+.RS 2
+.PD 0
+.IP \(bu 2
+Variables declared in document (on \fI$\fP and \fI{\fP)
+.IP \(bu 2
+Functions declared in document
+.IP \(bu 2
+Environment variables (on \fI$\fP and \fI{\fP)
+.IP \(bu 2
+Keywords
+.IP \(bu 2
+Executables in \fIPATH\fP
+.IP \(bu 2
+Resolve with \fBhelp\fP output as docs for keywords and builtins
+.IP \(bu 2
+Resolve with man page as docs for executables
+
+.RE
+.SS Document Symbols
+
+.RS 2
+.PD 0
+.IP \(bu 2
+Variable assignment in document
+.IP \(bu 2
+Function declaration in document
+
+.RE
+.SS Workspace Symbols
+
+.RS 2
+.PD 0
+.IP \(bu 2
+Variable assignment in workspace \&.sh files and scripts without extension but
+shebang
+.IP \(bu 2
+Function declaration in workspace \&.sh files and scripts without extension but
+shebang
+
+.RE
+.SS Formatting
+
+.RS 2
+.PD 0
+.IP \(bu 2
+Entire file
+.IP \(bu 2
+Range formatting (as long as range covers nodes that can be formatted)
+
+.RE
+.SS Code Actions
+
+.RS 2
+.PD 0
+.IP \(bu 2
+Fix for shellcheck lints (position dependent)
+.IP \(bu 2
+Add ignore comment for shellcheck lints (position dependent)
+.IP \(bu 2
+Fix all auto\-fixable lints (only when there are fixable lints)
+.IP \(bu 2
+Add shebang if not exist
+.IP \(bu 2
+Minify script
+
+.RE
+.SS Inlay Hint
+
+.RS 2
+.PD 0
+.IP \(bu 2
+SGR ANSI escapes
+
+.RE
+.SS Document Colors
+
+.RS 2
+.PD 0
+.IP \(bu 2
+256\-color (8\-bit) foreground (\fC\x1b[38;5;<n>m\fP) and background
+(\fC\x1b[48;5;<n>m\fP)
+.IP \(bu 2
+True color (24\-bit) foreground(\fC\x1b[38;2;<r>;<g>;<b>m\fP) and background
+(\fC\x1b[48;2;<r>;<g>;<b>m\fP)
+.IP \(bu 2
+3\-bit / 4\-bit color foreground (\fC\x1b[<n>m\fP; n ∈ [30,37] ∪ [90,97]) and
+background (\fC\x1b[<n>m\fP; n ∈ [40,47] ∪ [100,107])
+.IP \(bu 2
+Also alternative escapes \fC\e\fP and \fC\033\fP
+
+.RE
+.SH SEE ALSO
+.PD
+.PP
+sh(1), bash(1), shellcheck(1)
