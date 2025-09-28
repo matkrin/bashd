@@ -1,6 +1,9 @@
 # bashd
 
-Bash language server
+bashd is a Language Server Protocol (LSP) implementation for Bash, built using
+the Go [sh](https://github.com/mvdan/sh/) package and featuring
+[ShellCheck](https://github.com/koalaman/shellcheck) integration for real-time
+linting.
 
 ## Features
 
@@ -8,7 +11,7 @@ Bash language server
 
 - Check if sourced file exists
 - [Parser](https://github.com/mvdan/sh/) errors
-- [shellcheck](https://github.com/koalaman/shellcheck) integration
+- [ShellCheck](https://github.com/koalaman/shellcheck) lints
 - For document on document change
 - For workspace on initialize
 
@@ -91,8 +94,37 @@ Bash language server
   [90,97]) and background (`\x1b[<n>m`; n ∈ [40,47] ∪ [100,107])
 - Also alternative escapes `\e` and `\033`
 
-
 ## Installation
+
+### Install via go install
+
+If you have Go installed (v1.17+), you can install bashd directly with:
+
+```sh
+go install github.com/matkrin/bashd/cmd/bashd@latest
+```
+
+This will download, build, and install the binary to your `GOBIN` directory
+(usually `$HOME/go/bin`). Make sure `GOBIN` is in your system’s `PATH`:
+
+```sh
+export PATH="$PATH:$(go env GOPATH)/bin"
+```
+
+### Download Prebuilt Binary
+
+Precompiled binaries are available for Linux, macOS, and Windows in the Releases
+section.
+
+1. Go to: https://github.com/matkrin/bashd/releases
+2. Download the binary for your platform.
+3. Make it executable (if needed):
+
+```sh
+chmod +x bashd
+```
+
+4. Make sure to move it into a directory in your systems's `PATH`.
 
 ## Setup
 
