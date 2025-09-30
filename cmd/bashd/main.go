@@ -55,7 +55,9 @@ func main() {
 	server := server.NewServer(name, VERSION, state, writer)
 
 	for scanner.Scan() {
-		msg := scanner.Bytes()
+		msg := make([]byte, len(scanner.Bytes()))
+		copy(msg, scanner.Bytes())
+
 		method, contents, err := lsp.DecodeMessage(msg)
 		if err != nil {
 			slog.Error("ERROR decoding message", "err", err)
