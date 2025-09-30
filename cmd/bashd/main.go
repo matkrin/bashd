@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/matkrin/bashd/internal/lsp"
 	"github.com/matkrin/bashd/internal/server"
@@ -48,6 +49,7 @@ func main() {
 
 	config := server.Config{
 		ExcludeDirs: []string{".git", ".venv", "node_modules"},
+		DiagnosticDebounceTime: 200 * time.Millisecond,
 	}
 
 	state := server.NewState(config)

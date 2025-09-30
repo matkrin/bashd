@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/matkrin/bashd/internal/lsp"
 	"github.com/matkrin/bashd/internal/utils"
@@ -19,7 +20,8 @@ type Document struct {
 }
 
 type Config struct {
-	ExcludeDirs []string
+	ExcludeDirs            []string
+	DiagnosticDebounceTime time.Duration
 }
 
 type State struct {

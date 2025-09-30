@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/matkrin/bashd/internal/lsp"
 )
@@ -16,12 +17,14 @@ type queuedMessage struct {
 }
 
 type Server struct {
-	name         string
-	version      string
-	state        State
-	writer       io.Writer
-	messageQueue chan queuedMessage
-	wg           sync.WaitGroup
+	name            string
+	version         string
+	state           State
+	writer          io.Writer
+	messageQueue    chan queuedMessage
+	wg              sync.WaitGroup
+	diagnosticTimer *time.Timer
+	mu              sync.Mutex
 }
 
 func NewServer(name, version string, state State, writer io.Writer) *Server {
@@ -75,7 +78,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 
 		workspaceDiagnostics := findDiagnosticsWorkspace(&s.state)
 		for uri, diagnostics := range workspaceDiagnostics {
-			pushDiagnostic(s.writer, uri, diagnostics)
+			s.pushDiagnostic(uri, diagnostics)
 		}
 
 		capabilities := lsp.ServerCapabilities{
@@ -110,7 +113,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		}
 
 		msg := lsp.NewInitializeResponse(request.ID, &capabilities, &info)
-		writeResponse(s.writer, msg)
+		s.writeResponse(msg)
 
 	case "shutdown":
 		var request lsp.ShutdownRequest
@@ -128,7 +131,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 			},
 			Result: nil,
 		}
-		writeResponse(s.writer, response)
+		s.writeResponse(response)
 
 	case "exit":
 		slog.Info("Exiting")
@@ -151,7 +154,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		s.state.OpenDocument(uri, documentText)
 
 		diagnostics := findDiagnostics(documentText, uri, s.state.EnvVars)
-		pushDiagnostic(s.writer, request.Params.TextDocument.URI, diagnostics)
+		s.pushDiagnostic(request.Params.TextDocument.URI, diagnostics)
 
 	case "textDocument/didChange":
 		var request lsp.TextDocumentDidChangeNotification
@@ -166,9 +169,18 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 			s.state.UpdateDocument(uri, change.Text)
 		}
 
-		documentText := s.state.Documents[uri].Text
-		diagnostics := findDiagnostics(documentText, uri, s.state.EnvVars)
-		pushDiagnostic(s.writer, request.Params.TextDocument.URI, diagnostics)
+		s.mu.Lock()
+		if s.diagnosticTimer != nil {
+			s.diagnosticTimer.Stop()
+		}
+
+		debounceTime := s.state.Config.DiagnosticDebounceTime
+		s.diagnosticTimer = time.AfterFunc(debounceTime, func() {
+			documentText := s.state.Documents[uri].Text
+			diagnostics := findDiagnostics(documentText, uri, s.state.EnvVars)
+			s.pushDiagnostic(request.Params.TextDocument.URI, diagnostics)
+		})
+		s.mu.Unlock()
 
 	case "textDocument/hover":
 		var request lsp.HoverRequest
@@ -177,7 +189,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		}
 		response := handleHover(&request, &s.state)
 		if response != nil {
-			writeResponse(s.writer, response)
+			s.writeResponse(response)
 		}
 
 	case "textDocument/definition":
@@ -188,7 +200,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		}
 		response := handleDefinition(&request, &s.state)
 		if response != nil {
-			writeResponse(s.writer, response)
+			s.writeResponse(response)
 		}
 
 	case "textDocument/references":
@@ -198,7 +210,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		}
 		response := handleReferences(&request, &s.state)
 		if response != nil {
-			writeResponse(s.writer, response)
+			s.writeResponse(response)
 		}
 
 	case "textDocument/completion":
@@ -208,7 +220,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		}
 		response := handleCompletion(&request, &s.state)
 		if response != nil {
-			writeResponse(s.writer, response)
+			s.writeResponse(response)
 		}
 
 	case "completionItem/resolve":
@@ -218,7 +230,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		}
 		response := handleCompletionItemResolve(&request)
 		if response != nil {
-			writeResponse(s.writer, response)
+			s.writeResponse(response)
 		}
 
 	case "textDocument/documentSymbol":
@@ -228,7 +240,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		}
 		response := handleDocumentSymbol(&request, &s.state)
 		if response != nil {
-			writeResponse(s.writer, response)
+			s.writeResponse(response)
 		}
 
 	case "textDocument/prepareRename":
@@ -238,7 +250,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		}
 		response := handlePrepareRename(&request, &s.state)
 		if response != nil {
-			writeResponse(s.writer, response)
+			s.writeResponse(response)
 		}
 
 	case "textDocument/rename":
@@ -248,7 +260,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		}
 		response := handleRename(&request, &s.state)
 		if response != nil {
-			writeResponse(s.writer, response)
+			s.writeResponse(response)
 		}
 
 	case "workspace/symbol":
@@ -258,7 +270,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		}
 		response := handleWorkspaceSymbol(&request, &s.state)
 		if response != nil {
-			writeResponse(s.writer, response)
+			s.writeResponse(response)
 		}
 
 	case "textDocument/formatting":
@@ -268,7 +280,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		}
 		response := handleFormatting(&request, &s.state)
 		if response != nil {
-			writeResponse(s.writer, response)
+			s.writeResponse(response)
 		}
 
 	case "textDocument/rangeFormatting":
@@ -278,7 +290,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		}
 		response := handleRangeFormatting(&request, &s.state)
 		if response != nil {
-			writeResponse(s.writer, response)
+			s.writeResponse(response)
 		}
 
 	case "textDocument/codeAction":
@@ -288,7 +300,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		}
 		response := handleCodeAction(&request, &s.state)
 		if response != nil {
-			writeResponse(s.writer, response)
+			s.writeResponse(response)
 		}
 
 	case "textDocument/documentColor":
@@ -298,7 +310,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		}
 		response := handleDocumentColor(&request, &s.state)
 		if response != nil {
-			writeResponse(s.writer, response)
+			s.writeResponse(response)
 		}
 
 	case "textDocument/inlayHint":
@@ -308,20 +320,22 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		}
 		response := handleInlayHint(&request, &s.state)
 		if response != nil {
-			writeResponse(s.writer, response)
+			s.writeResponse(response)
 		}
 
 	}
 }
 
-func pushDiagnostic(writer io.Writer, uri string, diagnostics []lsp.Diagnostic) {
+func (s *Server) pushDiagnostic(uri string, diagnostics []lsp.Diagnostic) {
 	notification := lsp.NewDiagnosticNotification(uri, diagnostics)
-	writeResponse(writer, notification)
+	s.writeResponse(notification)
 }
 
-func writeResponse(writer io.Writer, msg any) {
+func (s *Server) writeResponse(msg any) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	reply := lsp.EncodeMessage(msg)
 	// logger.Info(reply)
-	writer.Write([]byte(reply))
+	s.writer.Write([]byte(reply))
 }
-
