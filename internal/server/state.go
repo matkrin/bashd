@@ -49,15 +49,9 @@ func NewState(config Config) State {
 	}
 }
 
-func (s *State) OpenDocument(uri, text string) {
+func (s *State) SetDocument(uri, documentText string) {
 	s.Documents[uri] = Document{
-		Text:         text,
-		SourcedFiles: []Document{},
-	}
-}
-func (s *State) UpdateDocument(uri, text string) {
-	s.Documents[uri] = Document{
-		Text:         text,
+		Text:         documentText,
 		SourcedFiles: []Document{},
 	}
 }

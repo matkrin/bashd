@@ -151,7 +151,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		uri := request.Params.TextDocument.URI
 		slog.Info("Opened document", "URI", uri)
 		documentText := request.Params.TextDocument.Text
-		s.state.OpenDocument(uri, documentText)
+		s.state.SetDocument(uri, documentText)
 
 		diagnostics := findDiagnostics(documentText, uri, s.state.EnvVars)
 		s.pushDiagnostic(request.Params.TextDocument.URI, diagnostics)
@@ -166,7 +166,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		slog.Info("Changed document", "URI", uri)
 
 		for _, change := range request.Params.ContentChanges {
-			s.state.UpdateDocument(uri, change.Text)
+			s.state.SetDocument(uri, change.Text)
 		}
 
 		s.mu.Lock()
