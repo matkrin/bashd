@@ -22,8 +22,11 @@ func UriToPath(uri string) (string, error) {
 
 // Converts an absolute path to and URI
 func PathToURI(path string) string {
-	uri := url.URL{Scheme: "file", Path: filepath.ToSlash(path)}
-	return uri.String()
+	path = filepath.ToSlash(path)
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
+	}
+	return "file://" + path
 }
 
 // Get the leading whitespace (spaces or tabs) from a line
