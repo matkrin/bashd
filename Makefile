@@ -13,5 +13,8 @@ endif
 build:
 	GOOS=$(GOOS) GOARCH=$(GOARCH) go build -ldflags=$(LDFLAGS) -o bin/$(BINNAME)$(EXT) cmd/$(BINNAME)/main.go
 
+watch:
+	./scripts/watch.sh
+
 test:
 	@go test ./...
