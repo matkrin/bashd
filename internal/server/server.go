@@ -168,6 +168,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		for _, change := range request.Params.ContentChanges {
 			s.state.SetDocument(uri, change.Text)
 		}
+		documentText := s.state.Documents[uri].Text
 
 		s.mu.Lock()
 		if s.diagnosticTimer != nil {
@@ -176,7 +177,6 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 
 		debounceTime := s.state.Config.DiagnosticDebounceTime
 		s.diagnosticTimer = time.AfterFunc(debounceTime, func() {
-			documentText := s.state.Documents[uri].Text
 			diagnostics := findDiagnostics(documentText, uri, s.state.EnvVars)
 			s.pushDiagnostic(request.Params.TextDocument.URI, diagnostics)
 		})

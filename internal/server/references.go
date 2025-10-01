@@ -22,7 +22,8 @@ func handleReferences(request *lsp.ReferencesRequest, state *State) *lsp.Referen
 	documentText := state.Documents[uri].Text
 	fileAst, err := ast.ParseDocument(documentText, uri)
 	if err != nil {
-		slog.Error(err.Error())
+		slog.Error("Could not parse document", "err", err.Error())
+		return nil
 	}
 	referenceNodes := fileAst.FindRefsInFile(cursor, params.Context.IncludeDeclaration)
 
