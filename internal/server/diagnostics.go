@@ -65,12 +65,12 @@ func diagnosticParseError(err error) lsp.Diagnostic {
 
 	switch e := err.(type) {
 	case syntax.ParseError:
-		line = e.Pos.Line()
-		col = e.Pos.Col()
+		line = e.Pos.Line() - 1
+		col = e.Pos.Col() - 1
 		message = e.Text
 	case syntax.LangError:
-		line = e.Pos.Line()
-		col = e.Pos.Col()
+		line = e.Pos.Line() - 1
+		col = e.Pos.Col() - 1
 		message = e.Feature
 	case syntax.QuoteError:
 		message = e.Message
