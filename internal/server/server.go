@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"os"
@@ -49,280 +50,61 @@ func (s *Server) run() {
 	}
 }
 
-func (s *Server) HandleMessage(method string, contents []byte) {
-	s.messageQueue <- queuedMessage{method: method, contents: contents}
-}
-
 func (s *Server) Stop() {
 	close(s.messageQueue)
 	s.wg.Wait()
 }
 
+func (s *Server) HandleMessage(method string, contents []byte) {
+	s.messageQueue <- queuedMessage{method: method, contents: contents}
+}
+
 func (s *Server) dispatchMessage(method string, contents []byte) {
 	slog.Info("Received message", "method", method)
-
+	var err error
 	switch method {
 	case "initialize":
-		var request lsp.InitializeRequest
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-		}
-
-		slog.Info("Connected to client",
-			"name", request.Params.ClientInfo.Name,
-			"version", request.Params.ClientInfo.Version,
-		)
-
-		s.state.WorkspaceFolders = request.Params.WorkspaceFolders
-		slog.Info("Workspace folders set", "workerspaceFolders", s.state.WorkspaceFolders)
-
-		workspaceDiagnostics := findDiagnosticsWorkspace(&s.state)
-		for uri, diagnostics := range workspaceDiagnostics {
-			s.pushDiagnostic(uri, diagnostics)
-		}
-
-		capabilities := lsp.ServerCapabilities{
-			TextDocumentSync:                1,
-			HoverProvider:                   true,
-			DefinitionProvider:              true,
-			DeclarationProvider:             false,
-			ReferencesProvider:              true,
-			DocumentSymbolProvider:          true,
-			WorkspaceSymbolProvider:         true,
-			DocumentFormattingProvider:      true,
-			DocumentRangeFormattingProvider: true,
-			CodeActionProvider:              true,
-			ColorProvider:                   true,
-			InlayHintProvider:               true,
-			RenameProvider: lsp.RenameOptions{
-				PrepareProvider: true,
-			},
-			CompletionProvider: lsp.CompletionOptions{
-				TriggerCharacters: []string{"$", "{"},
-				ResolveProvider:   true,
-			},
-			DiagnosticProvider: lsp.DiagnosticOptions{
-				Identifier:            nil,
-				InterFileDependencies: false,
-				WorkspaceDiagnostics:  false,
-			},
-		}
-		info := lsp.ServerInfo{
-			Name:    "bashd",
-			Version: "0.1.0a1",
-		}
-
-		msg := lsp.NewInitializeResponse(request.ID, &capabilities, &info)
-		s.writeResponse(msg)
-
+		err = s.onInitialize(contents)
 	case "shutdown":
-		var request lsp.ShutdownRequest
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-		}
-
-		slog.Info("Received shutdown request")
-		s.state.ShutdownRequested = true
-
-		response := lsp.ShutdownResponse{
-			Response: lsp.Response{
-				RPC: lsp.RPC_VERSION,
-				ID:  &request.ID,
-			},
-			Result: nil,
-		}
-		s.writeResponse(response)
-
+		err = s.onShutdown(contents)
 	case "exit":
-		slog.Info("Exiting")
-		if s.state.ShutdownRequested {
-			os.Exit(0)
-		} else {
-			slog.Warn("Exiting without shutdown preceding shutdown request")
-			os.Exit(1)
-		}
-
+		s.onExit()
 	case "textDocument/didOpen":
-		var request lsp.DidOpenTextDocumentNotification
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-		}
-
-		uri := request.Params.TextDocument.URI
-		slog.Info("Opened document", "URI", uri)
-		documentText := request.Params.TextDocument.Text
-		s.state.SetDocument(uri, documentText)
-
-		diagnostics := findDiagnostics(documentText, uri, s.state.EnvVars)
-		s.pushDiagnostic(request.Params.TextDocument.URI, diagnostics)
-
+		err = s.onTextDocumentDidOpen(contents)
 	case "textDocument/didChange":
-		var request lsp.TextDocumentDidChangeNotification
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-		}
-
-		uri := request.Params.TextDocument.URI
-		slog.Info("Changed document", "URI", uri)
-
-		for _, change := range request.Params.ContentChanges {
-			s.state.SetDocument(uri, change.Text)
-		}
-		documentText := s.state.Documents[uri].Text
-
-		s.mu.Lock()
-		if s.diagnosticTimer != nil {
-			s.diagnosticTimer.Stop()
-		}
-
-		debounceTime := s.state.Config.DiagnosticDebounceTime
-		s.diagnosticTimer = time.AfterFunc(debounceTime, func() {
-			diagnostics := findDiagnostics(documentText, uri, s.state.EnvVars)
-			s.pushDiagnostic(request.Params.TextDocument.URI, diagnostics)
-		})
-		s.mu.Unlock()
-
+		err = s.onTextDocumentDidChange(contents)
 	case "textDocument/hover":
-		var request lsp.HoverRequest
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-		}
-		response := handleHover(&request, &s.state)
-		if response != nil {
-			s.writeResponse(response)
-		}
-
+		err = s.onTextDocumentHover(contents)
 	case "textDocument/definition":
-		var request lsp.DefinitionRequest
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-
-		}
-		response := handleDefinition(&request, &s.state)
-		if response != nil {
-			s.writeResponse(response)
-		}
-
+		err = s.onTextDocumentDefinition(contents)
 	case "textDocument/references":
-		var request lsp.ReferencesRequest
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-		}
-		response := handleReferences(&request, &s.state)
-		if response != nil {
-			s.writeResponse(response)
-		}
-
+		err = s.onTextDocumentReferences(contents)
 	case "textDocument/completion":
-		var request lsp.CompletionRequest
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-		}
-		response := handleCompletion(&request, &s.state)
-		if response != nil {
-			s.writeResponse(response)
-		}
-
+		err = s.onTextDocumentCompletion(contents)
 	case "completionItem/resolve":
-		var request lsp.CompletionItemResolveRequest
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-		}
-		response := handleCompletionItemResolve(&request)
-		if response != nil {
-			s.writeResponse(response)
-		}
-
+		err = s.onCompletionItemResolve(contents)
 	case "textDocument/documentSymbol":
-		var request lsp.DocumentSymbolsRequest
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-		}
-		response := handleDocumentSymbol(&request, &s.state)
-		if response != nil {
-			s.writeResponse(response)
-		}
-
+		err = s.onTextDocumentDocumentSymbol(contents)
 	case "textDocument/prepareRename":
-		var request lsp.PrepareRenameRequest
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-		}
-		response := handlePrepareRename(&request, &s.state)
-		if response != nil {
-			s.writeResponse(response)
-		}
-
+		err = s.onTextDocumentPerpareRename(contents)
 	case "textDocument/rename":
-		var request lsp.RenameRequest
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-		}
-		response := handleRename(&request, &s.state)
-		if response != nil {
-			s.writeResponse(response)
-		}
-
+		err = s.onTextDocumentRename(contents)
 	case "workspace/symbol":
-		var request lsp.WorkspaceSymbolRequest
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-		}
-		response := handleWorkspaceSymbol(&request, &s.state)
-		if response != nil {
-			s.writeResponse(response)
-		}
-
+		err = s.onWorkspaceSymbol(contents)
 	case "textDocument/formatting":
-		var request lsp.FormattingRequest
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-		}
-		response := handleFormatting(&request, &s.state)
-		if response != nil {
-			s.writeResponse(response)
-		}
-
+		err = s.onTextDocumentFormatting(contents)
 	case "textDocument/rangeFormatting":
-		var request lsp.RangeFormattingRequest
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-		}
-		response := handleRangeFormatting(&request, &s.state)
-		if response != nil {
-			s.writeResponse(response)
-		}
-
+		err = s.onTextDocumentRangeFormatting(contents)
 	case "textDocument/codeAction":
-		var request lsp.CodeActionRequest
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-		}
-		response := handleCodeAction(&request, &s.state)
-		if response != nil {
-			s.writeResponse(response)
-		}
-
+		err = s.onTextDocumentCodeAction(contents)
 	case "textDocument/documentColor":
-		var request lsp.DocumentColorRequest
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-		}
-		response := handleDocumentColor(&request, &s.state)
-		if response != nil {
-			s.writeResponse(response)
-		}
-
+		err = s.onTextDocumentDocumentColor(contents)
 	case "textDocument/inlayHint":
-		var request lsp.InlayHintRequest
-		if err := json.Unmarshal(contents, &request); err != nil {
-			slog.Error("Could not parse request", "method", method)
-		}
-		response := handleInlayHint(&request, &s.state)
-		if response != nil {
-			s.writeResponse(response)
-		}
+		err = s.onTextDocumentInlayHint(contents)
+	}
 
+	if err != nil {
+		slog.Error("ERROR", "method", method, "err", err)
 	}
 }
 
@@ -338,4 +120,303 @@ func (s *Server) writeResponse(msg any) {
 	reply := lsp.EncodeMessage(msg)
 	// logger.Info(reply)
 	s.writer.Write([]byte(reply))
+}
+
+func (s *Server) onInitialize(contents []byte) error {
+	var request lsp.InitializeRequest
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+
+	slog.Info("ClientInfo", "name", request.Params.ClientInfo.Name,
+		"version", request.Params.ClientInfo.Version)
+
+	s.state.WorkspaceFolders = request.Params.WorkspaceFolders
+	slog.Info("Workspace folders set", "workerspaceFolders", s.state.WorkspaceFolders)
+
+	workspaceDiagnostics := findDiagnosticsWorkspace(&s.state)
+	for uri, diagnostics := range workspaceDiagnostics {
+		s.pushDiagnostic(uri, diagnostics)
+	}
+
+	capabilities := lsp.ServerCapabilities{
+		TextDocumentSync:                1,
+		HoverProvider:                   true,
+		DefinitionProvider:              true,
+		DeclarationProvider:             false,
+		ReferencesProvider:              true,
+		DocumentSymbolProvider:          true,
+		WorkspaceSymbolProvider:         true,
+		DocumentFormattingProvider:      true,
+		DocumentRangeFormattingProvider: true,
+		CodeActionProvider:              true,
+		ColorProvider:                   true,
+		InlayHintProvider:               true,
+		RenameProvider: lsp.RenameOptions{
+			PrepareProvider: true,
+		},
+		CompletionProvider: lsp.CompletionOptions{
+			TriggerCharacters: []string{"$", "{"},
+			ResolveProvider:   true,
+		},
+		DiagnosticProvider: lsp.DiagnosticOptions{
+			Identifier:            nil,
+			InterFileDependencies: false,
+			WorkspaceDiagnostics:  false,
+		},
+	}
+	info := lsp.ServerInfo{
+		Name:    "bashd",
+		Version: "0.1.0a1",
+	}
+
+	msg := lsp.NewInitializeResponse(request.ID, &capabilities, &info)
+	s.writeResponse(msg)
+
+	return nil
+}
+
+func (s *Server) onShutdown(contents []byte) error {
+	var request lsp.ShutdownRequest
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+
+	slog.Info("Received shutdown request")
+	s.state.ShutdownRequested = true
+
+	response := lsp.ShutdownResponse{
+		Response: lsp.Response{
+			RPC: lsp.RPC_VERSION,
+			ID:  &request.ID,
+		},
+		Result: nil,
+	}
+	s.writeResponse(response)
+
+	return nil
+}
+
+func (s *Server) onExit() {
+	slog.Info("Exiting")
+	if s.state.ShutdownRequested {
+		os.Exit(0)
+	} else {
+		slog.Warn("Exiting without shutdown preceding shutdown request")
+		os.Exit(1)
+	}
+}
+
+func (s *Server) onTextDocumentDidOpen(contents []byte) error {
+	var request lsp.DidOpenTextDocumentNotification
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+
+	uri := request.Params.TextDocument.URI
+	slog.Info("Opened document", "URI", uri)
+	documentText := request.Params.TextDocument.Text
+	s.state.SetDocument(uri, documentText)
+
+	diagnostics := findDiagnostics(documentText, uri, s.state.EnvVars)
+	s.pushDiagnostic(request.Params.TextDocument.URI, diagnostics)
+
+	return nil
+}
+
+func (s *Server) onTextDocumentDidChange(contents []byte) error {
+	var request lsp.TextDocumentDidChangeNotification
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+
+	uri := request.Params.TextDocument.URI
+	slog.Info("Changed document", "URI", uri)
+
+	for _, change := range request.Params.ContentChanges {
+		s.state.SetDocument(uri, change.Text)
+	}
+	documentText := s.state.Documents[uri].Text
+
+	s.mu.Lock()
+	if s.diagnosticTimer != nil {
+		s.diagnosticTimer.Stop()
+	}
+
+	debounceTime := s.state.Config.DiagnosticDebounceTime
+	s.diagnosticTimer = time.AfterFunc(debounceTime, func() {
+		diagnostics := findDiagnostics(documentText, uri, s.state.EnvVars)
+		s.pushDiagnostic(request.Params.TextDocument.URI, diagnostics)
+	})
+	s.mu.Unlock()
+
+	return nil
+}
+
+func (s *Server) onTextDocumentHover(contents []byte) error {
+	var request lsp.HoverRequest
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+	response := handleHover(&request, &s.state)
+	if response != nil {
+		s.writeResponse(response)
+	}
+	return nil
+}
+
+func (s *Server) onTextDocumentDefinition(contents []byte) error {
+	var request lsp.DefinitionRequest
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+	response := handleDefinition(&request, &s.state)
+	if response != nil {
+		s.writeResponse(response)
+	}
+	return nil
+}
+
+func (s *Server) onTextDocumentReferences(contents []byte) error {
+	var request lsp.ReferencesRequest
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+	response := handleReferences(&request, &s.state)
+	if response != nil {
+		s.writeResponse(response)
+	}
+	return nil
+}
+
+func (s *Server) onTextDocumentCompletion(contents []byte) error {
+	var request lsp.CompletionRequest
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+	response := handleCompletion(&request, &s.state)
+	if response != nil {
+		s.writeResponse(response)
+	}
+	return nil
+}
+
+func (s *Server) onCompletionItemResolve(contents []byte) error {
+	var request lsp.CompletionItemResolveRequest
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+	response := handleCompletionItemResolve(&request)
+	if response != nil {
+		s.writeResponse(response)
+	}
+	return nil
+}
+
+func (s *Server) onTextDocumentDocumentSymbol(contents []byte) error {
+	var request lsp.DocumentSymbolsRequest
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+	response := handleDocumentSymbol(&request, &s.state)
+	if response != nil {
+		s.writeResponse(response)
+	}
+	return nil
+}
+
+func (s *Server) onTextDocumentPerpareRename(contents []byte) error {
+	var request lsp.PrepareRenameRequest
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+	response := handlePrepareRename(&request, &s.state)
+	if response != nil {
+		s.writeResponse(response)
+	}
+	return nil
+}
+
+func (s *Server) onTextDocumentRename(contents []byte) error {
+	var request lsp.RenameRequest
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+	response := handleRename(&request, &s.state)
+	if response != nil {
+		s.writeResponse(response)
+	}
+	return nil
+}
+
+func (s *Server) onWorkspaceSymbol(contents []byte) error {
+	var request lsp.WorkspaceSymbolRequest
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+	response := handleWorkspaceSymbol(&request, &s.state)
+	if response != nil {
+		s.writeResponse(response)
+	}
+	return nil
+}
+
+func (s *Server) onTextDocumentFormatting(contents []byte) error {
+	var request lsp.FormattingRequest
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+	response := handleFormatting(&request, &s.state)
+	if response != nil {
+		s.writeResponse(response)
+	}
+	return nil
+}
+
+func (s *Server) onTextDocumentRangeFormatting(contents []byte) error {
+	var request lsp.RangeFormattingRequest
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+	response := handleRangeFormatting(&request, &s.state)
+	if response != nil {
+		s.writeResponse(response)
+	}
+	return nil
+}
+
+func (s *Server) onTextDocumentCodeAction(contents []byte) error {
+	var request lsp.CodeActionRequest
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+	response := handleCodeAction(&request, &s.state)
+	if response != nil {
+		s.writeResponse(response)
+	}
+	return nil
+}
+
+func (s *Server) onTextDocumentDocumentColor(contents []byte) error {
+	var request lsp.DocumentColorRequest
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+	response := handleDocumentColor(&request, &s.state)
+	if response != nil {
+		s.writeResponse(response)
+	}
+	return nil
+}
+
+func (s *Server) onTextDocumentInlayHint(contents []byte) error {
+	var request lsp.InlayHintRequest
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+	response := handleInlayHint(&request, &s.state)
+	if response != nil {
+		s.writeResponse(response)
+	}
+	return nil
 }
