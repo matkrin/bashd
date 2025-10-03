@@ -32,7 +32,8 @@ func main() {
 
 	pflag.Parse()
 	if *versionOpt {
-		fmt.Println(VERSION)
+		fmt.Printf("%s %s\n", name, VERSION)
+		os.Exit(0)
 	}
 
 	logFile, err := initLogging(*verbosityOpt, *logFileOpt, *jsonOpt)
