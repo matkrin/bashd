@@ -14,8 +14,8 @@ import (
 var SHEBANG = "#!/usr/bin/env bash\n\n"
 
 func handleCodeAction(request *lsp.CodeActionRequest, state *State) *lsp.CodeActionResponse {
-	slog.Info("CODE ACTION", "range", request.Params.Range)
-	slog.Info("CODE ACTION", "context", request.Params.Context)
+	slog.Debug("CODE ACTION", "range", request.Params.Range)
+	slog.Debug("CODE ACTION", "context", request.Params.Context)
 	uri := request.Params.TextDocument.URI
 	documentText := state.Documents[uri].Text
 	hasShebang := fileutil.HasShebang([]byte(documentText))
@@ -26,22 +26,21 @@ func handleCodeAction(request *lsp.CodeActionRequest, state *State) *lsp.CodeAct
 		actions = append(actions, *action)
 	}
 
-	actions = append(actions, *singleLineCodeAction(documentText, uri))
-
-	shellcheck, err := shellcheck.Run(documentText)
-	if err != nil {
-		slog.Error("ERROR running shellcheck", "err", err)
+	if fileAst, err := ast.ParseDocument(documentText, uri); err == nil {
+		actions = append(actions, *minifyCodeAction(fileAst, uri))
 	}
 
-	// Fix all auto-fixable
-	if shellcheck.ContainsFixable() {
-		actions = append(actions, shellcheck.ToCodeActionFlat(uri))
-	}
+	if shellcheck, err := shellcheck.Run(documentText); err == nil {
+		// Fix all auto-fixable
+		if shellcheck.ContainsFixable() {
+			actions = append(actions, shellcheck.ToCodeActionFlat(uri))
+		}
 
-	// Fix for certain lint (position dependent)
-	context := request.Params.Context
-	if len(context.Diagnostics) != 0 {
-		actions = append(actions, shellcheckCodeActions(shellcheck, uri, documentText, context)...)
+		// Fix for certain lint (position dependent)
+		context := request.Params.Context
+		if len(context.Diagnostics) != 0 {
+			actions = append(actions, shellcheckCodeActions(shellcheck, uri, documentText, context)...)
+		}
 	}
 
 	response := &lsp.CodeActionResponse{
@@ -71,16 +70,9 @@ func shebangCodeAction(uri string) *lsp.CodeAction {
 	return action
 }
 
-func singleLineCodeAction(document string, uri string) *lsp.CodeAction {
-	fileAst, err := ast.ParseDocument(document, uri)
-	if err != nil {
-		return nil
-	}
-
+func minifyCodeAction(fileAst *ast.Ast, uri string) *lsp.CodeAction {
 	singleLine := syntax.SingleLine(true)
-
 	printer := syntax.NewPrinter(singleLine)
-
 	buffer := bytes.NewBuffer([]byte{})
 	printer.Print(buffer, fileAst.File)
 
@@ -90,16 +82,7 @@ func singleLineCodeAction(document string, uri string) *lsp.CodeAction {
 			Changes: map[string][]lsp.TextEdit{
 				uri: {
 					lsp.TextEdit{
-						Range: lsp.Range{
-							Start: lsp.Position{
-								Line:      0,
-								Character: 0,
-							},
-							End: lsp.Position{
-								Line:      9999,
-								Character: 9999,
-							},
-						},
+						Range:   lsp.NewRange(0, 0, 9999, 9999),
 						NewText: buffer.String(),
 					},
 				},
@@ -119,16 +102,22 @@ func shellcheckCodeActions(
 	for _, comment := range shellcheck.Comments {
 		shellcheckDiagnostic := comment.ToDiagnostic()
 		for _, contextDiagnostic := range context.Diagnostics {
-			if shellcheckDiagnostic.Range == contextDiagnostic.Range {
-				actionFixLint := comment.ToCodeActionFixLint(uri)
-				if actionFixLint != nil {
-					actions = append(actions, *actionFixLint)
-				}
-				actionIgnore := comment.ToCodeActionIgnore(uri, documentText, &contextDiagnostic.Range)
-				if actionIgnore != nil {
-					actions = append(actions, *actionIgnore)
-				}
+			if shellcheckDiagnostic.Range != contextDiagnostic.Range {
+				continue
 			}
+			// Lint fix
+			actionFixLint := comment.ToCodeActionFixLint(uri)
+			if actionFixLint == nil {
+				continue
+			}
+			actions = append(actions, *actionFixLint)
+
+			// Add ignore comment
+			actionIgnore := comment.ToCodeActionIgnore(uri, documentText, &contextDiagnostic.Range)
+			if actionIgnore == nil {
+				continue
+			}
+			actions = append(actions, *actionIgnore)
 		}
 	}
 
