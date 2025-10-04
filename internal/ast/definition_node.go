@@ -163,7 +163,7 @@ func (a *Ast) DefNodes() []DefNode {
 
 		// Variable "assignment" in `read` statements
 		case *syntax.CallExpr:
-			if len(n.Args) == 0 {
+			if len(n.Args) < 2 {
 				return true
 			}
 			cmdName := ExtractIdentifier(n.Args[0])
@@ -175,16 +175,24 @@ func (a *Ast) DefNodes() []DefNode {
 			enclosingFunc = a.findEnclosingFunctionForNode(n)
 			isScoped = (enclosingFunc != nil) // Only scoped if inside a function
 
-			for _, arg := range n.Args {
-				for _, wp := range arg.Parts {
-					switch p := wp.(type) {
-					case *syntax.Lit:
-						name = p.Value
-						startLine, startChar = p.Pos().Line(), p.Pos().Col()
-						endLine, endChar = p.End().Line(), p.End().Col()
-					}
+			for _, arg := range n.Args[1:] {
+				name = ExtractIdentifier(arg)
+				if name != "" {
+					startLine, startChar = arg.Pos().Line(), arg.Pos().Col()
+					endLine, endChar = arg.End().Line(), arg.End().Col()
+					defNodes = append(defNodes, DefNode{
+						Node:      n,
+						Name:      name,
+						Scope:     enclosingFunc,
+						IsScoped:  isScoped,
+						StartLine: startLine,
+						StartChar: startChar,
+						EndLine:   endLine,
+						EndChar:   endChar,
+					})
 				}
 			}
+			return true
 		}
 
 		// Add the definition if we found a name
