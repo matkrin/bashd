@@ -57,12 +57,10 @@ func (a *Ast) FindDefinitionAcrossFiles(
 	env map[string]string,
 	baseDir string,
 ) (string, *DefNode) {
-	// First, try to find in current file
 	if def := a.FindDefInFile(cursor); def != nil {
-		return "", def // Empty string means current file
+		return "", def
 	}
 
-	// Then search in sourced files
 	return a.FindDefInSourcedFile(cursor, env, baseDir)
 }
 
@@ -83,11 +81,11 @@ func findLocalVarInSourcedFile(targetIdentifier, cursorFuncName, sourcedFile str
 	// Find function with same name in sourced file
 	targetFunc := sourcedAst.findFunctionByName(cursorFuncName)
 	if targetFunc == nil {
-		return "", nil // Function doesn't exist in this file
+		return "", nil
 	}
 
 	// Look for scoped variables in that function
-	// Note: For cross-file shadowing, we typically consider ALL local variables in the sourced function
+	// NOTE: For cross-file shadowing, we typically consider ALL local variables in the sourced function
 	// as being declared "before" the current cursor, since the sourced file is processed first
 	for _, defNode := range sourcedAst.DefNodes() {
 		if defNode.Name == targetIdentifier && defNode.IsScoped && defNode.Scope == targetFunc {
@@ -112,7 +110,7 @@ func findGlobalVarInSourcedFile(targetIdentifier, sourcedFile string) (string, *
 		return "", nil
 	}
 
-	// Look for global variables (non-function, non-scoped definitions)
+	// Look for global variables
 	for _, defNode := range sourcedAst.DefNodes() {
 		if defNode.Name == targetIdentifier && !defNode.IsScoped {
 			// Make sure it's not a function (we handle those separately)
@@ -139,7 +137,6 @@ func findFunctionInSourcedFile(targetIdentifier, sourcedFile string) (string, *D
 		return "", nil
 	}
 
-	// Look for function definitions
 	for _, defNode := range sourcedAst.DefNodes() {
 		if defNode.Name == targetIdentifier {
 			if _, ok := defNode.Node.(*syntax.FuncDecl); ok {

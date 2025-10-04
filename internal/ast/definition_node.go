@@ -2,12 +2,10 @@ package ast
 
 import (
 	"fmt"
-	"log/slog"
 
 	"mvdan.cc/sh/v3/syntax"
 )
 
-// Wrapper for nodes identified as definition
 type DefNode struct {
 	Node      syntax.Node
 	Name      string
@@ -19,7 +17,7 @@ type DefNode struct {
 	EndChar   uint
 }
 
-// Helper function to check if a definition appears before the cursor position
+// Check if a definition appears before the cursor position
 // Definition is before cursor if:
 //   1. Definition line <= cursor line, OR
 //   2. Same line but definition column < cursor column
@@ -33,7 +31,7 @@ func (d *DefNode) isBeforeCursor(cursor Cursor) bool {
 	return false
 }
 
-// Helper method to check if DefNode comes after otherDef source code
+// Check if DefNode comes after otherDef source code
 func (d *DefNode) isDefinitionAfter(otherDef *DefNode) bool {
 	if d.StartLine > otherDef.StartLine {
 		return true
@@ -51,8 +49,7 @@ func (d *DefNode) isSameDefinition(def2 *DefNode) bool {
 		d.Name == def2.Name
 }
 
-// Identify DefNodes
-// with tracking processed scoped assignments to avoid duplicates
+// Identify DefNodes with tracking processed scoped assignments to avoid duplicates
 func (a *Ast) DefNodes() []DefNode {
 	defNodes := []DefNode{}
 
@@ -86,12 +83,12 @@ func (a *Ast) DefNodes() []DefNode {
 			}
 
 		// Scoped Variable Declaration with `local`, `declare`, `typeset`
-		// These are always scoped variables
+		// These are scoped if inside a function
 		case *syntax.DeclClause:
 			cmd := n.Variant.Value
 			if cmd == "local" || cmd == "declare" || cmd == "typeset" {
 				enclosingFunc = a.findEnclosingFunctionForNode(n)
-				isScoped = true
+				isScoped = (enclosingFunc != nil)
 
 				for _, arg := range n.Args {
 					if arg.Name != nil {
@@ -99,12 +96,9 @@ func (a *Ast) DefNodes() []DefNode {
 						startLine, startChar = arg.Name.ValuePos.Line(), arg.Name.ValuePos.Col()
 						endLine, endChar = arg.Name.ValueEnd.Line(), arg.Name.ValueEnd.Col()
 
-						// Mark this assignment as processed to avoid duplicate from *syntax.Assign
 						assignmentKey := fmt.Sprintf("%d:%d:%s", startLine, startChar, name)
 						processedScopedAssignments[assignmentKey] = true
 
-						slog.Info("Adding DefNode", "name", name, "isScoped", isScoped, "nodeType",
-							fmt.Sprintf("%T", node), "line", startLine)
 						defNodes = append(defNodes, DefNode{
 							Node:      n,
 							Name:      name,
@@ -122,22 +116,20 @@ func (a *Ast) DefNodes() []DefNode {
 			// If it's not a scoped declaration, don't process it here
 			return true
 
-		// Function Definition
+		// Function Definition (always global)
 		case *syntax.FuncDecl:
 			if n.Name != nil {
 				name = n.Name.Value
 				startLine, startChar = n.Name.Pos().Line(), n.Name.Pos().Col()
 				endLine, endChar = n.Name.End().Line(), n.Name.End().Col()
-				// Functions are always global
 				enclosingFunc = nil
 				isScoped = false
 			}
 
 		// Iteration variable in for/select loops
 		case *syntax.ForClause:
-			// For loop variables are scoped to the loop (treat as local to enclosing function)
 			enclosingFunc = a.findEnclosingFunctionForNode(n)
-			isScoped = (enclosingFunc != nil) // Only scoped if inside a function
+			isScoped = (enclosingFunc != nil)
 
 			switch loop := n.Loop.(type) {
 			case *syntax.WordIter:

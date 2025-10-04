@@ -1,14 +1,13 @@
 package ast
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
 
 	"mvdan.cc/sh/v3/syntax"
 )
 
-// Enhanced cross-file references with proper scoping
+// Cross-file reference finding
 func (a *Ast) FindRefsinSourcedFile(
 	cursor Cursor,
 	env map[string]string,
@@ -21,13 +20,11 @@ func (a *Ast) FindRefsinSourcedFile(
 		return map[string][]RefNode{}
 	}
 
-	// First, find the definition using cross-file definition resolution
 	targetFile, defNode := a.FindDefinitionAcrossFiles(cursor, env, baseDir)
 
 	sourcedFiles := a.FindAllSourcedFiles(env, baseDir, map[string]bool{})
 	filesRefNodes := map[string][]RefNode{}
 
-	slog.Info("SOURCED_REFS", "targetFile", targetFile, "defNode", defNode, "identifier", targetIdentifier)
 
 	// If no definition found, fall back to simple name matching
 	if defNode == nil {
@@ -56,8 +53,6 @@ func (a *Ast) FindRefsinSourcedFile(
 		return filesRefNodes
 	}
 
-	slog.Info("Definition found, using proper scoping logic")
-
 	// Definition found - find references across all files with proper scoping
 	for _, sourcedFile := range sourcedFiles {
 		fileContent, err := os.ReadFile(sourcedFile)
@@ -77,7 +72,6 @@ func (a *Ast) FindRefsinSourcedFile(
 				continue
 			}
 
-			// Use the same logic as single-file references but adapted for cross-file
 			if sourcedFileAst.WouldResolveToSameDefinitionAcrossFiles(refNode.Node, defNode, targetFile, sourcedFile) {
 				refs = append(refs, refNode)
 			}
@@ -207,59 +201,3 @@ func isSameDefinitionAcrossFiles(def1 *DefNode, def2 *DefNode, file1, file2 stri
 	return false
 }
 
-// Debug method for cross-file reference resolution
-func (a *Ast) DebugCrossFileReferenceResolution(
-	cursor Cursor,
-	env map[string]string,
-	baseDir string,
-) {
-	cursorNode := a.FindNodeUnderCursor(cursor)
-	targetIdentifier := ExtractIdentifier(cursorNode)
-	fmt.Printf("=== Cross-File Reference Resolution for '%s' ===\n", targetIdentifier)
-
-	targetFile, defNode := a.FindDefinitionAcrossFiles(cursor, env, baseDir)
-
-	if defNode == nil {
-		fmt.Printf("No definition found\n")
-		return
-	}
-
-	fmt.Printf("Target definition: %s at line %d:%d in %s\n",
-		defNode.Name, defNode.StartLine, defNode.StartChar, targetFile)
-	if defNode.IsScoped {
-		fmt.Printf("  (scoped in function: %s)\n", defNode.Scope.Name.Value)
-	} else {
-		fmt.Printf("  (global)\n")
-	}
-
-	sourcedFiles := a.FindAllSourcedFiles(env, baseDir, map[string]bool{})
-
-	for _, sourcedFile := range sourcedFiles {
-		fmt.Printf("\n--- File: %s ---\n", sourcedFile)
-
-		fileContent, err := os.ReadFile(sourcedFile)
-		if err != nil {
-			fmt.Printf("Error reading file: %s\n", err)
-			continue
-		}
-		sourcedFileAst, err := ParseDocument(string(fileContent), sourcedFile)
-		if err != nil {
-			fmt.Printf("Error parsing file: %s\n", err)
-			continue
-		}
-
-		for _, refNode := range sourcedFileAst.RefNodes(true) {
-			if refNode.Name != targetIdentifier {
-				continue
-			}
-
-			fmt.Printf("Line %d:%d - '%s'", refNode.StartLine, refNode.StartChar, refNode.Name)
-
-			if sourcedFileAst.WouldResolveToSameDefinitionAcrossFiles(refNode.Node, defNode, targetFile, sourcedFile) {
-				fmt.Printf(" -> MATCHES target definition\n")
-			} else {
-				fmt.Printf(" -> different definition\n")
-			}
-		}
-	}
-}

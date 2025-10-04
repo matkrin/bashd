@@ -8,7 +8,6 @@ import (
 	"mvdan.cc/sh/v3/syntax"
 )
 
-// Wraps a node that can be part of a reference.
 type RefNode struct {
 	Node      syntax.Node
 	Name      string
@@ -43,11 +42,10 @@ func (r *RefNode) ToLspTextEdit(newText string) lsp.TextEdit {
 	}
 }
 
-// Enhanced refNodes that handles scoped declarations properly
+// Identify DefNodes with tracking processed scoped assignments to avoid duplicates
 func (a *Ast) RefNodes(includeDeclaration bool) []RefNode {
 	refNodes := []RefNode{}
 
-	// Track processed scoped assignments to avoid duplicates (same as in DefNodes)
 	processedScopedAssignments := make(map[string]bool) // key: "line:col:name"
 
 	syntax.Walk(a.File, func(node syntax.Node) bool {
@@ -70,7 +68,7 @@ func (a *Ast) RefNodes(includeDeclaration bool) []RefNode {
 
 				// Variable assignments as part of read statements
 				if cmdName == "read" && includeDeclaration {
-					for _, arg := range n.Args[1:] { // Skip the "read" command itself
+					for _, arg := range n.Args[1:] {
 						for _, wp := range arg.Parts {
 							switch p := wp.(type) {
 							case *syntax.Lit:
@@ -109,10 +107,8 @@ func (a *Ast) RefNodes(includeDeclaration bool) []RefNode {
 				startLine, startChar = n.Name.Pos().Line(), n.Name.Pos().Col()
 				endLine, endChar = n.Name.End().Line(), n.Name.End().Col()
 
-				// Check if this assignment is part of a scoped declaration
 				assignmentKey := fmt.Sprintf("%d:%d:%s", startLine, startChar, name)
 				if processedScopedAssignments[assignmentKey] {
-					// Skip this - it's already been processed as part of a DeclClause
 					return true
 				}
 			}
@@ -147,7 +143,7 @@ func (a *Ast) RefNodes(includeDeclaration bool) []RefNode {
 							})
 						}
 					}
-					return true // Continue walking, but don't add to the general list
+					return true
 				}
 			}
 
@@ -209,8 +205,7 @@ func (a *Ast) RefNodes(includeDeclaration bool) []RefNode {
 	return refNodes
 }
 
-// Enhanced FindRefsInFile with proper scoping logic
-// Fixed FindRefsInFile with proper scoping logic
+// Find RefNodes in a file
 func (a *Ast) FindRefsInFile(cursor Cursor, includeDeclaration bool) []RefNode {
 	cursorNode := a.FindNodeUnderCursor(cursor)
 	targetIdentifier := ExtractIdentifier(cursorNode)
@@ -288,50 +283,12 @@ func (a *Ast) wouldResolveToSameDefinition(refCursorNode syntax.Node, targetDefN
 	// Look for global definitions (functions and non-scoped variables)
 	for _, defNode := range a.DefNodes() {
 		if defNode.Name == targetIdentifier {
-			// Skip ALL scoped variables (they're only visible within their function)
 			if defNode.IsScoped {
 				continue
 			}
-			// This reference would resolve to this global definition
 			return defNode.isSameDefinition(targetDefNode)
 		}
 	}
 
 	return false
 }
-
-// Fixed IsVariableShadowed method to work with RefNode instead of cursorNode
-func (a *Ast) IsVariableShadowed(varName string, cursor Cursor) (bool, *DefNode) {
-	currentScope := a.findEnclosingFunction(cursor)
-
-	// Look for local variables that shadow globals
-	for _, defNode := range a.DefNodes() {
-		if defNode.Name != varName {
-			continue
-		}
-
-		// Only consider scoped (local) variables for shadowing
-		if !defNode.IsScoped {
-			continue
-		}
-
-		// Check if the local variable is in the same scope as the cursor
-		if defNode.Scope == currentScope {
-			// Check if the local variable is declared before the cursor position
-			if defNode.isBeforeCursor(cursor) {
-				// Found a local variable that shadows any global with the same name
-				return true, &defNode
-			}
-		}
-	}
-
-	return false, nil
-}
-
-// Alternative version if you want to keep the original signature
-func (a *Ast) IsVariableShadowedByNode(varName string, cursorNode syntax.Node) (bool, *DefNode) {
-	pos := cursorNode.Pos()
-	cursor := Cursor{Line: pos.Line(), Col: pos.Col()}
-	return a.IsVariableShadowed(varName, cursor)
-}
-
