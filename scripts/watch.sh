@@ -12,6 +12,7 @@ WATCH_MSG=$(yellow_bright "Watching .go files")
 BUILD_MSG=$(black_on_green "✓ Build successful")
 
 recompile() {
+    local changed_file="$1"
     echo "$WATCH_MSG"
     echo "$(cyan "$changed_file") changed. Rebuilding..."
     $BUILD_CMD && echo "$BUILD_MSG"
@@ -22,7 +23,7 @@ watch_go_files_mac() {
     fswatch ./**/*.go |
         while read -r changed_file; do
             clear
-            recompile
+            recompile "$changed_file"
         done
 }
 
@@ -37,14 +38,14 @@ watch_go_files_linux() {
         ./**/*.go |
         while read -r changed_file; do
             clear
-            recompile
+            recompile "$changed_file"
         done
 }
 
 if [[ $(uname) == "Linux" ]]; then
-    command -v inotifywait &>/dev/null || (echo "'inotifywait' needs to be installed" && exit)
+    command -v inotifywait &>/dev/null || { echo "'inotifywait' needs to be installed" ; exit 1; }
     watch_go_files_linux
 elif [[ $(uname) == "Darwin" ]]; then
-    command -v fswatch &>/dev/null || (echo "'fswatch' needs to be installed" && exit)
+    command -v fswatch &>/dev/null || { echo "'fswatch' needs to be installed"; exit 1; }
     watch_go_files_mac
 fi

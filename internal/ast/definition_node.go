@@ -243,48 +243,6 @@ func (a *Ast) findEnclosingFunctionForNode(targetNode syntax.Node) *syntax.FuncD
 	return enclosingFunc
 }
 
-// // Convenience methods for filtering DefNodes by type
-//
-// // Get only scoped variable definitions (local, declare, typeset)
-// func (a *Ast) ScopedVarDefNodes() []DefNode {
-// 	var scopedNodes []DefNode
-// 	for _, node := range a.DefNodes() {
-// 		if node.IsScoped {
-// 			scopedNodes = append(scopedNodes, node)
-// 		}
-// 	}
-// 	return scopedNodes
-// }
-//
-// // Get only global variable definitions (assignments outside functions or not declared as local)
-// func (a *Ast) GlobalVarDefNodes() []DefNode {
-// 	var globalNodes []DefNode
-// 	for _, node := range a.DefNodes() {
-// 		// Functions are always global
-// 		if _, ok := node.Node.(*syntax.FuncDecl); ok {
-// 			globalNodes = append(globalNodes, node)
-// 			continue
-// 		}
-//
-// 		// Variables that are not scoped
-// 		if !node.IsScoped {
-// 			globalNodes = append(globalNodes, node)
-// 		}
-// 	}
-// 	return globalNodes
-// }
-//
-// // Get only function definitions
-// func (a *Ast) FunctionDefNodes() []DefNode {
-// 	var funcNodes []DefNode
-// 	for _, node := range a.DefNodes() {
-// 		if _, ok := node.Node.(*syntax.FuncDecl); ok {
-// 			funcNodes = append(funcNodes, node)
-// 		}
-// 	}
-// 	return funcNodes
-// }
-
 // Updated FindDefInFile that uses the unified DefNodes
 func (a *Ast) FindDefInFile(cursor Cursor) *DefNode {
 	cursorNode := a.FindNodeUnderCursor(cursor)
