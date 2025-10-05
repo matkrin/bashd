@@ -68,7 +68,7 @@ foo() {
   echo "$a $b $c"
 }
 
-echo "$b"
+echo "$a $b $c"
 `
 	fileAst, _ := ParseDocument(input, "")
 
@@ -77,10 +77,14 @@ echo "$b"
 		name      string
 		startLine uint
 	}{
+		// Inside function
 		{NewCursor(7, 9), "a", 2},
 		{NewCursor(7, 12), "b", 6},
 		{NewCursor(7, 14), "c", 7},
-		{NewCursor(10, 7), "b", 3},
+		// Outside function
+		{NewCursor(10, 7), "a", 2},
+		{NewCursor(10, 10), "b", 3},
+		{NewCursor(10, 13), "c", 7},
 	}
 
 	for _, e := range expected {
