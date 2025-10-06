@@ -106,18 +106,18 @@ func shellcheckCodeActions(
 				continue
 			}
 			// Lint fix
-			actionFixLint := comment.ToCodeActionFixLint(uri)
-			if actionFixLint == nil {
-				continue
+			if actionFixLint := comment.ToCodeActionFixLint(uri); actionFixLint != nil {
+				actions = append(actions, *actionFixLint)
 			}
-			actions = append(actions, *actionFixLint)
 
 			// Add ignore comment
-			actionIgnore := comment.ToCodeActionIgnore(uri, documentText, &contextDiagnostic.Range)
-			if actionIgnore == nil {
-				continue
+			if actionIgnore := comment.ToCodeActionIgnore(
+				uri,
+				documentText,
+				&contextDiagnostic.Range,
+			); actionIgnore != nil {
+				actions = append(actions, *actionIgnore)
 			}
-			actions = append(actions, *actionIgnore)
 		}
 	}
 
