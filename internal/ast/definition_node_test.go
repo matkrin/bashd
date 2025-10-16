@@ -66,34 +66,41 @@ foo() {
   local b="scoped"
   c="global_in_func"
   echo "$a $b $c"
+  local a="shadows"
+  echo "$a"
 }
 
 echo "$a $b $c"
 `
 	fileAst, _ := ParseDocument(input, "")
 
-	expected := []struct {
+	tests := []struct {
 		cursor    Cursor
 		name      string
 		startLine uint
+		isScoped bool
 	}{
 		// Inside function
-		{NewCursor(7, 9), "a", 2},
-		{NewCursor(7, 12), "b", 6},
-		{NewCursor(7, 14), "c", 7},
+		{NewCursor(7, 9), "a", 2, false},
+		{NewCursor(7, 12), "b", 6, true},
+		{NewCursor(7, 14), "c", 7, false},
+		{NewCursor(9, 9), "a", 9, true},
 		// Outside function
-		{NewCursor(10, 7), "a", 2},
-		{NewCursor(10, 10), "b", 3},
-		{NewCursor(10, 13), "c", 7},
+		{NewCursor(12, 7), "a", 2, false},
+		{NewCursor(12, 10), "b", 3, false},
+		{NewCursor(12, 13), "c", 7, false},
 	}
 
-	for _, e := range expected {
+	for _, e := range tests {
 		defNode := fileAst.FindDefInFile(e.cursor)
 		if defNode.Name != e.name {
 			t.Errorf("expected '%s', got '%s'", e.name, defNode.Name)
 		}
 		if defNode.StartLine != e.startLine {
 			t.Errorf("expected '%d', got '%d'", e.startLine, defNode.StartLine)
+		}
+		if defNode.IsScoped != e.isScoped {
+			t.Errorf("expected '%v', got '%v'", e.isScoped, defNode.IsScoped)
 		}
 	}
 }
