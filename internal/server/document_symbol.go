@@ -12,7 +12,7 @@ func handleDocumentSymbol(request *lsp.DocumentSymbolsRequest, state *State) *ls
 	uri := request.Params.TextDocument.URI
 	document := state.Documents[uri]
 	documentSymbols := []lsp.DocumentSymbol{}
-	fileAst, err := ast.ParseDocument(document.Text, uri)
+	fileAst, err := ast.ParseDocument(document.Text, uri, false)
 	if err != nil {
 		slog.Error("Could not parse document", "document", uri)
 		return nil

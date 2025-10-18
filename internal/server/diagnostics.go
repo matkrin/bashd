@@ -27,7 +27,7 @@ func findDiagnostics(
 		diagnostics = append(diagnostics, shellcheck.ToDiagnostics()...)
 	}
 
-	fileAst, err := ast.ParseDocument(documentText, uri)
+	fileAst, err := ast.ParseDocument(documentText, uri, false)
 	if err != nil {
 		diagnostics = append(diagnostics, diagnosticParseError(err))
 		return diagnostics

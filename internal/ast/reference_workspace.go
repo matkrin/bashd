@@ -38,7 +38,7 @@ func (a *Ast) FindRefsInWorkspaceFiles(
 		return map[string][]RefNode{}
 	}
 
-	originalAst, err := ParseDocument(string(originalFileContent), originalFilePath)
+	originalAst, err := ParseDocument(string(originalFileContent), originalFilePath, false)
 	if err != nil {
 		slog.Error("Could not parse original file", "file", originalFilePath)
 		return map[string][]RefNode{}
@@ -60,7 +60,7 @@ func (a *Ast) FindRefsInWorkspaceFiles(
 			continue
 		}
 
-		workspaceFileAst, err := ParseDocument(string(fileContent), shFile)
+		workspaceFileAst, err := ParseDocument(string(fileContent), shFile, false)
 		if err != nil {
 			slog.Error("Could not parse file", "file", shFile)
 			continue

@@ -40,7 +40,7 @@ func handleCodeAction(request *lsp.CodeActionRequest, state *State) *lsp.CodeAct
 		}
 	}
 
-	if fileAst, err := ast.ParseDocument(documentText, uri); err == nil {
+	if fileAst, err := ast.ParseDocument(documentText, uri, false); err == nil {
 		actions = append(actions, *minifyCodeAction(fileAst, uri))
 	}
 

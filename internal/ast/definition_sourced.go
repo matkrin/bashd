@@ -48,7 +48,7 @@ func findGlobalInSourcedFile(targetIdentifier, sourcedFile string) (string, *Def
 		return "", nil
 	}
 
-	sourcedAst, err := ParseDocument(string(fileContent), sourcedFile)
+	sourcedAst, err := ParseDocument(string(fileContent), sourcedFile, false)
 	if err != nil {
 		slog.Error("Could not parse file", "file", sourcedFile)
 		return "", nil

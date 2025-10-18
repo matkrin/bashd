@@ -22,7 +22,7 @@ for g in 1 2 3; do
   echo $e
 done
 `
-	fileAst, _ := ParseDocument(input, "")
+	fileAst, _ := ParseDocument(input, "", false)
 	defNodes := fileAst.DefNodes()
 
 	expected := []struct {
@@ -72,7 +72,7 @@ foo() {
 
 echo "$a $b $c"
 `
-	fileAst, _ := ParseDocument(input, "")
+	fileAst, _ := ParseDocument(input, "", false)
 
 	tests := []struct {
 		cursor    Cursor

@@ -103,7 +103,7 @@ foo() {
 
 foo
 `
-	fileAst, _ := ast.ParseDocument(input, "test.sh")
+	fileAst, _ := ast.ParseDocument(input, "test.sh", false)
 	defNodes := fileAst.DefNodes()
 	if len(defNodes) != 2 {
 		t.Errorf("length of defNodes not 2; got %v", len(defNodes))
@@ -147,7 +147,7 @@ foo
 		},
 	}
 
-	fileAst, _ := ast.ParseDocument(input, "test.sh")
+	fileAst, _ := ast.ParseDocument(input, "test.sh", false)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := fileAst.FindDefInFile(tt.cursor)

@@ -18,7 +18,7 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 	)
 
 	document := state.Documents[uri].Text
-	fileAst, err := ast.ParseDocument(document, uri)
+	fileAst, err := ast.ParseDocument(document, uri, false)
 	if err != nil {
 		slog.Error(err.Error())
 		return nil

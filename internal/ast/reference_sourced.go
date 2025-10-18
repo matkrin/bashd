@@ -36,7 +36,7 @@ func (a *Ast) FindRefsinSourcedFile(
 				slog.Error("Could not read file", "file", sourcedFile)
 				continue
 			}
-			sourcedFileAst, err := ParseDocument(string(fileContent), sourcedFile)
+			sourcedFileAst, err := ParseDocument(string(fileContent), sourcedFile, false)
 			if err != nil {
 				slog.Error(err.Error())
 				continue
@@ -60,7 +60,7 @@ func (a *Ast) FindRefsinSourcedFile(
 			slog.Error("Could not read file", "file", sourcedFile)
 			continue
 		}
-		sourcedFileAst, err := ParseDocument(string(fileContent), sourcedFile)
+		sourcedFileAst, err := ParseDocument(string(fileContent), sourcedFile, false)
 		if err != nil {
 			slog.Error(err.Error())
 			continue
@@ -90,7 +90,7 @@ func (a *Ast) WouldResolveToSameDefinitionAcrossFiles(refCursorNode syntax.Node,
 		slog.Error("Could not read reference file", "file", refFile)
 		return false
 	}
-	refFileAst, err := ParseDocument(string(fileContent), refFile)
+	refFileAst, err := ParseDocument(string(fileContent), refFile, false)
 	if err != nil {
 		slog.Error("Could not parse reference file", "file", refFile)
 		return false

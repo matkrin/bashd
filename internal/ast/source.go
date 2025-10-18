@@ -70,7 +70,7 @@ func (a *Ast) FindAllSourcedFiles(
 
 		// Recurse
 		if content, err := os.ReadFile(resolved); err == nil {
-			if parsed, err := ParseDocument(string(content), ""); err == nil {
+			if parsed, err := ParseDocument(string(content), "", false); err == nil {
 				subFiles := parsed.FindAllSourcedFiles(env, filepath.Dir(resolved), visited)
 				sourcedFiles = append(sourcedFiles, subFiles...)
 			}

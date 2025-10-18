@@ -20,7 +20,7 @@ func handleReferences(request *lsp.ReferencesRequest, state *State) *lsp.Referen
 
 	// In current file
 	documentText := state.Documents[uri].Text
-	fileAst, err := ast.ParseDocument(documentText, uri)
+	fileAst, err := ast.ParseDocument(documentText, uri, false)
 	if err != nil {
 		slog.Error("Could not parse document", "err", err.Error())
 		return nil

@@ -14,7 +14,7 @@ func handleCompletion(request *lsp.CompletionRequest, state *State) *lsp.Complet
 
 	uri := request.Params.TextDocument.URI
 	document := state.Documents[uri].Text
-	fileAst, err := ast.ParseDocument(document, uri)
+	fileAst, err := ast.ParseDocument(document, uri, true)
 	if err != nil {
 		response := lsp.NewCompletionResponse(request.ID, completionList)
 		return &response

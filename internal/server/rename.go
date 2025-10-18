@@ -22,7 +22,7 @@ func handlePrepareRename(
 	)
 
 	document := state.Documents[uri].Text
-	fileAst, err := ast.ParseDocument(document, uri)
+	fileAst, err := ast.ParseDocument(document, uri, false)
 	if err != nil {
 		slog.Error(err.Error())
 	}
@@ -63,7 +63,7 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 	)
 
 	document := state.Documents[uri].Text
-	fileAst, err := ast.ParseDocument(document, uri)
+	fileAst, err := ast.ParseDocument(document, uri, false)
 	if err != nil {
 		slog.Error(err.Error())
 	}

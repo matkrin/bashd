@@ -52,9 +52,14 @@ type Ast struct {
 	File *syntax.File
 }
 
-func ParseDocument(documentText, documentName string) (*Ast, error) {
+func ParseDocument(documentText, documentName string, fallible bool) (*Ast, error) {
 	reader := strings.NewReader(documentText)
-	parser := syntax.NewParser(syntax.KeepComments(true))
+	var parser *syntax.Parser
+	if fallible {
+		parser = syntax.NewParser(syntax.KeepComments(true), syntax.RecoverErrors(9999))
+	} else {
+		parser = syntax.NewParser(syntax.KeepComments(true))
+	}
 	file, err := parser.Parse(reader, documentName)
 	if err != nil {
 		return nil, err
@@ -79,7 +84,6 @@ func (a *Ast) FindNodeUnderCursor(cursor Cursor) syntax.Node {
 
 	return found
 }
-
 
 func ExtractIdentifier(node syntax.Node) string {
 	switch n := node.(type) {

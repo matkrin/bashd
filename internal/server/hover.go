@@ -21,7 +21,7 @@ func handleHover(request *lsp.HoverRequest, state *State) *lsp.HoverResponse {
 		request.Params.Position.Character,
 	)
 	documentText := state.Documents[uri].Text
-	fileAst, err := ast.ParseDocument(documentText, uri)
+	fileAst, err := ast.ParseDocument(documentText, uri, true)
 	if err != nil {
 		slog.Error(err.Error())
 		return nil

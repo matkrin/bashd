@@ -15,7 +15,7 @@ func handleFormatting(request *lsp.FormattingRequest, state *State) *lsp.Formatt
 	slog.Info("FORMATTING", "params", request.Params)
 	uri := request.Params.TextDocument.URI
 	document := state.Documents[uri].Text
-	fileAst, err := ast.ParseDocument(document, uri)
+	fileAst, err := ast.ParseDocument(document, uri, false)
 	if err != nil {
 		return nil
 	}
@@ -71,7 +71,7 @@ func handleRangeFormatting(request *lsp.RangeFormattingRequest, state *State) *l
 	rangeLines := lines[startLine : endLine+1]
 	rangeString := strings.Join(rangeLines, "\n")
 
-	rangeAst, err := ast.ParseDocument(rangeString, uri)
+	rangeAst, err := ast.ParseDocument(rangeString, uri, false)
 	if err != nil {
 		return nil
 	}
