@@ -218,7 +218,12 @@ func (s *Server) onTextDocumentDidOpen(contents []byte) error {
 	documentText := request.Params.TextDocument.Text
 	s.state.SetDocument(uri, documentText)
 
-	diagnostics := findDiagnostics(documentText, uri, s.state.EnvVars)
+	diagnostics := findDiagnostics(
+		documentText,
+		uri,
+		s.state.EnvVars,
+		s.state.Config.ShellCheckOptions,
+	)
 	s.pushDiagnostic(request.Params.TextDocument.URI, diagnostics)
 
 	return nil
@@ -245,7 +250,12 @@ func (s *Server) onTextDocumentDidChange(contents []byte) error {
 
 	debounceTime := s.state.Config.DiagnosticDebounceTime
 	s.diagnosticTimer = time.AfterFunc(debounceTime, func() {
-		diagnostics := findDiagnostics(documentText, uri, s.state.EnvVars)
+		diagnostics := findDiagnostics(
+			documentText,
+			uri,
+			s.state.EnvVars,
+			s.state.Config.ShellCheckOptions,
+		)
 		s.pushDiagnostic(request.Params.TextDocument.URI, diagnostics)
 	})
 	s.mu.Unlock()

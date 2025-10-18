@@ -26,11 +26,8 @@ func handleCodeAction(request *lsp.CodeActionRequest, state *State) *lsp.CodeAct
 		actions = append(actions, *action)
 	}
 
-	if fileAst, err := ast.ParseDocument(documentText, uri); err == nil {
-		actions = append(actions, *minifyCodeAction(fileAst, uri))
-	}
-
-	if shellcheck, err := shellcheck.Run(documentText); err == nil {
+	shellcheck, err := shellcheck.Run(documentText, state.Config.ShellCheckOptions)
+	if err == nil {
 		// Fix all auto-fixable
 		if shellcheck.ContainsFixable() {
 			actions = append(actions, shellcheck.ToCodeActionFlat(uri))
@@ -41,6 +38,10 @@ func handleCodeAction(request *lsp.CodeActionRequest, state *State) *lsp.CodeAct
 		if len(context.Diagnostics) != 0 {
 			actions = append(actions, shellcheckCodeActions(shellcheck, uri, documentText, context)...)
 		}
+	}
+
+	if fileAst, err := ast.ParseDocument(documentText, uri); err == nil {
+		actions = append(actions, *minifyCodeAction(fileAst, uri))
 	}
 
 	response := &lsp.CodeActionResponse{

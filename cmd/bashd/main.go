@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/matkrin/bashd/internal/lsp"
 	"github.com/matkrin/bashd/internal/server"
+	"github.com/matkrin/bashd/internal/shellcheck"
 	"github.com/spf13/pflag"
 )
 
@@ -23,6 +25,23 @@ func main() {
 	verbosityOpt := pflag.CountP("verbose", "v", "Increase log message verbosity")
 	versionOpt := pflag.BoolP("version", "V", false, "Print version")
 
+	severityOpt := pflag.StringP("severity", "S", "style", "Minimum severity of errors to consider")
+	shellcheckIncludeOpt := pflag.StringSlice(
+		"shellcheck-include",
+		[]string{},
+		"Only include ShellCheck lints",
+	)
+	shellcheckExcludeOpt := pflag.StringSlice(
+		"shellcheck-exclude",
+		[]string{},
+		"Exclude ShellCheck lints",
+	)
+	shellcheckOptionalsOpt := pflag.StringSlice(
+		"shellcheck-optionals",
+		[]string{},
+		"Enable ShellCheck optional lints",
+	)
+
 	pflag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "bashd - Bash language server\n\n")
 		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", name)
@@ -31,6 +50,12 @@ func main() {
 	}
 
 	pflag.Parse()
+
+	if !slices.Contains([]string{"error", "warning", "info", "style"}, *severityOpt) {
+		fmt.Fprintf(os.Stderr, "illegal severity '%s'\n", *severityOpt)
+		os.Exit(1)
+	}
+
 	if *versionOpt {
 		fmt.Printf("%s %s\n", name, VERSION)
 		os.Exit(0)
@@ -45,17 +70,39 @@ func main() {
 		defer logFile.Close()
 	}
 
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Split(lsp.Split)
+	shellcheckOptionalsOpt = &[]string{
+		"add-default-case",         // Suggest adding a default case in `case` statements
+		"avoid-negated-conditions", // Suggest removing unnecessary comparison negations
+		"avoid-nullary-conditions", // Suggest explicitly using -n in `[ $var ]`
+		// "check-extra-masked-returns", // Check for additional cases where exit codes are masked
+		"check-set-e-suppressed",     // Notify when set -e is suppressed during function invocation
+		"check-unassigned-uppercase", // Warn when uppercase variables are unassigned
+		"deprecate-which",            // Suggest 'command -v' instead of 'which'
+		// "quote-safe-variables",       // Suggest quoting variables without metacharacters
+		"require-double-brackets", // Require [[ and warn about [ in Bash/Ksh
+		// "require-variable-braces",    // Suggest putting braces around all variable references
+		"useless-use-of-cat", // Check for Useless Use Of Cat (UUOC)
+	}
+
+	shellcheckOptions := shellcheck.Options{
+		Include:       *shellcheckIncludeOpt,
+		Exclude:       *shellcheckExcludeOpt,
+		OptionalLints: *shellcheckOptionalsOpt,
+		Severity:      *severityOpt,
+	}
 
 	config := server.Config{
-		ExcludeDirs: []string{".git", ".venv", "node_modules"},
+		ExcludeDirs:            []string{".git", ".venv", "node_modules"},
 		DiagnosticDebounceTime: 200 * time.Millisecond,
+		ShellCheckOptions:      shellcheckOptions,
 	}
 
 	state := server.NewState(config)
 	writer := os.Stdout
 	server := server.NewServer(name, VERSION, state, writer)
+
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Split(lsp.Split)
 
 	for scanner.Scan() {
 		msg := make([]byte, len(scanner.Bytes()))

@@ -13,6 +13,14 @@ import (
 	"github.com/matkrin/bashd/internal/utils"
 )
 
+type Options struct {
+	Include       []string
+	Exclude       []string
+	OptionalLints []string // See `shellcheck --list-optional`
+	Dialect       string   // sh, bash, dash, ksh, busybox
+	Severity      string   // error, warning, info, style
+}
+
 // https://github.com/koalaman/shellcheck/wiki/Integration
 type ShellCheckResult struct {
 	Comments []Comment `json:"comments"`
@@ -124,7 +132,7 @@ func (c *Comment) ToCodeActionIgnore(uri, documentText string, diagnosticRange *
 	indentation := utils.GetIndentation(diagnosticLine)
 	textEdits := []lsp.TextEdit{
 		{
-			Range: lsp.NewRange(startLine, 0, startLine, 0),
+			Range:   lsp.NewRange(startLine, 0, startLine, 0),
 			NewText: fmt.Sprintf("%s# shellcheck disable=SC%d\n", indentation, c.Code),
 		},
 	}
@@ -175,19 +183,30 @@ func (f *Fix) toTextEdits() []lsp.TextEdit {
 	return textEdits
 }
 
-func Run(filecontent string) (*ShellCheckResult, error) {
-	optionalLints := []string{
-		"add-default-case",
-		"require-double-brackets",
-	}
-	cmd := exec.Command(
-		"shellcheck",
+func Run(filecontent string, options Options) (*ShellCheckResult, error) {
+	optionalLints := options.OptionalLints
+
+	args := []string{
 		"--format=json1",
 		"--external-sources",
-		"--enable=add-default-case,require-double-brackets",
-		fmt.Sprintf("--enable=%s", strings.Join(optionalLints, ",")),
-		"-",
-	)
+	}
+	if len(optionalLints) != 0 {
+		args = append(args, fmt.Sprintf("--enable=%s", strings.Join(optionalLints, ",")))
+	}
+	if len(options.Include) != 0 {
+		args = append(args, fmt.Sprintf("--include=%s", strings.Join(options.Include, ",")))
+	}
+	if len(options.Exclude) != 0 {
+		args = append(args, fmt.Sprintf("--exclude=%s", strings.Join(options.Exclude, ",")))
+	}
+	if options.Dialect != "" {
+		args = append(args, fmt.Sprintf("--shell=%s", options.Dialect))
+	}
+	if options.Severity != "" {
+		args = append(args, fmt.Sprintf("--severity=%s", options.Severity))
+	}
+	args = append(args, "-")
+	cmd := exec.Command( "shellcheck", args...)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, errors.New("Could not acquire stdin")

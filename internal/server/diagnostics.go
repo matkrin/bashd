@@ -16,10 +16,11 @@ func findDiagnostics(
 	documentText string,
 	uri string,
 	envVars map[string]string,
+	shellcheckOptions shellcheck.Options,
 ) []lsp.Diagnostic {
 	diagnostics := []lsp.Diagnostic{}
 
-	shellcheck, err := shellcheck.Run(documentText)
+	shellcheck, err := shellcheck.Run(documentText, shellcheckOptions)
 	if err != nil {
 		slog.Error("ERROR running shellcheck", "err", err)
 	} else {
@@ -51,7 +52,12 @@ func findDiagnosticsWorkspace(state *State) map[string][]lsp.Diagnostic {
 		}
 
 		uri := utils.PathToURI(shFile)
-		diagnostics := findDiagnostics(string(fileContent), uri, state.EnvVars)
+		diagnostics := findDiagnostics(
+			string(fileContent),
+			uri,
+			state.EnvVars,
+			state.Config.ShellCheckOptions,
+		)
 		workspaceDiagnostics[uri] = diagnostics
 	}
 

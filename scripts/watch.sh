@@ -2,6 +2,7 @@
 
 shopt -s globstar
 
+WATCH_PATTERN="./**/*.go"
 BUILD_CMD="make --no-print-directory build"
 
 cyan() { printf "\e[36m%s\e[0m" "$1"; }
@@ -20,7 +21,7 @@ recompile() {
 
 watch_go_files_mac() {
     echo "$WATCH_MSG"
-    fswatch ./**/*.go |
+    fswatch $WATCH_PATTERN |
         while read -r changed_file; do
             clear
             recompile "$changed_file"
@@ -35,7 +36,7 @@ watch_go_files_linux() {
         -e modify,create,delete,move \
         --exclude '(^|/)\.git/' \
         --format '%w%f' \
-        ./**/*.go |
+        $WATCH_PATTERN |
         while read -r changed_file; do
             clear
             recompile "$changed_file"

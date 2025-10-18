@@ -102,11 +102,11 @@ If you have Go installed (v1.17+), you can install bashd directly with:
 go install github.com/matkrin/bashd/cmd/bashd@latest
 ```
 
-This will download, build, and install the binary to your `GOBIN` directory
-(usually `$HOME/go/bin`). Make sure `GOBIN` is in your system’s `PATH`:
+This will download, build, and install the binary to `$HOME/go/bin`, make sure
+it is is in your system’s `PATH`:
 
 ```sh
-export PATH="$PATH:$(go env GOPATH)/bin"
+export PATH="${HOME}/go/bin:${PATH}"
 ```
 
 Additionally, precompiled binaries are available for Linux, macOS, and Windows

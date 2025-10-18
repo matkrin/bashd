@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/matkrin/bashd/internal/lsp"
+	"github.com/matkrin/bashd/internal/shellcheck"
 	"github.com/matkrin/bashd/internal/utils"
 	"mvdan.cc/sh/v3/fileutil"
 )
@@ -22,6 +23,7 @@ type Document struct {
 type Config struct {
 	ExcludeDirs            []string
 	DiagnosticDebounceTime time.Duration
+	ShellCheckOptions      shellcheck.Options
 }
 
 type State struct {
