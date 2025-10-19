@@ -245,19 +245,15 @@ func (a *Ast) FindRefsInFile(cursor Cursor, includeDeclaration bool) []RefNode {
 	return references
 }
 
-// Fixed wouldResolveToSameDefinition that properly handles declaration ordering
 func (a *Ast) wouldResolveToSameDefinition(refCursorNode syntax.Node, targetDefNode *DefNode) bool {
-	// Simulate FindDefInFile logic at the reference location
 	pos := refCursorNode.Pos()
 	cursor := Cursor{Line: pos.Line(), Col: pos.Col()}
 	refScope := a.findEnclosingFunction(cursor)
 
-	// Apply the same resolution logic as FindDefInFile
 	targetIdentifier := targetDefNode.Name
 
-	// First, look for scoped variables in the same function scope
+	// Look for scoped variables in the same function scope
 	if refScope != nil {
-		// Find the closest local declaration that comes BEFORE the reference
 		var closestLocalDef *DefNode
 
 		for _, defNode := range a.DefNodes() {

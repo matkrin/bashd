@@ -126,7 +126,7 @@ func (a *Ast) FindRefsInWorkspaceFiles(
 				}
 
 				// Use cross-file resolution logic
-				if workspaceFileAst.WouldResolveToSameDefinitionAcrossFiles(refNode.Node, defNode, targetFile, shFile) {
+				if workspaceFileAst.wouldResolveToSameDefinitionAcrossFiles(refNode.Node, defNode) {
 					refs = append(refs, refNode)
 				}
 			}
