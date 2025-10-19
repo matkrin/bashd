@@ -55,6 +55,7 @@ func handleReferences(request *lsp.ReferencesRequest, state *State) *lsp.Referen
 	refNodesInWorkspaceFile := fileAst.FindRefsInWorkspaceFiles(
 		uri,
 		state.WorkspaceShFiles(),
+		baseDir,
 		cursor,
 		state.EnvVars,
 		params.Context.IncludeDeclaration,

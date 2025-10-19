@@ -21,39 +21,13 @@ func (a *Ast) FindRefsinSourcedFile(
 	}
 
 	_, defNode := a.FindDefinitionAcrossFiles(cursor, env, baseDir)
+	if defNode == nil {
+		return map[string][]RefNode{}
+	}
 
 	sourcedFiles := a.FindAllSourcedFiles(env, baseDir, map[string]bool{})
 	filesRefNodes := map[string][]RefNode{}
 
-
-	// If no definition found, fall back to simple name matching
-	if defNode == nil {
-		slog.Info("No definition found, falling back to name matching")
-
-		for _, sourcedFile := range sourcedFiles {
-			fileContent, err := os.ReadFile(sourcedFile)
-			if err != nil {
-				slog.Error("Could not read file", "file", sourcedFile)
-				continue
-			}
-			sourcedFileAst, err := ParseDocument(string(fileContent), sourcedFile, false)
-			if err != nil {
-				slog.Error(err.Error())
-				continue
-			}
-
-			refs := []RefNode{}
-			for _, refNode := range sourcedFileAst.RefNodes(includeDeclaration) {
-				if refNode.Name == targetIdentifier {
-					refs = append(refs, refNode)
-				}
-			}
-			filesRefNodes[sourcedFile] = refs
-		}
-		return filesRefNodes
-	}
-
-	// Definition found - find references across all files with proper scoping
 	for _, sourcedFile := range sourcedFiles {
 		fileContent, err := os.ReadFile(sourcedFile)
 		if err != nil {
@@ -62,7 +36,7 @@ func (a *Ast) FindRefsinSourcedFile(
 		}
 		sourcedFileAst, err := ParseDocument(string(fileContent), sourcedFile, false)
 		if err != nil {
-			slog.Error(err.Error())
+			slog.Error("Could not parse file", "file", sourcedFile)
 			continue
 		}
 
@@ -76,7 +50,9 @@ func (a *Ast) FindRefsinSourcedFile(
 				refs = append(refs, refNode)
 			}
 		}
-		filesRefNodes[sourcedFile] = refs
+		if len(refs) > 0 {
+			filesRefNodes[sourcedFile] = refs
+		}
 	}
 
 	return filesRefNodes

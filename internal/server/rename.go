@@ -97,6 +97,7 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 	refNodesInWorkspaceFile := fileAst.FindRefsInWorkspaceFiles(
 		uri,
 		state.WorkspaceShFiles(),
+		baseDir,
 		cursor,
 		state.EnvVars,
 		true,
