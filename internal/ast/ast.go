@@ -108,6 +108,12 @@ func ExtractIdentifier(node syntax.Node) string {
 		if n.Name != nil {
 			return n.Name.Value
 		}
+	case *syntax.DeclClause:
+		if n.Variant != nil {
+			return n.Variant.Value
+		}
+	case *syntax.CoprocClause:
+		return "coproc"
 	}
 	return ""
 }
