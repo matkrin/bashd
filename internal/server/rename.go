@@ -25,6 +25,7 @@ func handlePrepareRename(
 	fileAst, err := ast.ParseDocument(document, uri, false)
 	if err != nil {
 		slog.Error(err.Error())
+		return nil
 	}
 	cursorNode := fileAst.FindNodeUnderCursor(cursor)
 	referenceNodes := fileAst.FindRefsInFile(cursor, true)
@@ -66,16 +67,18 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 	fileAst, err := ast.ParseDocument(document, uri, false)
 	if err != nil {
 		slog.Error(err.Error())
+		return nil
 	}
 	referenceNodes := fileAst.FindRefsInFile(cursor, true)
 
-	changes := map[string][]lsp.TextEdit{}
+	changes := make(map[string][]lsp.TextEdit)
 	changes[uri] = findTextEditsInFile(referenceNodes, params.NewName)
 
 	// In sourced files
 	filename, err := utils.UriToPath(uri)
 	if err != nil {
 		slog.Error("Could not transform URI to path", "err", err.Error())
+		return nil
 	}
 	baseDir := filepath.Dir(filename)
 	referenceNodesInSourcedFiles := fileAst.FindRefsinSourcedFile(
@@ -126,7 +129,7 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 }
 
 func findTextEditsInFile(referenceNodes []ast.RefNode, newText string) []lsp.TextEdit {
-	textEdits := []lsp.TextEdit{}
+	var textEdits []lsp.TextEdit
 	for _, refNode := range referenceNodes {
 		textEdits = append(textEdits, refNode.ToLspTextEdit(newText))
 	}
