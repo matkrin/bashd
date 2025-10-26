@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/matkrin/bashd/internal/ast"
 	"github.com/matkrin/bashd/internal/lsp"
@@ -10,22 +11,26 @@ import (
 
 // Handler for `textDocument/completion`
 func handleCompletion(request *lsp.CompletionRequest, state *State) *lsp.CompletionResponse {
-	completionList := []lsp.CompletionItem{}
+	var completionList []lsp.CompletionItem
 
 	uri := request.Params.TextDocument.URI
 	document := state.Documents[uri].Text
 	fileAst, err := ast.ParseDocument(document, uri, true)
 	if err != nil {
-		response := lsp.NewCompletionResponse(request.ID, completionList)
-		return &response
+		slog.Error("Could not parse file", "file", uri)
 	}
 
 	triggerChar := request.Params.Context.TriggerCharacter
 	if triggerChar != nil && (*triggerChar == "$" || *triggerChar == "{") {
-		completionList = append(completionList, completeDollar(fileAst, state)...)
+		if fileAst != nil {
+			completionList = append(completionList, completeDollar(fileAst, state)...)
+		}
 	} else {
+		if fileAst != nil {
+			completionList = append(completionList, completionFunctions(fileAst)...)
+		}
 		completionList = append(completionList, completionKeywords()...)
-		completionList = append(completionList, completionFunctions(fileAst)...)
+		completionList = append(completionList, completionBuiltins()...)
 		completionList = append(completionList, completionPathItem(state)...)
 	}
 
@@ -46,14 +51,14 @@ func handleCompletionItemResolve(
 		Value: mdDocumentation,
 	}
 
-	response := lsp.CompletionItemResolveResponse{
+	response := &lsp.CompletionItemResolveResponse{
 		Response: lsp.Response{
 			RPC: lsp.RPC_VERSION,
 			ID:  &request.ID,
 		},
 		Result: completionItem,
 	}
-	return &response
+	return response
 }
 
 // Completion for variables defined in Document and environment variables
@@ -98,6 +103,22 @@ func completionKeywords() []lsp.CompletionItem {
 		completionItem := lsp.CompletionItem{
 			Label:         keyword,
 			Kind:          lsp.CompletionKeyword,
+			Detail:        "",
+			Documentation: nil,
+		}
+		result = append(result, completionItem)
+	}
+
+	return result
+}
+
+// Completion for keywords
+func completionBuiltins() []lsp.CompletionItem {
+	var result []lsp.CompletionItem
+	for _, builtin := range BASH_BUILTINS {
+		completionItem := lsp.CompletionItem{
+			Label:         builtin,
+			Kind:          lsp.CompletionFunction,
 			Detail:        "",
 			Documentation: nil,
 		}
