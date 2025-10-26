@@ -1,12 +1,14 @@
 package server
 
 import (
+	"io"
 	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/matkrin/bashd/internal/lsp"
@@ -61,6 +63,9 @@ func (s *State) SetDocument(uri, documentText string) {
 // Find sh-files and return their filepaths
 func (s *State) WorkspaceShFiles() []string {
 	var shFiles []string
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+
 	for _, folder := range s.WorkspaceFolders {
 		dirpath, err := utils.UriToPath(folder.URI)
 		if err != nil {
@@ -74,14 +79,36 @@ func (s *State) WorkspaceShFiles() []string {
 			if d.IsDir() && slices.Contains(s.Config.ExcludeDirs, d.Name()) {
 				return fs.SkipDir
 			}
-			fileext := filepath.Ext(path)
-			if fileext == ".sh" || fileutil.CouldBeScript2(d) == fileutil.ConfIfShebang {
+
+			if fileutil.CouldBeScript2(d) == fileutil.ConfIsScript {
+				mu.Lock()
 				shFiles = append(shFiles, path)
+				mu.Unlock()
+			} else if fileutil.CouldBeScript2(d) == fileutil.ConfIfShebang {
+				wg.Add(1)
+				go func(path string) {
+					defer wg.Done()
+					file, err := os.Open(path)
+					if err != nil {
+						return
+					}
+					defer file.Close()
+					data, err := io.ReadAll(file)
+					if err != nil {
+						return
+					}
+					if fileutil.HasShebang(data) {
+						mu.Lock()
+						shFiles = append(shFiles, path)
+						mu.Unlock()
+					}
+				}(path)
 			}
 			return nil
 		})
 	}
 
+	wg.Wait()
 	return shFiles
 }
 
