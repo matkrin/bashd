@@ -14,7 +14,6 @@ import (
 )
 
 func handleHover(request *lsp.HoverRequest, state *State) *lsp.HoverResponse {
-
 	uri := request.Params.TextDocument.URI
 	cursor := ast.NewCursor(
 		request.Params.Position.Line,
@@ -36,7 +35,7 @@ func handleHover(request *lsp.HoverRequest, state *State) *lsp.HoverResponse {
 
 	identifier := ast.ExtractIdentifier(cursorNode)
 	documentation := getDocumentation(identifier)
-	if strings.Trim(documentation, "\n") != "" {
+	if documentation != "" {
 		hoverResultValue = fmt.Sprintf("```man\n%s\n```", documentation)
 	}
 

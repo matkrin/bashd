@@ -11,14 +11,13 @@ import (
 func handleDocumentSymbol(request *lsp.DocumentSymbolsRequest, state *State) *lsp.DocumentSymbolResponse {
 	uri := request.Params.TextDocument.URI
 	document := state.Documents[uri]
-	documentSymbols := []lsp.DocumentSymbol{}
 	fileAst, err := ast.ParseDocument(document.Text, uri, false)
 	if err != nil {
 		slog.Error("Could not parse document", "document", uri)
 		return nil
 	}
 
-	documentSymbols = findDocumentSymbols(fileAst.DefNodes())
+	documentSymbols := findDocumentSymbols(fileAst.DefNodes())
 
 	response := lsp.NewDocumentSymbolResponse(request.ID, documentSymbols)
 	return &response
@@ -26,7 +25,7 @@ func handleDocumentSymbol(request *lsp.DocumentSymbolsRequest, state *State) *ls
 
 func findDocumentSymbols(defNodes []ast.DefNode) []lsp.DocumentSymbol {
 	locals := findLocals(defNodes)
-	documentSymbols := []lsp.DocumentSymbol{}
+	var documentSymbols  []lsp.DocumentSymbol
 
 	for _, defNode := range defNodes {
 		var kind lsp.SymbolKind
@@ -104,7 +103,7 @@ func findDocumentSymbols(defNodes []ast.DefNode) []lsp.DocumentSymbol {
 }
 
 func findLocals(defNodes []ast.DefNode) map[string][]lsp.DocumentSymbol {
-	locals := map[string][]lsp.DocumentSymbol{}
+	locals := make(map[string][]lsp.DocumentSymbol)
 
 	for _, defNode := range defNodes {
 		decl, ok := defNode.Node.(*syntax.DeclClause)

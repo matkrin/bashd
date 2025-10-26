@@ -27,7 +27,7 @@ func handleReferences(request *lsp.ReferencesRequest, state *State) *lsp.Referen
 	}
 	referenceNodes := fileAst.FindRefsInFile(cursor, params.Context.IncludeDeclaration)
 
-	locations := []lsp.Location{}
+	var locations []lsp.Location
 	for _, refNode := range referenceNodes {
 		locations = append(locations, refNode.ToLspLocation(uri))
 	}

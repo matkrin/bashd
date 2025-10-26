@@ -11,10 +11,9 @@ import (
 )
 
 func handleWorkspaceSymbol(request *lsp.WorkspaceSymbolRequest, state *State) *lsp.WorkspaceSymbolResponse {
-	slog.Info("Workspace Symbols Query", "query", request.Params.Query)
 	shFiles := state.WorkspaceShFiles()
 
-	workspaceSymbols := []lsp.WorkspaceSymbol{}
+	var workspaceSymbols []lsp.WorkspaceSymbol
 	for _, shFile := range shFiles {
 		fileContent, err := os.ReadFile(shFile)
 		if err != nil {

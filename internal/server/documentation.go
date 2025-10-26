@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os/exec"
 	"slices"
+	"strings"
 )
 
 func getDocumentation(command string) string {
@@ -17,29 +18,29 @@ func getDocumentation(command string) string {
 		documentation = runMan(command)
 	}
 
-	return documentation
+	return strings.Trim(documentation, "\n")
 }
 
 func runMan(command string) string {
 	manCmd := exec.Command("man", "-p", "cat", command)
 	colCmd := exec.Command("col", "-bx")
 
-	man, err := runPipe(manCmd, colCmd)
+	manOutput, err := runPipe(manCmd, colCmd)
 	if err != nil {
 		slog.Error("Error running pipe", "err", err)
 	}
-	return man
+	return manOutput
 }
 
 func runHelp(command string) string {
 	helpCmd := exec.Command("bash", "-c", fmt.Sprintf("help %s", command))
 	colCmd := exec.Command("col", "-bx")
 
-	help, err := runPipe(helpCmd, colCmd)
+	helpOutput, err := runPipe(helpCmd, colCmd)
 	if err != nil {
 		slog.Error("Error running pipe", "err", err)
 	}
-	return help
+	return helpOutput
 }
 
 func runPipe(cmd1, cmd2 *exec.Cmd) (string, error) {

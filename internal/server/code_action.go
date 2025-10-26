@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"log/slog"
 
 	"github.com/matkrin/bashd/internal/ast"
 	"github.com/matkrin/bashd/internal/lsp"
@@ -14,8 +13,6 @@ import (
 var SHEBANG = "#!/usr/bin/env bash\n\n"
 
 func handleCodeAction(request *lsp.CodeActionRequest, state *State) *lsp.CodeActionResponse {
-	slog.Debug("CODE ACTION", "range", request.Params.Range)
-	slog.Debug("CODE ACTION", "context", request.Params.Context)
 	uri := request.Params.TextDocument.URI
 	documentText := state.Documents[uri].Text
 	hasShebang := fileutil.HasShebang([]byte(documentText))
@@ -36,7 +33,10 @@ func handleCodeAction(request *lsp.CodeActionRequest, state *State) *lsp.CodeAct
 		// Fix for certain lint (position dependent)
 		context := request.Params.Context
 		if len(context.Diagnostics) != 0 {
-			actions = append(actions, shellcheckCodeActions(shellcheck, uri, documentText, context)...)
+			shellcheckCodeActions := shellcheckCodeActions(shellcheck, uri, documentText, context)
+			if len(shellcheckCodeActions) > 0 {
+				actions = append(actions, shellcheckCodeActions...)
+			}
 		}
 	}
 
@@ -99,7 +99,7 @@ func shellcheckCodeActions(
 	documentText string,
 	context lsp.CodeActionContext,
 ) []lsp.CodeAction {
-	actions := []lsp.CodeAction{}
+	actions := make([]lsp.CodeAction, len(shellcheck.Comments))
 	for _, comment := range shellcheck.Comments {
 		shellcheckDiagnostic := comment.ToDiagnostic()
 		for _, contextDiagnostic := range context.Diagnostics {

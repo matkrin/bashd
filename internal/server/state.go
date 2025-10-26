@@ -43,7 +43,7 @@ func NewState(config Config) State {
 	}
 
 	return State{
-		Documents:         map[string]Document{},
+		Documents:         make(map[string]Document),
 		EnvVars:           envVars,
 		PathItems:         pathItems,
 		Config:            config,
@@ -60,7 +60,7 @@ func (s *State) SetDocument(uri, documentText string) {
 
 // Find sh-files and return their filepaths
 func (s *State) WorkspaceShFiles() []string {
-	shFiles := []string{}
+	var shFiles []string
 	for _, folder := range s.WorkspaceFolders {
 		dirpath, err := utils.UriToPath(folder.URI)
 		if err != nil {

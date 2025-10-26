@@ -1,7 +1,6 @@
 package server
 
 import (
-	"log/slog"
 	"regexp"
 	"strconv"
 	"strings"
@@ -13,8 +12,6 @@ import (
 var ansiRegex = regexp.MustCompile(`(\\e|\\033|\\x1b|\x1b)\[[0-9;]*m`)
 
 func handleDocumentColor(request *lsp.DocumentColorRequest, state *State) *lsp.DocumentColorResponse {
-	slog.Info("COLOR", "params", request.Params)
-
 	uri := request.Params.TextDocument.URI
 	documentText := state.Documents[uri].Text
 

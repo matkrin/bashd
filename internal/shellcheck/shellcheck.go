@@ -50,7 +50,7 @@ type Fix struct {
 }
 
 func (s *ShellCheckResult) ToDiagnostics() []lsp.Diagnostic {
-	diagnostics := []lsp.Diagnostic{}
+	var diagnostics []lsp.Diagnostic
 	for _, comment := range s.Comments {
 		diagnostics = append(diagnostics, comment.ToDiagnostic())
 	}

@@ -18,7 +18,7 @@ func findDiagnostics(
 	envVars map[string]string,
 	shellcheckOptions shellcheck.Options,
 ) []lsp.Diagnostic {
-	diagnostics := []lsp.Diagnostic{}
+	diagnostics := make([]lsp.Diagnostic, 0)
 
 	shellcheck, err := shellcheck.Run(documentText, shellcheckOptions)
 	if err != nil {
@@ -43,7 +43,7 @@ func findDiagnostics(
 }
 
 func findDiagnosticsWorkspace(state *State) map[string][]lsp.Diagnostic {
-	workspaceDiagnostics := map[string][]lsp.Diagnostic{}
+	workspaceDiagnostics := make(map[string][]lsp.Diagnostic)
 
 	for _, shFile := range state.WorkspaceShFiles() {
 		fileContent, err := os.ReadFile(shFile)
