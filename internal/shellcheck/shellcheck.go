@@ -14,11 +14,11 @@ import (
 )
 
 type Options struct {
-	Include       []string
-	Exclude       []string
-	OptionalLints []string // See `shellcheck --list-optional`
-	Dialect       string   // sh, bash, dash, ksh, busybox
-	Severity      string   // error, warning, info, style
+	Include  []string
+	Exclude  []string
+	Enable   []string // See `shellcheck --list-optional`
+	Dialect  string   // sh, bash, dash, ksh, busybox
+	Severity string   // error, warning, info, style
 }
 
 // https://github.com/koalaman/shellcheck/wiki/Integration
@@ -184,7 +184,7 @@ func (f *Fix) toTextEdits() []lsp.TextEdit {
 }
 
 func Run(filecontent string, options Options) (*ShellCheckResult, error) {
-	optionalLints := options.OptionalLints
+	optionalLints := options.Enable
 
 	args := []string{
 		"--format=json1",
@@ -206,7 +206,7 @@ func Run(filecontent string, options Options) (*ShellCheckResult, error) {
 		args = append(args, fmt.Sprintf("--severity=%s", options.Severity))
 	}
 	args = append(args, "-")
-	cmd := exec.Command( "shellcheck", args...)
+	cmd := exec.Command("shellcheck", args...)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, errors.New("Could not acquire stdin")

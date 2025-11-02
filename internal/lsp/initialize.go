@@ -7,13 +7,14 @@ type InitializeRequest struct {
 }
 
 type InitializeRequestParams struct {
-	ProcessID        *int              `json:"processId"`
-	ClientInfo       *ClientInfo       `json:"clientInfo"`
-	Locale           string            `json:"locale"`
-	RootPath         *string           `json:"rootPath"`
-	RootURI          *string           `json:"rootUri"`
-	Trace            *string           `json:"trace"`
-	WorkspaceFolders []WorkspaceFolder `json:"workspaceFolders"`
+	ProcessID             *int              `json:"processId"`
+	ClientInfo            *ClientInfo       `json:"clientInfo"`
+	Locale                string            `json:"locale"`
+	RootPath              *string           `json:"rootPath"`
+	RootURI               *string           `json:"rootUri"`
+	Trace                 *string           `json:"trace"`
+	WorkspaceFolders      []WorkspaceFolder `json:"workspaceFolders"`
+	InitializationOptions *any              `json:"initializationOptions"`
 	// Capabilities ClientCapabilities `json:"capabilities"`
 }
 

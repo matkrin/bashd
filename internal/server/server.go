@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -73,6 +74,8 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 		err = s.onTextDocumentDidOpen(contents)
 	case "textDocument/didChange":
 		err = s.onTextDocumentDidChange(contents)
+	case "workspace/didChangeConfiguration":
+		err = s.onDidChangeConfiguration(contents)
 	case "textDocument/hover":
 		err = s.onTextDocumentHover(contents)
 	case "textDocument/definition":
@@ -130,6 +133,7 @@ func (s *Server) onInitialize(contents []byte) error {
 
 	slog.Info("ClientInfo", "name", request.Params.ClientInfo.Name,
 		"version", request.Params.ClientInfo.Version)
+	slog.Info("onInitialize", "initializationOptions", request.Params.InitializationOptions)
 
 	s.state.WorkspaceFolders = request.Params.WorkspaceFolders
 	slog.Info("Workspace folders set", "workerspaceFolders", s.state.WorkspaceFolders)
@@ -259,6 +263,78 @@ func (s *Server) onTextDocumentDidChange(contents []byte) error {
 		s.pushDiagnostic(request.Params.TextDocument.URI, diagnostics)
 	})
 	s.mu.Unlock()
+
+	return nil
+}
+
+type didChangeConfigurationSettings struct {
+	Severity   *string `json:"severity"`
+	Shellcheck *struct {
+		Include *[]string `json:"include"`
+		Exclude *[]string `json:"exclude"`
+		Enable  *[]string `json:"enable"`
+	} `json:"shellcheck"`
+	Format *struct {
+		BinaryNextLine *bool `json:"binary_next_line"` // Binary ops like && and | may start a line
+		CaseIndent     *bool `json:"case_indent"`      // Switch cases will be indented
+		SpaceRedirects *bool `json:"space_redirects"`  // Redirect operators will be followed by a space
+		FuncNextLine   *bool `json:"func_next_line"`   // Function opening braces are placed on a separate line
+	} `json:"format"`
+}
+
+func (s *Server) onDidChangeConfiguration(contents []byte) error {
+	var request lsp.DidChangeConfigurationRequest
+	if err := json.Unmarshal(contents, &request); err != nil {
+		return errors.New("ERROR: Could not parse request")
+	}
+
+	paramsSettings, ok := request.Params.Settings.(map[string]any)
+	if !ok {
+		return errors.New("ERROR: Unknown settings type")
+	}
+
+	rawSettings, ok := paramsSettings["bashd"]
+	if !ok {
+		return errors.New("ERROR: Settings did not contain key 'bashd'")
+	}
+
+	data, err := json.Marshal(rawSettings)
+	if err != nil {
+		return fmt.Errorf("ERROR: Could not marshal settings: %w", err)
+	}
+
+	var settings didChangeConfigurationSettings
+	if err := json.Unmarshal(data, &settings); err != nil {
+		return fmt.Errorf("ERROR: Could not unmarshal bashd settings: %w", err)
+	}
+
+	slog.Info("onDidChangeConfiguration", "settings", settings)
+	if settings.Format != nil {
+		if settings.Format.BinaryNextLine != nil {
+			s.state.Config.FormatOptions.BinaryNextLine = *settings.Format.BinaryNextLine
+		}
+		if settings.Format.CaseIndent != nil {
+			s.state.Config.FormatOptions.CaseIndent = *settings.Format.CaseIndent
+		}
+		if settings.Format.SpaceRedirects != nil {
+			s.state.Config.FormatOptions.SpaceRedirects = *settings.Format.SpaceRedirects
+		}
+		if settings.Format.FuncNextLine != nil {
+			s.state.Config.FormatOptions.FuncNextLine = *settings.Format.FuncNextLine
+		}
+	}
+	if settings.Severity != nil {
+		s.state.Config.ShellCheckOptions.Severity = *settings.Severity
+	}
+	if settings.Shellcheck.Include != nil {
+		s.state.Config.ShellCheckOptions.Include = *settings.Shellcheck.Include
+	}
+	if settings.Shellcheck.Exclude != nil {
+		s.state.Config.ShellCheckOptions.Exclude = *settings.Shellcheck.Exclude
+	}
+	if settings.Shellcheck.Enable != nil {
+		s.state.Config.ShellCheckOptions.Enable = *settings.Shellcheck.Enable
+	}
 
 	return nil
 }

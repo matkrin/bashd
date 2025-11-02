@@ -29,8 +29,10 @@ func handleFormatting(request *lsp.FormattingRequest, state *State) *lsp.Formatt
 	indent := syntax.Indent(indentWidth)
 
 	printer := syntax.NewPrinter(indent,
-		syntax.SpaceRedirects(true),
-		syntax.BinaryNextLine(true),
+		syntax.SpaceRedirects(state.Config.FormatOptions.SpaceRedirects),
+		syntax.BinaryNextLine(state.Config.FormatOptions.BinaryNextLine),
+		syntax.FunctionNextLine(state.Config.FormatOptions.FuncNextLine),
+		syntax.SwitchCaseIndent(state.Config.FormatOptions.CaseIndent),
 	)
 
 	buffer := bytes.NewBuffer([]byte{})

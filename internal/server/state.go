@@ -26,6 +26,14 @@ type Config struct {
 	ExcludeDirs            []string
 	DiagnosticDebounceTime time.Duration
 	ShellCheckOptions      shellcheck.Options
+	FormatOptions          FormatOptions
+}
+
+type FormatOptions struct {
+	BinaryNextLine bool
+	CaseIndent     bool
+	SpaceRedirects bool
+	FuncNextLine   bool
 }
 
 type State struct {
@@ -93,6 +101,7 @@ func (s *State) WorkspaceShFiles() []string {
 						return
 					}
 					defer file.Close()
+					// TODO: Maybe read not all bytes
 					data, err := io.ReadAll(file)
 					if err != nil {
 						return

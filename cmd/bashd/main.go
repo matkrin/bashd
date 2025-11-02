@@ -26,21 +26,15 @@ func main() {
 	versionOpt := pflag.BoolP("version", "V", false, "Print version")
 
 	severityOpt := pflag.StringP("severity", "S", "style", "Minimum severity of errors to consider")
-	shellcheckIncludeOpt := pflag.StringSlice(
-		"shellcheck-include",
-		[]string{},
-		"Only include ShellCheck lints",
-	)
-	shellcheckExcludeOpt := pflag.StringSlice(
-		"shellcheck-exclude",
-		[]string{},
-		"Exclude ShellCheck lints",
-	)
-	shellcheckOptionalsOpt := pflag.StringSlice(
-		"shellcheck-optionals",
-		[]string{},
-		"Enable ShellCheck optional lints",
-	)
+
+	shellcheckIncludeOpt := pflag.StringSlice("shellcheck-include", []string{}, "Only include ShellCheck lints")
+	shellcheckExcludeOpt := pflag.StringSlice("shellcheck-exclude", []string{}, "Exclude ShellCheck lints")
+	shellcheckEnableOpt := pflag.StringSlice("shellcheck-enable", []string{}, "Enable ShellCheck optional lints")
+
+	fmtBinaryNextLineOpt := pflag.Bool("fmt-binary-next-line", false, "Binary ops start a line")
+	fmtCaseIndentOpt := pflag.Bool("fmt-case-indent", false, "Switch cases will be indented")
+	fmtSpaceRedirectsOpt := pflag.Bool("fmt-space-redirects", false, "Redirect operators will be followed by a space")
+	fmtFuncNextLineOpt := pflag.Bool("fmt-func-next-line", false, "Function opening braces are placed on a separate line")
 
 	pflag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "bashd - Bash language server\n\n")
@@ -70,31 +64,25 @@ func main() {
 		defer logFile.Close()
 	}
 
-	shellcheckOptionalsOpt = &[]string{
-		"add-default-case",         // Suggest adding a default case in `case` statements
-		"avoid-negated-conditions", // Suggest removing unnecessary comparison negations
-		"avoid-nullary-conditions", // Suggest explicitly using -n in `[ $var ]`
-		// "check-extra-masked-returns", // Check for additional cases where exit codes are masked
-		"check-set-e-suppressed",     // Notify when set -e is suppressed during function invocation
-		"check-unassigned-uppercase", // Warn when uppercase variables are unassigned
-		"deprecate-which",            // Suggest 'command -v' instead of 'which'
-		// "quote-safe-variables",       // Suggest quoting variables without metacharacters
-		"require-double-brackets", // Require [[ and warn about [ in Bash/Ksh
-		// "require-variable-braces",    // Suggest putting braces around all variable references
-		"useless-use-of-cat", // Check for Useless Use Of Cat (UUOC)
+	shellcheckOptions := shellcheck.Options{
+		Include:  *shellcheckIncludeOpt,
+		Exclude:  *shellcheckExcludeOpt,
+		Enable:   *shellcheckEnableOpt,
+		Severity: *severityOpt,
 	}
 
-	shellcheckOptions := shellcheck.Options{
-		Include:       *shellcheckIncludeOpt,
-		Exclude:       *shellcheckExcludeOpt,
-		OptionalLints: *shellcheckOptionalsOpt,
-		Severity:      *severityOpt,
+	formatOptions := server.FormatOptions{
+		BinaryNextLine: *fmtBinaryNextLineOpt,
+		CaseIndent:     *fmtCaseIndentOpt,
+		SpaceRedirects: *fmtSpaceRedirectsOpt,
+		FuncNextLine:   *fmtFuncNextLineOpt,
 	}
 
 	config := server.Config{
 		ExcludeDirs:            []string{".git", ".venv", "node_modules"},
 		DiagnosticDebounceTime: 200 * time.Millisecond,
 		ShellCheckOptions:      shellcheckOptions,
+		FormatOptions:          formatOptions,
 	}
 
 	state := server.NewState(config)
