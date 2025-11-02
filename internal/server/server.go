@@ -292,6 +292,7 @@ func (s *Server) onDidChangeConfiguration(contents []byte) error {
 	if !ok {
 		return errors.New("ERROR: Unknown settings type")
 	}
+	slog.Info("onDidChangeConfiguration", "params.settings", paramsSettings)
 
 	rawSettings, ok := paramsSettings["bashd"]
 	if !ok {
@@ -326,14 +327,16 @@ func (s *Server) onDidChangeConfiguration(contents []byte) error {
 	if settings.Severity != nil {
 		s.state.Config.ShellCheckOptions.Severity = *settings.Severity
 	}
-	if settings.Shellcheck.Include != nil {
-		s.state.Config.ShellCheckOptions.Include = *settings.Shellcheck.Include
-	}
-	if settings.Shellcheck.Exclude != nil {
-		s.state.Config.ShellCheckOptions.Exclude = *settings.Shellcheck.Exclude
-	}
-	if settings.Shellcheck.Enable != nil {
-		s.state.Config.ShellCheckOptions.Enable = *settings.Shellcheck.Enable
+	if settings.Shellcheck != nil {
+		if settings.Shellcheck.Include != nil {
+			s.state.Config.ShellCheckOptions.Include = *settings.Shellcheck.Include
+		}
+		if settings.Shellcheck.Exclude != nil {
+			s.state.Config.ShellCheckOptions.Exclude = *settings.Shellcheck.Exclude
+		}
+		if settings.Shellcheck.Enable != nil {
+			s.state.Config.ShellCheckOptions.Enable = *settings.Shellcheck.Enable
+		}
 	}
 
 	return nil
