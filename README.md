@@ -160,6 +160,10 @@ name = "bash"
 language-servers = [{ name = "bashd" }]
 ```
 
+See [bashd (1)](/docs/bashd.1.md) for all
+[configuration options](/docs/bashd.1.md#CONFIGURATION) and
+full [examples](/docs/bashd.1.md#EXAMPLES).
+
 [sgr]: https://en.wikipedia.org/wiki/ANSI_escape_code#Select_Graphic_Rendition_parameters
 [8b-color]: https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
 [24b-color]: https://en.wikipedia.org/wiki/ANSI_escape_code#24-bit

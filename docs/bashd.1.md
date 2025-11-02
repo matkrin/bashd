@@ -32,6 +32,36 @@ the Go sh package and featuring ShellCheck integration for real-time linting.
 - **-v**, **--verbose**
   Increase log message verbosity with repeated usage up to **-vvv**.
 
+- **-S**, **--severity** _SEVERITY-LEVEL_
+  Minimum severity used for diagnostics. _SEVERITY_LEVEL_ must be one of
+  _style_, _info_, _warning_ or _error_. Default: _style_
+
+- **--shellcheck-enable** _OPTIONAL-LINTS_
+  Enable **shellcheck** optional lints. See avaible optional lints with
+  **shellcheck --list-optional**.
+
+- **--shellcheck-exclude** _RULE-CODES_
+  Exclude **shellcheck** lints. _RULES-COES_ is a comma separated list of rules.
+
+- **--shellcheck-include** _RULE-CODES_
+  Only include **shellcheck** lints. _RULES-CODES_ is a comma separated list of
+  rules. All other rules will be disabled.
+
+- **--fmt-binary-next-line**
+  On format, binary operators will appear on the next line when a binary
+  command, such as a _|_, _&&_ or _||_, spans multiple lines. A `_\\_` will be
+  used.
+
+- **--fmt-case-indent**
+  On format, _switch_ cases will be indented. As such, _switch_ case bodies will
+  be two levels deeper than the _switch_ itself.
+
+- **--fmt-func-next-line**
+  On format, function opening braces are placed on a separate line.
+
+- **--fmt-space-redirects**
+  On format, redirect operators such as _>_ will be followed by a space.
+
 - **-h**, **--help**
   Print a help message.
 
@@ -40,94 +70,151 @@ the Go sh package and featuring ShellCheck integration for real-time linting.
 
 ---
 
-# FEATURES
+# CONFIGURATION
+## severity
+Minimum severity used for diagnostics. Must be one of
+_style_, _info_, _warning_ or _error_. Default: _style_
 
-## Diagnostics
+## shellcheck
+---
+- **include**
+  List of **shellcheck** rule codes. All other rules will be disabled.
 
-- Check if sourced file exists
-- Parser errors
-- ShellCheck lints
-- For document on document change
-- For workspace on initialize
+- **exclude**
+  List of **shellcheck** rules codes.
 
-## Hover
+- **enable**
+  List of **shellcheck** optional lints.
+---
 
-- Show **help** output as docs for keywords and builtins
-- Show man page as docs for executables
-- Show location of assignment for variables
-- Show location and body for functions
+As the time of writing the following optional lints are available:
 
-## Definition
+| Rule name                    | Description                                                 |
+| ---------------------------- | ----------------------------------------------------------- |
+| _add-default-case_           | Suggest adding a default case in `case` statements          |
+| _avoid-negated-conditions_   | Suggest removing unnecessary comparison negations           |
+| _avoid-nullary-conditions_   | Suggest explicitly using -n in `[ $var ]`                   |
+| _check-extra-masked-returns_ | Check for additional cases where exit codes are masked      |
+| _check-set-e-suppressed_     | Notify when set -e is suppressed during function invocation |
+| _check-unassigned-uppercase_ | Warn when uppercase variables are unassigned                |
+| _deprecate-which_            | Suggest 'command -v' instead of 'which'                     |
+| _quote-safe-variables_       | Suggest quoting variables without metacharacters            |
+| _require-double-brackets_    | Require [[ and warn about [ in Bash/Ksh                     |
+| _require-variable-braces_    | Suggest putting braces around all variable references       |
+| _useless-use-of-cat_         | Check for Useless Use Of Cat (UUOC)                         |
 
-- Variable assignment in document and sourced files
-- Function declaration in document and sourced files
-- Sourced file itself
+## format
+---
+- **binary_next_line**
+  Binary operators will appear on the next line when a binary
+  command, such as a _|_, _&&_ or _||_, spans multiple lines. A _`\\`_ will be
+  used between lines.
 
-## References
+- **case_indent**
+  Switch cases will be indented. As such, _switch_ case bodies will
+  be two levels deeper than the _switch_ itself.
 
-- Function calls in current document and sourced files
-- Variable usage in current document and sourced files
-- Function calls in workspace file which source the current file
-- Variable usage in workspace file which source the current file
-- Depending on `ReferenceContext.includeDeclaration` function declarations and
-  variable assignments
+- **space_redirects**
+  Redirect operators such as _>_ will be followed by a space.
 
-## Rename
+- **func_next_line**
+  Function opening braces are placed on a separate line.
+---
 
-- Function declarations and calls in document and sourced files
-- Variable assignments and usage in document and sourced files
-- Function declarations and calls in workspace file which source the current
-  file
-- Variable assignments and usage in workspace file which source the current file
+# EXAMPLES
+## Invoke with highest log level and log to a file
 
-## Completion
+```sh
+bashd -vvv --logfile <LOG-FILE-NAME>
+```
 
-- Variables declared in document (on _`$`_ and _`{`_)
-- Functions declared in document
-- Environment variables (on _`$`_ and _`{`_)
-- Keywords
-- Executables in _PATH_
-- Resolve with **help** output as docs for keywords and builtins
-- Resolve with man page as docs for executables
+To do the same within Neovim, use
+```lua
+    vim.lsp.config.bashd = {
+      cmd = { "bashd", "-vvv", "--logfile", "<LOG-FILE-NAME>" },
+      -- ...
+```
 
-## Document Symbols
+or in Helix via
 
-- Variable assignment in document
-- Function declaration in document
+```toml
+    [language-server.bashd]
+    command = "bashd"
+    args = [ "-vvv", "--logfile", "<LOG_FILE-NAME>"]
+    # ...
+```
 
-## Workspace Symbols
 
-- Variable assignment in workspace .sh files and scripts without extension but
-  shebang
-- Function declaration in workspace .sh files and scripts without extension but
-  shebang
+## Neovim configuration
+```lua
+vim.lsp.config.bashd = {
+  cmd = { "bashd" },
+  filetypes = { "bash", "sh" },
+  root_markers = { ".git" },
+  settings = {
+    bashd = {
+      severity = "style",                -- Minimum severity of errors to consider (error, warning, info, style)
+      shellcheck = {
+        include = {},                    -- Consider only given types of warnings
+        exclude = {},                    -- Exclude types of warnings
+        enable = {                       -- List of optional checks to enable (or 'all')
+          "add-default-case",            -- Suggest adding a default case in `case` statements
+          "avoid-negated-conditions",    -- Suggest removing unnecessary comparison negations
+          "avoid-nullary-conditions",    -- Suggest explicitly using -n in `[ $var ]`
+          "check-extra-masked-returns",  -- Check for additional cases where exit codes are masked
+          "check-set-e-suppressed",      -- Notify when set -e is suppressed during function invocation
+          "check-unassigned-uppercase",  -- Warn when uppercase variables are unassigned
+          "deprecate-which",             -- Suggest 'command -v' instead of 'which'
+          "quote-safe-variables",        -- Suggest quoting variables without metacharacters
+          "require-double-brackets",     -- Require [[ and warn about [ in Bash/Ksh
+          "require-variable-braces",     -- Suggest putting braces around all variable references
+          "useless-use-of-cat",          -- Check for Useless Use Of Cat (UUOC)
+        },
+      },
+      format = {
+        binary_next_line = true,  -- Binary ops like && and | may start a line
+        case_indent = false,      -- Switch cases will be indented
+        space_redirects = true,   -- Redirect operators will be followed by a space
+        func_next_line = false,   -- Function opening braces are placed on a separate line
+      }
+    }
+  }
+}
 
-## Formatting
+vim.lsp.enable("bashd")
+```
 
-- Entire file
-- Range formatting (as long as range covers nodes that can be formatted)
+## Helix configuration
+```toml
+[language-server.bashd]
+command = "bashd"
 
-## Code Actions
+[language-server.bashd.config.bashd]
+severity = "style"                 # Minimum severity of errors to consider (error, warning, info, style)
+shellcheck.include = []            # Consider only given types of warnings
+shellcheck.exclude = []            # Exclude types of warnings
+shellcheck.enable = [              # -- List of optional checks to enable (or 'all')
+    "add-default-case",            # Suggest adding a default case in `case` statements
+    "avoid-negated-conditions",    # Suggest removing unnecessary comparison negations
+    "avoid-nullary-conditions",    # Suggest explicitly using -n in `[ $var ]`
+    "check-extra-masked-returns",  # Check for additional cases where exit codes are masked
+    "check-set-e-suppressed",      # Notify when set -e is suppressed during function invocation
+    "check-unassigned-uppercase",  # Warn when uppercase variables are unassigned
+    "deprecate-which",             # Suggest 'command -v' instead of 'which'
+    "quote-safe-variables",        # Suggest quoting variables without metacharacters
+    "require-double-brackets",     # Require [[ and warn about [ in Bash/Ksh
+    "require-variable-braces",     # Suggest putting braces around all variable references
+    "useless-use-of-cat",          # Check for Useless Use Of Cat (UUOC)
+]
+format.binary_next_line = true     # Binary ops like && and | may start a line
+format.case_indent = false         # Switch cases will be indented
+format.space_redirects = true      # Redirect operators will be followed by a space
+format.func_next_line = false      # Function opening braces are placed on a separate line
 
-- Fix for shellcheck lints (position dependent)
-- Add ignore comment for shellcheck lints (position dependent)
-- Fix all auto-fixable lints (only when there are fixable lints)
-- Add shebang if not exist
-- Minify script
-
-### Inlay Hint
-
-- SGR ANSI escapes
-
-### Document Colors
-
-- 256-color (8-bit) foreground (`\x1b[38;5;<n>m`) and background
-  (`\x1b[48;5;<n>m`)
-- True color (24-bit) foreground(`\x1b[38;2;<r>;<g>;<b>m`) and background
-  (`\x1b[48;2;<r>;<g>;<b>m`)
-- 3-bit / 4-bit color foreground (`\x1b[<n>m`; n ∈ [30,37] ∪ [90,97]) and
-  background (`\x1b[<n>m`; n ∈ [40,47] ∪ [100,107])
-- Also alternative escapes `\e` and `\033`
+[[language]]
+name = "bash"
+language-servers = [{ name = "bashd" }]
+```
 
 # SEE ALSO
 

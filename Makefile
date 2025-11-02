@@ -18,3 +18,6 @@ watch:
 
 test:
 	@go test ./...
+
+man:
+	mdman -o ./docs/$(BINNAME).1 ./docs/$(BINNAME).1.md && man ./docs/$(BINNAME).1

@@ -26,6 +26,44 @@ Log to \fIFILE\fP instead of stderr\&.
 Increase log message verbosity with repeated usage up to \fB-vvv\fP\&.
 
 .TP
+\fB-S\fP, \fB--severity\fP \fISEVERITY-LEVEL\fP
+Minimum severity used for diagnostics\&. \fISEVERITY_LEVEL\fP must be one of
+\fIstyle\fP, \fIinfo\fP, \fIwarning\fP or \fIerror\fP\&. Default: \fIstyle\fP
+
+.TP
+\fB--shellcheck-enable\fP \fIOPTIONAL-LINTS\fP
+Enable \fBshellcheck\fP optional lints\&. See avaible optional lints with
+\fBshellcheck --list-optional\fP\&.
+
+.TP
+\fB--shellcheck-exclude\fP \fIRULE-CODES\fP
+Exclude \fBshellcheck\fP lints\&. \fIRULES-COES\fP is a comma separated list of rules\&.
+
+.TP
+\fB--shellcheck-include\fP \fIRULE-CODES\fP
+Only include \fBshellcheck\fP lints\&. \fIRULES-CODES\fP is a comma separated list of
+rules\&. All other rules will be disabled\&.
+
+.TP
+\fB--fmt-binary-next-line\fP
+On format, binary operators will appear on the next line when a binary
+command, such as a \fI|\fP, \fI&&\fP or \fI||\fP, spans multiple lines\&. A \fC_\\_\fP will be
+used\&.
+
+.TP
+\fB--fmt-case-indent\fP
+On format, \fIswitch\fP cases will be indented\&. As such, \fIswitch\fP case bodies will
+be two levels deeper than the \fIswitch\fP itself\&.
+
+.TP
+\fB--fmt-func-next-line\fP
+On format, function opening braces are placed on a separate line\&.
+
+.TP
+\fB--fmt-space-redirects\fP
+On format, redirect operators such as \fI>\fP will be followed by a space\&.
+
+.TP
 \fB-h\fP, \fB--help\fP
 Print a help message\&.
 
@@ -33,174 +71,203 @@ Print a help message\&.
 \fB-V\fP, \fB--version\fP
 Print the version\&.
 
-.SH FEATURES
-.SS Diagnostics
+.SH CONFIGURATION
+.SS severity
+.PD
+.PP
+Minimum severity used for diagnostics\&. Must be one of
+\fIstyle\fP, \fIinfo\fP, \fIwarning\fP or \fIerror\fP\&. Default: \fIstyle\fP
+.SS shellcheck
+.TP
+\fBinclude\fP
+List of \fBshellcheck\fP rule codes\&. All other rules will be disabled\&.
 
-.RS 2
-.PD 0
-.IP \(bu 2
-Check if sourced file exists
-.IP \(bu 2
-Parser errors
-.IP \(bu 2
-ShellCheck lints
-.IP \(bu 2
-For document on document change
-.IP \(bu 2
-For workspace on initialize
+.TP
+\fBexclude\fP
+List of \fBshellcheck\fP rules codes\&.
 
-.RE
-.SS Hover
+.TP
+\fBenable\fP
+List of \fBshellcheck\fP optional lints\&.
 
-.RS 2
-.PD 0
-.IP \(bu 2
-Show \fBhelp\fP output as docs for keywords and builtins
-.IP \(bu 2
-Show man page as docs for executables
-.IP \(bu 2
-Show location of assignment for variables
-.IP \(bu 2
-Show location and body for functions
+.PD
+.PP
+As the time of writing the following optional lints are available:
+.TS
+allbox;
+l l.
+T{
+Rule name
+T}	T{
+Description
+T}	
+T{
+\fIadd-default-case\fP
+T}	T{
+Suggest adding a default case in \fCcase\fP statements
+T}	
+T{
+\fIavoid-negated-conditions\fP
+T}	T{
+Suggest removing unnecessary comparison negations
+T}	
+T{
+\fIavoid-nullary-conditions\fP
+T}	T{
+Suggest explicitly using \-n in \fC[ $var ]\fP
+T}	
+T{
+\fIcheck-extra-masked-returns\fP
+T}	T{
+Check for additional cases where exit codes are masked
+T}	
+T{
+\fIcheck-set-e-suppressed\fP
+T}	T{
+Notify when set \-e is suppressed during function invocation
+T}	
+T{
+\fIcheck-unassigned-uppercase\fP
+T}	T{
+Warn when uppercase variables are unassigned
+T}	
+T{
+\fIdeprecate-which\fP
+T}	T{
+Suggest \&'command \-v\&' instead of \&'which\&'
+T}	
+T{
+\fIquote-safe-variables\fP
+T}	T{
+Suggest quoting variables without metacharacters
+T}	
+T{
+\fIrequire-double-brackets\fP
+T}	T{
+Require [[ and warn about [ in Bash/Ksh
+T}	
+T{
+\fIrequire-variable-braces\fP
+T}	T{
+Suggest putting braces around all variable references
+T}	
+T{
+\fIuseless-use-of-cat\fP
+T}	T{
+Check for Useless Use Of Cat (UUOC)
+T}	
+.TE
+.SS format
+.TP
+\fBbinary_next_line\fP
+Binary operators will appear on the next line when a binary
+command, such as a \fI|\fP, \fI&&\fP or \fI||\fP, spans multiple lines\&. A \fI\\\fP will be
+used between lines\&.
 
-.RE
-.SS Definition
+.TP
+\fBcase_indent\fP
+Switch cases will be indented\&. As such, \fIswitch\fP case bodies will
+be two levels deeper than the \fIswitch\fP itself\&.
 
-.RS 2
-.PD 0
-.IP \(bu 2
-Variable assignment in document and sourced files
-.IP \(bu 2
-Function declaration in document and sourced files
-.IP \(bu 2
-Sourced file itself
+.TP
+\fBspace_redirects\fP
+Redirect operators such as \fI>\fP will be followed by a space\&.
 
-.RE
-.SS References
+.TP
+\fBfunc_next_line\fP
+Function opening braces are placed on a separate line\&.
 
-.RS 2
-.PD 0
-.IP \(bu 2
-Function calls in current document and sourced files
-.IP \(bu 2
-Variable usage in current document and sourced files
-.IP \(bu 2
-Function calls in workspace file which source the current file
-.IP \(bu 2
-Variable usage in workspace file which source the current file
-.IP \(bu 2
-Depending on \fCReferenceContext.includeDeclaration\fP function declarations and
-variable assignments
+.SH EXAMPLES
+.SS Invoke with highest log level and log to a file
+.EX
+bashd -vvv --logfile <LOG-FILE-NAME>
+.EE
+.PD
+.PP
+To do the same within Neovim, use
+.EX
+    vim.lsp.config.bashd = {
+      cmd = { "bashd", "-vvv", "--logfile", "<LOG-FILE-NAME>" },
+      -- ...
+.EE
+.PD
+.PP
+or in Helix via
+.EX
+    [language-server.bashd]
+    command = "bashd"
+    args = [ "-vvv", "--logfile", "<LOG_FILE-NAME>"]
+    # ...
+.EE
+.SS Neovim configuration
+.EX
+vim.lsp.config.bashd = {
+  cmd = { "bashd" },
+  filetypes = { "bash", "sh" },
+  root_markers = { ".git" },
+  settings = {
+    bashd = {
+      severity = "style",                -- Minimum severity of errors to consider (error, warning, info, style)
+      shellcheck = {
+        include = {},                    -- Consider only given types of warnings
+        exclude = {},                    -- Exclude types of warnings
+        enable = {                       -- List of optional checks to enable (or 'all')
+          "add-default-case",            -- Suggest adding a default case in `case` statements
+          "avoid-negated-conditions",    -- Suggest removing unnecessary comparison negations
+          "avoid-nullary-conditions",    -- Suggest explicitly using -n in `[ $var ]`
+          "check-extra-masked-returns",  -- Check for additional cases where exit codes are masked
+          "check-set-e-suppressed",      -- Notify when set -e is suppressed during function invocation
+          "check-unassigned-uppercase",  -- Warn when uppercase variables are unassigned
+          "deprecate-which",             -- Suggest 'command -v' instead of 'which'
+          "quote-safe-variables",        -- Suggest quoting variables without metacharacters
+          "require-double-brackets",     -- Require [[ and warn about [ in Bash/Ksh
+          "require-variable-braces",     -- Suggest putting braces around all variable references
+          "useless-use-of-cat",          -- Check for Useless Use Of Cat (UUOC)
+        },
+      },
+      format = {
+        binary_next_line = true,  -- Binary ops like && and | may start a line
+        case_indent = false,      -- Switch cases will be indented
+        space_redirects = true,   -- Redirect operators will be followed by a space
+        func_next_line = false,   -- Function opening braces are placed on a separate line
+      }
+    }
+  }
+}
 
-.RE
-.SS Rename
+vim.lsp.enable("bashd")
+.EE
+.SS Helix configuration
+.EX
+[language-server.bashd]
+command = "bashd"
 
-.RS 2
-.PD 0
-.IP \(bu 2
-Function declarations and calls in document and sourced files
-.IP \(bu 2
-Variable assignments and usage in document and sourced files
-.IP \(bu 2
-Function declarations and calls in workspace file which source the current
-file
-.IP \(bu 2
-Variable assignments and usage in workspace file which source the current file
+[language-server.bashd.config.bashd]
+severity = "style"                 # Minimum severity of errors to consider (error, warning, info, style)
+shellcheck.include = []            # Consider only given types of warnings
+shellcheck.exclude = []            # Exclude types of warnings
+shellcheck.enable = [              # -- List of optional checks to enable (or 'all')
+    "add-default-case",            # Suggest adding a default case in `case` statements
+    "avoid-negated-conditions",    # Suggest removing unnecessary comparison negations
+    "avoid-nullary-conditions",    # Suggest explicitly using -n in `[ $var ]`
+    "check-extra-masked-returns",  # Check for additional cases where exit codes are masked
+    "check-set-e-suppressed",      # Notify when set -e is suppressed during function invocation
+    "check-unassigned-uppercase",  # Warn when uppercase variables are unassigned
+    "deprecate-which",             # Suggest 'command -v' instead of 'which'
+    "quote-safe-variables",        # Suggest quoting variables without metacharacters
+    "require-double-brackets",     # Require [[ and warn about [ in Bash/Ksh
+    "require-variable-braces",     # Suggest putting braces around all variable references
+    "useless-use-of-cat",          # Check for Useless Use Of Cat (UUOC)
+]
+format.binary_next_line = true     # Binary ops like && and | may start a line
+format.case_indent = false         # Switch cases will be indented
+format.space_redirects = true      # Redirect operators will be followed by a space
+format.func_next_line = false      # Function opening braces are placed on a separate line
 
-.RE
-.SS Completion
-
-.RS 2
-.PD 0
-.IP \(bu 2
-Variables declared in document (on \fI$\fP and \fI{\fP)
-.IP \(bu 2
-Functions declared in document
-.IP \(bu 2
-Environment variables (on \fI$\fP and \fI{\fP)
-.IP \(bu 2
-Keywords
-.IP \(bu 2
-Executables in \fIPATH\fP
-.IP \(bu 2
-Resolve with \fBhelp\fP output as docs for keywords and builtins
-.IP \(bu 2
-Resolve with man page as docs for executables
-
-.RE
-.SS Document Symbols
-
-.RS 2
-.PD 0
-.IP \(bu 2
-Variable assignment in document
-.IP \(bu 2
-Function declaration in document
-
-.RE
-.SS Workspace Symbols
-
-.RS 2
-.PD 0
-.IP \(bu 2
-Variable assignment in workspace \&.sh files and scripts without extension but
-shebang
-.IP \(bu 2
-Function declaration in workspace \&.sh files and scripts without extension but
-shebang
-
-.RE
-.SS Formatting
-
-.RS 2
-.PD 0
-.IP \(bu 2
-Entire file
-.IP \(bu 2
-Range formatting (as long as range covers nodes that can be formatted)
-
-.RE
-.SS Code Actions
-
-.RS 2
-.PD 0
-.IP \(bu 2
-Fix for shellcheck lints (position dependent)
-.IP \(bu 2
-Add ignore comment for shellcheck lints (position dependent)
-.IP \(bu 2
-Fix all auto\-fixable lints (only when there are fixable lints)
-.IP \(bu 2
-Add shebang if not exist
-.IP \(bu 2
-Minify script
-
-.RE
-.SS Inlay Hint
-
-.RS 2
-.PD 0
-.IP \(bu 2
-SGR ANSI escapes
-
-.RE
-.SS Document Colors
-
-.RS 2
-.PD 0
-.IP \(bu 2
-256\-color (8\-bit) foreground (\fC\x1b[38;5;<n>m\fP) and background
-(\fC\x1b[48;5;<n>m\fP)
-.IP \(bu 2
-True color (24\-bit) foreground(\fC\x1b[38;2;<r>;<g>;<b>m\fP) and background
-(\fC\x1b[48;2;<r>;<g>;<b>m\fP)
-.IP \(bu 2
-3\-bit / 4\-bit color foreground (\fC\x1b[<n>m\fP; n ∈ [30,37] ∪ [90,97]) and
-background (\fC\x1b[<n>m\fP; n ∈ [40,47] ∪ [100,107])
-.IP \(bu 2
-Also alternative escapes \fC\e\fP and \fC\033\fP
-
-.RE
+[[language]]
+name = "bash"
+language-servers = [{ name = "bashd" }]
+.EE
 .SH SEE ALSO
 .PD
 .PP
