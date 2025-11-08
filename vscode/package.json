@@ -1,0 +1,121 @@
+{
+    "name": "bashd-vscode",
+    "displayName": "bashd",
+    "version": "0.1.0",
+    "description": "Bash language server",
+    "keywords": [
+        "bash",
+        "language-server",
+        "bash-scripting",
+        "lsp"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/matkrin/bashd"
+    },
+    "license": "BSD-3-Clause",
+    "author": "matkrin",
+    "publisher": "matkrin",
+    "engines": {
+        "vscode": "^1.105.0"
+    },
+    "activationEvents": [],
+    "main": "./out/extension.js",
+    "contributes": {
+        "languages": [
+            {
+                "id": "bash",
+                "aliases": [
+                    "Bash",
+                    "bash",
+                    "sh"
+                ],
+                "extensions": [
+                    ".sh",
+                    ".bash"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "bashd",
+            "properties": {
+                "bashd.path": {
+                    "type": "string",
+                    "default": "bashd",
+                    "description": "Path to the bashd executable"
+                },
+                "bashd.severity": {
+                    "type": "string",
+                    "enum": [
+                        "error",
+                        "warning",
+                        "info",
+                        "style"
+                    ],
+                    "default": "style",
+                    "description": "Minimum severity of errors to consider"
+                },
+                "bashd.shellcheck.include": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [],
+                    "description": "Consider only given types of ShellCheck warnings"
+                },
+                "bashd.shellcheck.exclude": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [],
+                    "description": "Exclude given types of ShellCheck warnings"
+                },
+                "bashd.shellcheck.enable": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [],
+                    "description": "List of optional ShellCheck checks to enable"
+                },
+                "bashd.format.binary_next_line": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Binary ops like && and | may start a line"
+                },
+                "bashd.format.case_indent": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Switch cases will be indented"
+                },
+                "bashd.format.space_redirects": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Redirect operators will be followed by a space"
+                },
+                "bashd.format.func_next_line": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Function opening braces are placed on a separate line"
+                }
+            }
+        }
+    },
+    "type": "commonjs",
+    "scripts": {
+        "compile": "tsc -p .",
+        "package": "tsc -p . && vsce package"
+    },
+    "dependencies": {
+        "vscode-languageclient": "^9.0.1"
+    },
+    "devDependencies": {
+        "vscode": "^1.1.37",
+        "@types/vscode": "^1.105.0",
+        "@vscode/vsce": "^3.7.0",
+        "typescript": "^5.9.3"
+    }
+}
