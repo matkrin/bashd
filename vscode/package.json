@@ -19,24 +19,12 @@
     "engines": {
         "vscode": "^1.105.0"
     },
-    "activationEvents": [],
+    "activationEvents": [
+        "onLanguage:bash",
+        "onLanguage:shellscript"
+    ],
     "main": "./out/extension.js",
     "contributes": {
-        "languages": [
-            {
-                "id": "bash",
-                "aliases": [
-                    "Bash",
-                    "bash",
-                    "sh"
-                ],
-                "extensions": [
-                    ".sh",
-                    ".bash"
-                ],
-                "configuration": "./language-configuration.json"
-            }
-        ],
         "configuration": {
             "type": "object",
             "title": "bashd",

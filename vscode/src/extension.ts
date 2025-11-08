@@ -9,6 +9,7 @@ import {
 let client: LanguageClient;
 
 export function activate(context: vscode.ExtensionContext) {
+    console.log("bashd extention activated");
     const config = vscode.workspace.getConfiguration("bashd");
     const serverPath = config.get("path", "bashd");
 
@@ -17,7 +18,10 @@ export function activate(context: vscode.ExtensionContext) {
     };
 
     const clientOptions: LanguageClientOptions = {
-        documentSelector: [{ scheme: "file", language: "bash" }],
+        documentSelector: [
+            { scheme: "file", language: "bash" },
+            { scheme: "file", language: "shellscript" },
+        ],
         synchronize: {
             configurationSection: "bashd",
         },
