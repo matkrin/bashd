@@ -9,12 +9,12 @@ import {
 let client: LanguageClient;
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log("bashd extention activated");
     const config = vscode.workspace.getConfiguration("bashd");
     const serverPath = config.get("path", "bashd");
 
     const serverOptions: ServerOptions = {
         command: serverPath,
+        args: ["-vvv"]
     };
 
     const clientOptions: LanguageClientOptions = {

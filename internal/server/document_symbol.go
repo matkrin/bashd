@@ -25,13 +25,13 @@ func handleDocumentSymbol(request *lsp.DocumentSymbolsRequest, state *State) *ls
 
 func findDocumentSymbols(defNodes []ast.DefNode) []lsp.DocumentSymbol {
 	locals := findLocals(defNodes)
-	var documentSymbols  []lsp.DocumentSymbol
+	var documentSymbols []lsp.DocumentSymbol
 
 	for _, defNode := range defNodes {
 		var kind lsp.SymbolKind
 		var endLine, endCol uint
 		var selectionStartLine, selectionStartCol, selectionEndLine, selectionEndCol uint
-		var children []lsp.DocumentSymbol
+		children := make([]lsp.DocumentSymbol, 0)
 
 		switch n := defNode.Node.(type) {
 		// Function declaration

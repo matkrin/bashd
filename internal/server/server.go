@@ -121,7 +121,7 @@ func (s *Server) writeResponse(msg any) {
 	defer s.mu.Unlock()
 
 	reply := lsp.EncodeMessage(msg)
-	// logger.Info(reply)
+	// slog.Debug(reply)
 	s.writer.Write([]byte(reply))
 }
 
