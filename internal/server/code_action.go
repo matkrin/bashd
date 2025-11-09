@@ -17,7 +17,7 @@ func handleCodeAction(request *lsp.CodeActionRequest, state *State) *lsp.CodeAct
 	documentText := state.Documents[uri].Text
 	hasShebang := fileutil.HasShebang([]byte(documentText))
 
-	actions := []lsp.CodeAction{}
+	var actions []lsp.CodeAction
 	if !hasShebang {
 		action := shebangCodeAction(uri)
 		actions = append(actions, *action)
@@ -99,7 +99,7 @@ func shellcheckCodeActions(
 	documentText string,
 	context lsp.CodeActionContext,
 ) []lsp.CodeAction {
-	actions := make([]lsp.CodeAction, len(shellcheck.Comments))
+	var actions []lsp.CodeAction
 	for _, comment := range shellcheck.Comments {
 		shellcheckDiagnostic := comment.ToDiagnostic()
 		for _, contextDiagnostic := range context.Diagnostics {
