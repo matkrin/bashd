@@ -2,6 +2,7 @@ package ast
 
 import (
 	"fmt"
+	"strings"
 
 	"mvdan.cc/sh/v3/syntax"
 )
@@ -9,7 +10,7 @@ import (
 type DefNode struct {
 	Node      syntax.Node
 	Name      string
-	Scope     *syntax.FuncDecl  // nil for global scope
+	Scope     *syntax.FuncDecl // nil for global scope
 	IsScoped  bool             // true for local/declare/typeset variables
 	StartLine uint
 	StartChar uint
@@ -19,8 +20,8 @@ type DefNode struct {
 
 // Check if a definition appears before the cursor position
 // Definition is before cursor if:
-//   1. Definition line <= cursor line, OR
-//   2. Same line but definition column < cursor column
+//  1. Definition line <= cursor line, OR
+//  2. Same line but definition column < cursor column
 func (d *DefNode) isBeforeCursor(cursor Cursor) bool {
 	if d.StartLine <= cursor.Line {
 		return true
@@ -177,7 +178,7 @@ func (a *Ast) DefNodes() []DefNode {
 
 			for _, arg := range n.Args[1:] {
 				name = ExtractIdentifier(arg)
-				if name != "" {
+				if name != "" && !strings.HasPrefix(name, "-") {
 					startLine, startChar = arg.Pos().Line(), arg.Pos().Col()
 					endLine, endChar = arg.End().Line(), arg.End().Col()
 					defNodes = append(defNodes, DefNode{
@@ -233,8 +234,8 @@ func (a *Ast) findEnclosingFunctionForNode(targetNode syntax.Node) *syntax.FuncD
 
 		if (fnStart.Line() < targetStart.Line() ||
 			(fnStart.Line() == targetStart.Line() && fnStart.Col() <= targetStart.Col())) &&
-		   (targetEnd.Line() < fnEnd.Line() ||
-			(targetEnd.Line() == fnEnd.Line() && targetEnd.Col() <= fnEnd.Col())) {
+			(targetEnd.Line() < fnEnd.Line() ||
+				(targetEnd.Line() == fnEnd.Line() && targetEnd.Col() <= fnEnd.Col())) {
 			enclosingFunc = fn
 		}
 		return true
@@ -277,4 +278,3 @@ func (a *Ast) FindDefInFile(cursor Cursor) *DefNode {
 
 	return nil
 }
-
