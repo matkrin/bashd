@@ -40,7 +40,7 @@ func NewCompletionResponse(id int, completionList []CompletionItem) CompletionRe
 
 type CompletionItem struct {
 	Label        string                      `json:"label"`
-	LabelDetails *CompletionItemLabelDetails `json:"labelDetails"`
+	LabelDetails *CompletionItemLabelDetails `json:"labelDetails,omitempty"`
 	Kind         CompletionItemKind          `json:"kind"`
 	// Tags
 	Detail        string         `json:"detail"`
