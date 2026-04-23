@@ -46,14 +46,14 @@ rules\&. All other rules will be disabled\&.
 
 .TP
 \fB--fmt-binary-next-line\fP
-On format, binary operators will appear on the next line when a binary
-command, such as a \fI|\fP, \fI&&\fP or \fI||\fP, spans multiple lines\&. A \fC_\\_\fP will be
+On format, binary operators will appear on the next line when a binary command,
+such as a \fB|\fP, \fB&&\fP or \fB||\fP, spans multiple lines\&. A \fB\\\fP will be
 used\&.
 
 .TP
 \fB--fmt-case-indent\fP
-On format, \fIswitch\fP cases will be indented\&. As such, \fIswitch\fP case bodies will
-be two levels deeper than the \fIswitch\fP itself\&.
+On format, \fBswitch\fP cases will be indented\&. As such, \fBswitch\fP case bodies
+will be two levels deeper than the \fBswitch\fP itself\&.
 
 .TP
 \fB--fmt-func-next-line\fP
@@ -61,7 +61,7 @@ On format, function opening braces are placed on a separate line\&.
 
 .TP
 \fB--fmt-space-redirects\fP
-On format, redirect operators such as \fI>\fP will be followed by a space\&.
+On format, redirect operators such as \fB>\fP will be followed by a space\&.
 
 .TP
 \fB-h\fP, \fB--help\fP
@@ -104,7 +104,7 @@ T}
 T{
 \fIadd-default-case\fP
 T}	T{
-Suggest adding a default case in \fCcase\fP statements
+Suggest adding a default case in \fBcase\fP statements
 T}	
 T{
 \fIavoid-negated-conditions\fP
@@ -114,7 +114,7 @@ T}
 T{
 \fIavoid-nullary-conditions\fP
 T}	T{
-Suggest explicitly using \-n in \fC[ $var ]\fP
+Suggest explicitly using \fB-n\fP in \fB[ $var ]\fP
 T}	
 T{
 \fIcheck-extra-masked-returns\fP
@@ -124,7 +124,7 @@ T}
 T{
 \fIcheck-set-e-suppressed\fP
 T}	T{
-Notify when set \-e is suppressed during function invocation
+Notify when \fBset -e\fP is suppressed during function invocation
 T}	
 T{
 \fIcheck-unassigned-uppercase\fP
@@ -134,7 +134,7 @@ T}
 T{
 \fIdeprecate-which\fP
 T}	T{
-Suggest \&'command \-v\&' instead of \&'which\&'
+Suggest \fBcommand -v\fP instead of \fBwhich\fP
 T}	
 T{
 \fIquote-safe-variables\fP
@@ -144,7 +144,7 @@ T}
 T{
 \fIrequire-double-brackets\fP
 T}	T{
-Require [[ and warn about [ in Bash/Ksh
+Require \fB[[\fP and warn about \fB[\fP in Bash/Ksh
 T}	
 T{
 \fIrequire-variable-braces\fP
@@ -161,17 +161,17 @@ T}
 .TP
 \fBbinary_next_line\fP
 Binary operators will appear on the next line when a binary
-command, such as a \fI|\fP, \fI&&\fP or \fI||\fP, spans multiple lines\&. A \fI\\\fP will be
-used between lines\&.
+command, such as a \fB|\fP, \fB&&\fP or \fB||\fP, spans multiple lines\&. A \fB\\\fP
+will be used between lines\&.
 
 .TP
 \fBcase_indent\fP
-Switch cases will be indented\&. As such, \fIswitch\fP case bodies will
-be two levels deeper than the \fIswitch\fP itself\&.
+Switch cases will be indented\&. As such, \fBswitch\fP case bodies will
+be two levels deeper than the \fBswitch\fP itself\&.
 
 .TP
 \fBspace_redirects\fP
-Redirect operators such as \fI>\fP will be followed by a space\&.
+Redirect operators such as \fB>\fP will be followed by a space\&.
 
 .TP
 \fBfunc_next_line\fP
