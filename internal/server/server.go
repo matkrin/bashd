@@ -164,14 +164,14 @@ func (s *Server) onInitialize(contents []byte) error {
 			ResolveProvider:   true,
 		},
 		DiagnosticProvider: lsp.DiagnosticOptions{
-			Identifier:            nil,
+			Identifier:            &s.name,
 			InterFileDependencies: false,
 			WorkspaceDiagnostics:  false,
 		},
 	}
 	info := lsp.ServerInfo{
-		Name:    "bashd",
-		Version: "0.1.0a1",
+		Name:    s.name,
+		Version: s.version,
 	}
 
 	msg := lsp.NewInitializeResponse(request.ID, &capabilities, &info)
