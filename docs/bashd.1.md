@@ -196,7 +196,7 @@ command = "bashd"
 severity = "style"                 # Minimum severity of errors to consider (error, warning, info, style)
 shellcheck.include = []            # Consider only given types of warnings
 shellcheck.exclude = []            # Exclude types of warnings
-shellcheck.enable = [              # -- List of optional checks to enable (or 'all')
+shellcheck.enable = [              # List of optional checks to enable (or 'all')
     "add-default-case",            # Suggest adding a default case in `case` statements
     "avoid-negated-conditions",    # Suggest removing unnecessary comparison negations
     "avoid-nullary-conditions",    # Suggest explicitly using -n in `[ $var ]`
