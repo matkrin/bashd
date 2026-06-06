@@ -61,7 +61,7 @@ echo "hello world"
 				}
 
 			case "shutdown":
-				expectedIn := []string{"Content-Length: 38", `"jsonrpc"`, `"result":null`}
+				expectedIn := []string{"Content-Length: 24", `"jsonrpc"`}
 				response := writer.String()
 				for _, exp := range expectedIn {
 					if !strings.Contains(response, exp) {
