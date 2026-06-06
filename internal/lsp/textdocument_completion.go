@@ -12,7 +12,7 @@ type CompletionParams struct {
 
 type CompletionContext struct {
 	TriggerKind      CompletionTriggerKind `json:"triggerKind"`
-	TriggerCharacter *string               `json:"triggerCharacter"`
+	TriggerCharacter *string               `json:"triggerCharacter,omitempty"`
 }
 
 type CompletionTriggerKind int
@@ -61,8 +61,8 @@ type CompletionItem struct {
 }
 
 type CompletionItemLabelDetails struct {
-	Detail      *string `json:"detail"`
-	Description *string `json:"description"`
+	Detail      *string `json:"detail,omitempty"`
+	Description *string `json:"description,omitempty"`
 }
 
 type CompletionItemKind int

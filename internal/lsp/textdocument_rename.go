@@ -12,7 +12,7 @@ type RenameParams struct {
 
 type RenameResponse struct {
 	Response
-	Result *WorkspaceEdit `json:"result"`
+	Result *WorkspaceEdit `json:"result,omitempty"`
 }
 
 type WorkspaceEdit struct {

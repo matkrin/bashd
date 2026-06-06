@@ -19,8 +19,8 @@ type InlayHint struct {
 	Position     Position      `json:"position"`
 	Label        string        `json:"label"`
 	Kind         InlayHintKind `json:"kind"`
-	TextEdits    *[]TextEdit   `json:"textEdits"`
-	Tooltip      *string       `json:"tooltip"`
+	TextEdits    *[]TextEdit   `json:"textEdits,omitempty"`
+	Tooltip      *string       `json:"tooltip,omitempty"`
 	PaddingLeft  bool          `json:"paddingLeft"`
 	PaddingRight bool          `json:"paddingRight"`
 }

@@ -6,5 +6,5 @@ type ShutdownRequest struct {
 
 type ShutdownResponse struct {
 	Response
-	Result *any `json:"result"`
+	Result *any `json:"result,omitempty"`
 }

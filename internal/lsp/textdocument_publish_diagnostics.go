@@ -41,14 +41,14 @@ func NewDiagnosticNotification(uri string, diagnostics []Diagnostic) DiagnosticN
 
 type PublishDiagnosticsParams struct {
 	URI         string       `json:"uri"`
-	Version     *int         `json:"version"`
+	Version     *int         `json:"version,omitempty"`
 	Diagnostics []Diagnostic `json:"diagnostics"`
 }
 
 type Diagnostic struct {
 	Range    Range              `json:"range"`
 	Severity DiagnosticSeverity `json:"severity"`
-	Code     *string            `json:"code"`
+	Code     *string            `json:"code,omitempty"`
 	// CodeDescription
 	Source  string `json:"source"`
 	Message string `json:"message"`

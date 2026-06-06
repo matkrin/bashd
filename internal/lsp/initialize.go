@@ -7,14 +7,14 @@ type InitializeRequest struct {
 }
 
 type InitializeRequestParams struct {
-	ProcessID             *int              `json:"processId"`
-	ClientInfo            *ClientInfo       `json:"clientInfo"`
+	ProcessID             *int              `json:"processId,omitempty"`
+	ClientInfo            *ClientInfo       `json:"clientInfo,omitempty"`
 	Locale                string            `json:"locale"`
-	RootPath              *string           `json:"rootPath"`
-	RootURI               *string           `json:"rootUri"`
-	Trace                 *string           `json:"trace"`
+	RootPath              *string           `json:"rootPath,omitempty"`
+	RootURI               *string           `json:"rootUri,omitempty"`
+	Trace                 *string           `json:"trace,omitempty"`
 	WorkspaceFolders      []WorkspaceFolder `json:"workspaceFolders"`
-	InitializationOptions *any              `json:"initializationOptions"`
+	InitializationOptions *any              `json:"initializationOptions,omitempty"`
 	// Capabilities ClientCapabilities `json:"capabilities"`
 }
 
@@ -68,7 +68,7 @@ type CompletionOptions struct {
 }
 
 type DiagnosticOptions struct {
-	Identifier            *string `json:"identifier"`
+	Identifier            *string `json:"identifier,omitempty"`
 	InterFileDependencies bool    `json:"interFileDependencies"`
 	WorkspaceDiagnostics  bool    `json:"workspaceDiagnostics"`
 }
