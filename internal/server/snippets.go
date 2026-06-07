@@ -17,7 +17,7 @@ var SNIPPETS = []struct {
 	},
 	{
 		"for in directory",
-		"",
+		"foor loop over files in a directory",
 		"for ${1:FILE} in \"${2:DIR}\"/*; do\n\t${0::}\ndone",
 	},
 	{
@@ -27,12 +27,12 @@ var SNIPPETS = []struct {
 	},
 	{
 		"while read file",
-		"",
+		"while loop over lines in a file",
 		"while IFS= read -r ${1:LINE}; do\n\t${0::}\ndone < \"${2:FILE}\"",
 	},
 	{
 		"while getopts",
-		"",
+		"while loop with getopts command",
 		`while getopts "${1:ab:c:}" opt; do
 	case "\$opt" in
 		a) ;;
@@ -49,7 +49,7 @@ done`,
 	},
 	{
 		"if else",
-		"",
+		"if else statement",
 		"if [[ ${1:PREDICATE} ]]; then\n\t${2::}\nelse\n\t${0::}\nfi",
 	},
 	{
@@ -153,38 +153,38 @@ done`,
 		"<( ${0:COMMAND} )",
 	},
 	{
-		"var-default",
-		"default parameter expansion",
+		"var default",
+		"parameter expansion with default value",
 		"\"\\${${1:VAR:-${2:DEFAULT}}}\"",
 	},
 	{
 		"var-error",
-		"null or unset parameter expansion",
+		"parameter expansion with check for null or unset",
 		"\"\\${${1:VAR:?${2:ERROR_MSG}}}\"",
 	},
 	{
 		"find file",
-		"",
+		"find a file with given extension",
 		"find \"${1:PATH}\" -type f -name \"${2:*.EXT}\"",
 	},
 	{
 		"mapfile lines",
-		"",
+		"mapfile that creates a array over all lines in a file",
 		"mapfile -t ${1:LINES} < \"${2:FILE}\"",
 	},
 	{
 		"scriptdir",
-		"",
+		"gets the directory where scripti is located",
 		"script_dir=\"\\$(cd -- \"\\$(dirname -- \"\\${BASH_SOURCE[0]}\")\" && pwd)\"",
 	},
 	{
 		"usage",
-		"",
+		"usage function",
 		"usage() {\n\tcat <<EOF\nUsage: ${1:script} [options]\n\nEOF\n }",
 	},
 	{
 		"help",
-		"",
+		"help function",
 		`print-help() {
 	cat <<EOF
 ${1:PROGRAM_NAME} - ${2:SHORT_DESCRIPTION} (version ${3:VERSION})
