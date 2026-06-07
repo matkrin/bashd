@@ -54,27 +54,27 @@ done`,
 	},
 	{
 		"if file exists",
-		"",
+		"if statement that checks existance of a file",
 		"if [[ -f \"${1:FILE}\" ]]; then\n\t${0::}\nfi",
 	},
 	{
 		"if directory exists",
-		"",
+		"if statement that checks existance of a directory",
 		"if [[ -d \"${1:DIRECTORY}\" ]]; then\n\t${0::}\nfi",
 	},
 	{
 		"if string non-zero",
-		"",
+		"if statement that checks if a string has non-zero length",
 		"if [[ -n \"${1:VAR}\" ]]; then\n\t${0::}\nfi",
 	},
 	{
 		"if string zero",
-		"",
+		"if statement that checks if a string has zero length",
 		"if [[ -z \"${1:VAR}\" ]]; then\n\t${0::}\nfi",
 	},
 	{
 		"if command exists",
-		"",
+		"if statement that checks if executable exists in PATH",
 		"if command -v ${1:EXECUTABLE} >/dev/null 2>&1; then\n\t${0::}\nfi",
 	},
 	{
@@ -84,28 +84,33 @@ done`,
 	},
 	{
 		"start",
-		"",
+		"sensible preamble",
 		"#!/usr/bin/env bash\n\nset -euo pipefail\n\n${0}",
 	},
 	{
 		"declare array",
-		"",
+		"declare and array with values",
 		"declare -a ${1:ARR}=(\n\t\"${2:ITEM}\"\n)\n$0",
 	},
 	{
-		"declare associate array",
-		"",
+		"declare associative array",
+		"declare an associative array with keys and values",
 		"declare -A ${1:MAP}=(\n\t[\"${2:KEY}\"]=\"${3:VALUE}\"\n)\n$0",
 	},
 	{
 		"read -r",
-		"",
+		"read with -r (no backslash escape)",
 		"read -r ${1:VAR}",
 	},
 	{
 		"read -rp",
-		"",
+		"read with -r (no backslash escape) and -p (prompt)",
 		"read -rp \"${1:PROMPT: }\" ${2:VAR}",
+	},
+	{
+		"read comma list",
+		"read a comma separated input into array",
+		"IFS=',' read -ra ${1:PARTS} <<< \"${2:INPUT}\"",
 	},
 	{
 		"printf",
@@ -114,7 +119,7 @@ done`,
 	},
 	{
 		"echo stderr",
-		"",
+		"echo to stderr",
 		"echo >&2 \"${1:ERROR_MSG}\"",
 	},
 	{
@@ -136,6 +141,11 @@ done`,
 		"trap INT TERM",
 		"",
 		"trap '${1:HANDLER}' INT TERM",
+	},
+	{
+		"cleanup",
+		"cleanup function",
+		"cleanup() {\n\t${0::}\n}\n\ntrap cleanup EXIT",
 	},
 	{
 		"tmpdir",
@@ -178,6 +188,21 @@ done`,
 		"script_dir=\"\\$(cd -- \"\\$(dirname -- \"\\${BASH_SOURCE[0]}\")\" && pwd)\"",
 	},
 	{
+		"date",
+		"",
+		"date +'%Y-%m-%d'",
+	},
+	{
+		"date ISO 8601",
+		"",
+		"date +'%Y-%m-%dT%H:%M:%S%z'",
+	},
+	{
+		"install",
+		"",
+		"install -Dm755 \"${1:SRC}\" \"${2:DST}\"",
+	},
+	{
 		"usage",
 		"usage function",
 		"usage() {\n\tcat <<EOF\nUsage: ${1:script} [options]\n\nEOF\n }",
@@ -201,5 +226,25 @@ Options:
   -V, --version           Print version
 EOF
 }`,
+	},
+	{
+		"python command",
+		"python command with heredoc",
+		"python3 - <<'PY'\n${0:PYTHON}\nPY",
+	},
+	{
+		"log",
+		"log function",
+		`log() { printf '[%s] %s\n' "$(date +'%F %T')" "$*"; }`,
+	},
+	{
+		"die",
+		"die function",
+		`die() { echo >&2 "$*"; exit 1; }`,
+	},
+	{
+		"require",
+		"require function",
+		`require() { command -v "$1" >/dev/null 2>&1 || die "missing dependency: $1"; }`,
 	},
 }
