@@ -32,6 +32,7 @@ func handleCompletion(request *lsp.CompletionRequest, state *State) *lsp.Complet
 		completionList = append(completionList, completionKeywords()...)
 		completionList = append(completionList, completionBuiltins()...)
 		completionList = append(completionList, completionPathItem(state)...)
+		completionList = append(completionList, completionSnippets()...)
 	}
 
 	response := lsp.NewCompletionResponse(request.ID, completionList)
@@ -165,5 +166,27 @@ func completionPathItem(state *State) []lsp.CompletionItem {
 		}
 		result = append(result, completionItem)
 	}
+	return result
+}
+
+// Completion for snippets
+func completionSnippets() []lsp.CompletionItem {
+	var result []lsp.CompletionItem
+
+	insertTextFormat := lsp.InsertTextFormatSnippet
+	for _, snippet := range SNIPPETS {
+		result = append(result, lsp.CompletionItem{
+			Label:  snippet.label,
+			Kind:   lsp.CompletionSnippet,
+			Detail: "",
+			Documentation: &lsp.MarkupContent{
+				Kind:  lsp.MarkupKindMarkdown,
+				Value: snippet.documentation,
+			},
+			InsertText:       &snippet.insertText,
+			InsertTextFormat: &insertTextFormat,
+		})
+	}
+
 	return result
 }

@@ -54,6 +54,7 @@ linting.
 - Executables in PATH
 - Resolve with `help` output as docs for keywords and builtins
 - Resolve with man page as docs for executables
+- Snippets
 
 ### Document Symbols
 

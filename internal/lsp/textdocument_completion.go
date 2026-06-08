@@ -49,8 +49,8 @@ type CompletionItem struct {
 	// Preselect
 	// SortText
 	// FilterText
-	// InsertText
-	// InsertTextFormat
+	InsertText       *string           `json:"insertText"`
+	InsertTextFormat *InsertTextFormat `json:"insertTextFormat"`
 	// InsertTextMode
 	// TextEdit
 	// TextEditText
@@ -105,4 +105,11 @@ type MarkupKind string
 const (
 	MarkupKindPlainText MarkupKind = "plaintext"
 	MarkupKindMarkdown  MarkupKind = "markdown"
+)
+
+type InsertTextFormat int
+
+const (
+	InsertTextFormatPlainText InsertTextFormat = iota + 1
+	InsertTextFormatSnippet
 )
