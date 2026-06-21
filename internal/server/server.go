@@ -339,6 +339,11 @@ func (s *Server) onDidChangeConfiguration(contents []byte) error {
 		}
 	}
 
+	workspaceDiagnostics := findDiagnosticsWorkspace(&s.state)
+	for uri, diagnostics := range workspaceDiagnostics {
+		s.pushDiagnostic(uri, diagnostics)
+	}
+
 	return nil
 }
 
