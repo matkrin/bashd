@@ -44,13 +44,13 @@ type CompletionItem struct {
 	Kind         CompletionItemKind          `json:"kind"`
 	// Tags
 	Detail        string         `json:"detail"`
-	Documentation *MarkupContent `json:"documentation"` // Can make this markdown
+	Documentation *MarkupContent `json:"documentation,omitempty"` // Can make this markdown
 	// Deprecated
 	// Preselect
 	// SortText
 	// FilterText
-	InsertText       *string           `json:"insertText"`
-	InsertTextFormat *InsertTextFormat `json:"insertTextFormat"`
+	InsertText       *string           `json:"insertText,omitempty"`
+	InsertTextFormat *InsertTextFormat `json:"insertTextFormat,omitempty"`
 	// InsertTextMode
 	// TextEdit
 	// TextEditText
