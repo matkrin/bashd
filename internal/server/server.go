@@ -131,9 +131,13 @@ func (s *Server) onInitialize(contents []byte) error {
 		return errors.New("ERROR: Could not parse request")
 	}
 
-	slog.Info("ClientInfo", "name", request.Params.ClientInfo.Name,
-		"version", request.Params.ClientInfo.Version)
-	slog.Info("onInitialize", "initializationOptions", request.Params.InitializationOptions)
+	if request.Params.ClientInfo != nil {
+		slog.Info("ClientInfo", "name", request.Params.ClientInfo.Name,
+			"version", request.Params.ClientInfo.Version)
+	}
+	if request.Params.InitializationOptions != nil {
+		slog.Info("onInitialize", "initializationOptions", request.Params.InitializationOptions)
+	}
 
 	s.state.WorkspaceFolders = request.Params.WorkspaceFolders
 	slog.Info("Workspace folders set", "workerspaceFolders", s.state.WorkspaceFolders)
