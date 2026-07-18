@@ -20,14 +20,32 @@ func mockState1(documentText string) *State {
 
 func TestHandleMessage(t *testing.T) {
 	var testCases = []struct {
+		name     string
 		method   string
 		contents []byte
 	}{
 		{
+			name:     "initialize",
 			method:   "initialize",
 			contents: []byte(`{"id": 1, "params": {"clientInfo": {"name": "TestClient", "version": "1.0"}, "workspaceFolders": [{"uri": "file://workspace", "name": "workspace"}]}}`),
 		},
 		{
+			name:     "initialize_missing_clientInfo",
+			method:   "initialize",
+			contents: []byte(`{"id": 1, "params": {"workspaceFolders": [{"uri": "file://workspace", "name": "workspace"}]}}`),
+		},
+		{
+			name:     "initialize_empty_workspaceFolders",
+			method:   "initialize",
+			contents: []byte(`{"id": 1, "params": {"workspaceFolders": []}}`),
+		},
+		{
+			name:     "initialize_missing_workspaceFolders",
+			method:   "initialize",
+			contents: []byte(`{"id": 1, "params": {"clientInfo": {"name": "TestClient", "version": "1.0"}}}`),
+		},
+		{
+			name:     "shutdown",
 			method:   "shutdown",
 			contents: []byte(`{"id": 1}`),
 		},
@@ -56,7 +74,7 @@ echo "hello world"
 				response := writer.String()
 				for _, exp := range expectedIn {
 					if !strings.Contains(response, exp) {
-						t.Errorf("'%s' failed. expected '%s' in '%s'", tt.method, exp, response)
+						t.Errorf("'%s' failed. expected '%s' in '%s'", tt.name, exp, response)
 					}
 				}
 
@@ -65,7 +83,7 @@ echo "hello world"
 				response := writer.String()
 				for _, exp := range expectedIn {
 					if !strings.Contains(response, exp) {
-						t.Errorf("'%s' failed. expected '%s' in '%s'", tt.method, exp, response)
+						t.Errorf("'%s' failed. expected '%s' in '%s'", tt.name, exp, response)
 					}
 				}
 			}
