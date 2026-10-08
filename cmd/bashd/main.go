@@ -109,6 +109,10 @@ func main() {
 		}
 		server.HandleMessage(method, contents)
 	}
+
+	if err := scanner.Err(); err != nil {
+		slog.Error("Error in scanloop", "err", scanner.Err().Error())
+	}
 }
 
 func initLogging(verbosity int, filename string, json bool) (*os.File, error) {
