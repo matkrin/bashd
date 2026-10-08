@@ -64,6 +64,10 @@ the Go sh package and featuring ShellCheck integration for real-time linting.
 - **--fmt-space-redirects**
   On format, redirect operators such as **>** will be followed by a space.
 
+- **--workspace-diagnostics-on-startup**
+  Whether to run ShellCheck diagnostics for all shell files in the workspace
+  when the language server initializes. Default: _false_
+
 - **-h**, **--help**
   Print a help message.
 
@@ -73,6 +77,11 @@ the Go sh package and featuring ShellCheck integration for real-time linting.
 ---
 
 # CONFIGURATION
+
+## workspace_diagnostics_on_startup (initialization option)
+Whether to run ShellCheck diagnostics for all shell files in the workspace when
+the language server initializes. Default: _false_
+
 ## severity
 Minimum severity used for diagnostics. Must be one of
 _style_, _info_, _warning_ or _error_. Default: _style_
@@ -154,6 +163,11 @@ vim.lsp.config.bashd = {
   cmd = { "bashd" },
   filetypes = { "bash", "sh" },
   root_markers = { ".git" },
+  init_options = {
+      bashd = {
+          workspace_diagnostics_on_startup = false  -- Whether to run ShellCheck diagnostics on sh files in workspace on startup
+      }
+  },
   settings = {
     bashd = {
       severity = "style",                -- Minimum severity of errors to consider (error, warning, info, style)
@@ -193,6 +207,7 @@ vim.lsp.enable("bashd")
 command = "bashd"
 
 [language-server.bashd.config.bashd]
+workspace_diagnostics_on_startup = false  # Whether to run ShellCheck diagnostics on sh files in workspace on startup
 severity = "style"                 # Minimum severity of errors to consider (error, warning, info, style)
 shellcheck.include = []            # Consider only given types of warnings
 shellcheck.exclude = []            # Exclude types of warnings

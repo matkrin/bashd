@@ -125,6 +125,12 @@ func (s *Server) writeResponse(msg any) {
 	s.writer.Write([]byte(reply))
 }
 
+type initializationOptions struct {
+	Bashd *struct {
+		WorkspaceDiagnosticsOnStartup *bool `json:"workspace_diagnostics_on_startup"`
+	} `json:"bashd"`
+}
+
 func (s *Server) onInitialize(contents []byte) error {
 	var request lsp.InitializeRequest
 	if err := json.Unmarshal(contents, &request); err != nil {
@@ -137,14 +143,30 @@ func (s *Server) onInitialize(contents []byte) error {
 	}
 	if request.Params.InitializationOptions != nil {
 		slog.Info("onInitialize", "initializationOptions", request.Params.InitializationOptions)
+
+		data, err := json.Marshal(request.Params.InitializationOptions)
+		if err != nil {
+			return fmt.Errorf("ERROR: Could not marshal initialization options: %w", err)
+		}
+
+		var options initializationOptions
+		if err := json.Unmarshal(data, &options); err != nil {
+			return fmt.Errorf("ERROR: Could not unmarshal initialization options: %w", err)
+		}
+
+		if options.Bashd != nil && options.Bashd.WorkspaceDiagnosticsOnStartup != nil {
+			s.state.Config.WorkspaceDiagnosticsOnStartup = *options.Bashd.WorkspaceDiagnosticsOnStartup
+		}
 	}
 
 	s.state.WorkspaceFolders = request.Params.WorkspaceFolders
 	slog.Info("Workspace folders set", "workerspaceFolders", s.state.WorkspaceFolders)
 
-	workspaceDiagnostics := findDiagnosticsWorkspace(&s.state)
-	for uri, diagnostics := range workspaceDiagnostics {
-		s.pushDiagnostic(uri, diagnostics)
+	if s.state.Config.WorkspaceDiagnosticsOnStartup {
+		workspaceDiagnostics := findDiagnosticsWorkspace(&s.state)
+		for uri, diagnostics := range workspaceDiagnostics {
+			s.pushDiagnostic(uri, diagnostics)
+		}
 	}
 
 	capabilities := lsp.ServerCapabilities{

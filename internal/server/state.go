@@ -23,6 +23,11 @@ type Document struct {
 }
 
 type Config struct {
+	ExcludeDirs                   []string
+	DiagnosticDebounceTime        time.Duration
+	ShellCheckOptions             shellcheck.Options
+	FormatOptions                 FormatOptions
+	WorkspaceDiagnosticsOnStartup bool
 	ExcludeDirs            []string
 	DiagnosticDebounceTime time.Duration
 	ShellCheckOptions      shellcheck.Options

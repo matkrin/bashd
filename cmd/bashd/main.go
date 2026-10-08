@@ -36,6 +36,8 @@ func main() {
 	fmtSpaceRedirectsOpt := pflag.Bool("fmt-space-redirects", false, "Redirect operators will be followed by a space")
 	fmtFuncNextLineOpt := pflag.Bool("fmt-func-next-line", false, "Function opening braces are placed on a separate line")
 
+	workspaceDiagnosticsOnStartup := pflag.Bool("workspace-diagnostics-on-startup", false,
+		"Whether to run ShellCheck diagnostics on shell files in the workspace on startup")
 	pflag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "bashd - Bash language server\n\n")
 		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", name)
@@ -79,6 +81,11 @@ func main() {
 	}
 
 	config := server.Config{
+		ExcludeDirs:                   []string{".git", ".venv", "node_modules"},
+		DiagnosticDebounceTime:        200 * time.Millisecond,
+		ShellCheckOptions:             shellcheckOptions,
+		FormatOptions:                 formatOptions,
+		WorkspaceDiagnosticsOnStartup: *workspaceDiagnosticsOnStartup,
 		ExcludeDirs:            []string{".git", ".venv", "node_modules"},
 		DiagnosticDebounceTime: 200 * time.Millisecond,
 		ShellCheckOptions:      shellcheckOptions,
