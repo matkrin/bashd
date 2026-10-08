@@ -38,6 +38,9 @@ func main() {
 
 	workspaceDiagnosticsOnStartup := pflag.Bool("workspace-diagnostics-on-startup", false,
 		"Whether to run ShellCheck diagnostics on shell files in the workspace on startup")
+	workspaceDiagnosticsOnUpdate := pflag.Bool("workspace-diagnostics-on-update", false,
+		"Whether to run ShellCheck diagnostics on shell files in the workspace on startup")
+
 	pflag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "bashd - Bash language server\n\n")
 		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", name)
@@ -86,10 +89,7 @@ func main() {
 		ShellCheckOptions:             shellcheckOptions,
 		FormatOptions:                 formatOptions,
 		WorkspaceDiagnosticsOnStartup: *workspaceDiagnosticsOnStartup,
-		ExcludeDirs:            []string{".git", ".venv", "node_modules"},
-		DiagnosticDebounceTime: 200 * time.Millisecond,
-		ShellCheckOptions:      shellcheckOptions,
-		FormatOptions:          formatOptions,
+		WorkspaceDiagnosticsOnUpdate:  *workspaceDiagnosticsOnUpdate,
 	}
 
 	state := server.NewState(config)

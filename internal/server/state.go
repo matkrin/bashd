@@ -28,10 +28,7 @@ type Config struct {
 	ShellCheckOptions             shellcheck.Options
 	FormatOptions                 FormatOptions
 	WorkspaceDiagnosticsOnStartup bool
-	ExcludeDirs            []string
-	DiagnosticDebounceTime time.Duration
-	ShellCheckOptions      shellcheck.Options
-	FormatOptions          FormatOptions
+	WorkspaceDiagnosticsOnUpdate  bool
 }
 
 type FormatOptions struct {

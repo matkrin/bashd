@@ -52,11 +52,9 @@ the Go sh package and featuring ShellCheck integration for real-time linting.
   such as a **|**, **&&** or **||**, spans multiple lines. A **`\\`** will be
   used.
 
-
 - **--fmt-case-indent**
   On format, **switch** cases will be indented. As such, **switch** case bodies
   will be two levels deeper than the **switch** itself.
-
 
 - **--fmt-func-next-line**
   On format, function opening braces are placed on a separate line.
@@ -67,6 +65,11 @@ the Go sh package and featuring ShellCheck integration for real-time linting.
 - **--workspace-diagnostics-on-startup**
   Whether to run ShellCheck diagnostics for all shell files in the workspace
   when the language server initializes. Default: _false_
+
+- **--workspace-diagnostics-on-update**
+  Whether to run ShellCheck diagnostics for all shell files in the workspace
+  when the configuration gets updated via _workspace/didChangeConfiguration_.
+  Default: _false_
 
 - **-h**, **--help**
   Print a help message.
@@ -81,6 +84,11 @@ the Go sh package and featuring ShellCheck integration for real-time linting.
 ## workspace_diagnostics_on_startup (initialization option)
 Whether to run ShellCheck diagnostics for all shell files in the workspace when
 the language server initializes. Default: _false_
+
+## workspace_diagnostics_on_update
+Whether to run ShellCheck diagnostics for all shell files in the workspace
+when the configuration gets updated via _workspace/didChangeConfiguration_.
+Default: _false_
 
 ## severity
 Minimum severity used for diagnostics. Must be one of
@@ -113,7 +121,6 @@ As the time of writing the following optional lints are available:
 | _require-double-brackets_    | Require **[[** and warn about **[** in Bash/Ksh                 |
 | _require-variable-braces_    | Suggest putting braces around all variable references           |
 | _useless-use-of-cat_         | Check for Useless Use Of Cat (UUOC)                             |
-
 
 ## format
 ---
@@ -170,7 +177,8 @@ vim.lsp.config.bashd = {
   },
   settings = {
     bashd = {
-      severity = "style",                -- Minimum severity of errors to consider (error, warning, info, style)
+      workspace_diagnostics_on_update = false  -- Whether to run ShellCheck diagnostics on sh files in workspace on update
+      severity = "style",                      -- Minimum severity of errors to consider (error, warning, info, style)
       shellcheck = {
         include = {},                    -- Consider only given types of warnings
         exclude = {},                    -- Exclude types of warnings
@@ -208,6 +216,7 @@ command = "bashd"
 
 [language-server.bashd.config.bashd]
 workspace_diagnostics_on_startup = false  # Whether to run ShellCheck diagnostics on sh files in workspace on startup
+workspace_diagnostics_on_update = false   # Whether to run ShellCheck diagnostics on sh files in workspace on update
 severity = "style"                 # Minimum severity of errors to consider (error, warning, info, style)
 shellcheck.include = []            # Consider only given types of warnings
 shellcheck.exclude = []            # Exclude types of warnings

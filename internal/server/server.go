@@ -141,6 +141,7 @@ func (s *Server) onInitialize(contents []byte) error {
 		slog.Info("ClientInfo", "name", request.Params.ClientInfo.Name,
 			"version", request.Params.ClientInfo.Version)
 	}
+
 	if request.Params.InitializationOptions != nil {
 		slog.Info("onInitialize", "initializationOptions", request.Params.InitializationOptions)
 
@@ -294,8 +295,9 @@ func (s *Server) onTextDocumentDidChange(contents []byte) error {
 }
 
 type didChangeConfigurationSettings struct {
-	Severity   *string `json:"severity"`
-	Shellcheck *struct {
+	Severity                     *string `json:"severity"`
+	WorkspaceDiagnosticsOnUpdate *bool   `json:"lint_workspace_on_startup"`
+	Shellcheck                   *struct {
 		Include *[]string `json:"include"`
 		Exclude *[]string `json:"exclude"`
 		Enable  *[]string `json:"enable"`
@@ -365,9 +367,15 @@ func (s *Server) onDidChangeConfiguration(contents []byte) error {
 		}
 	}
 
-	workspaceDiagnostics := findDiagnosticsWorkspace(&s.state)
-	for uri, diagnostics := range workspaceDiagnostics {
-		s.pushDiagnostic(uri, diagnostics)
+	if settings.WorkspaceDiagnosticsOnUpdate != nil {
+		s.state.Config.WorkspaceDiagnosticsOnUpdate = *settings.WorkspaceDiagnosticsOnUpdate
+	}
+
+	if s.state.Config.WorkspaceDiagnosticsOnUpdate {
+		workspaceDiagnostics := findDiagnosticsWorkspace(&s.state)
+		for uri, diagnostics := range workspaceDiagnostics {
+			s.pushDiagnostic(uri, diagnostics)
+		}
 	}
 
 	return nil
