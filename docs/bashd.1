@@ -64,6 +64,12 @@ On format, function opening braces are placed on a separate line\&.
 On format, redirect operators such as \fB>\fP will be followed by a space\&.
 
 .TP
+\fB--no-workspace-diagnostics-on-update\fP
+Whether to run ShellCheck diagnostics for all shell files in the workspace
+when the configuration gets updated via \fIworkspace/didChangeConfiguration\fP\&.
+Default: \fIfalse\fP, i\&.e\&., workspace diagnostics run on update
+
+.TP
 \fB-h\fP, \fB--help\fP
 Print a help message\&.
 
@@ -72,6 +78,12 @@ Print a help message\&.
 Print the version\&.
 
 .SH CONFIGURATION
+.SS workspace_diagnostics_on_update
+.PD
+.PP
+Whether to run ShellCheck diagnostics for all shell files in the workspace
+when the configuration gets updated via \fIworkspace/didChangeConfiguration\fP\&.
+Default: \fItrue\fP, i\&.e\&., workspace diagnostics run on update
 .SS severity
 .PD
 .PP
@@ -207,7 +219,8 @@ vim.lsp.config.bashd = {
   root_markers = { ".git" },
   settings = {
     bashd = {
-      severity = "style",                -- Minimum severity of errors to consider (error, warning, info, style)
+      severity = "style",                      -- Minimum severity of errors to consider (error, warning, info, style)
+      workspace_diagnostics_on_update = true,  -- Whether to run ShellCheck diagnostics on sh files in workspace on update
       shellcheck = {
         include = {},                    -- Consider only given types of warnings
         exclude = {},                    -- Exclude types of warnings
@@ -243,6 +256,7 @@ vim.lsp.enable("bashd")
 command = "bashd"
 
 [language-server.bashd.config.bashd]
+workspace_diagnostics_on_update = true   # Whether to run ShellCheck diagnostics on sh files in workspace on update
 severity = "style"                 # Minimum severity of errors to consider (error, warning, info, style)
 shellcheck.include = []            # Consider only given types of warnings
 shellcheck.exclude = []            # Exclude types of warnings

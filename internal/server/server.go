@@ -265,7 +265,7 @@ func (s *Server) onTextDocumentDidChange(contents []byte) error {
 
 type didChangeConfigurationSettings struct {
 	Severity                     *string `json:"severity"`
-	WorkspaceDiagnosticsOnUpdate *bool   `json:"lint_workspace_on_startup"`
+	WorkspaceDiagnosticsOnUpdate *bool   `json:"workspace_diagnostics_on_update"`
 	Shellcheck                   *struct {
 		Include *[]string `json:"include"`
 		Exclude *[]string `json:"exclude"`

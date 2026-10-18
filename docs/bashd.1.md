@@ -62,14 +62,10 @@ the Go sh package and featuring ShellCheck integration for real-time linting.
 - **--fmt-space-redirects**
   On format, redirect operators such as **>** will be followed by a space.
 
-- **--workspace-diagnostics-on-startup**
-  Whether to run ShellCheck diagnostics for all shell files in the workspace
-  when the language server initializes. Default: _false_
-
-- **--workspace-diagnostics-on-update**
+- **--no-workspace-diagnostics-on-update**
   Whether to run ShellCheck diagnostics for all shell files in the workspace
   when the configuration gets updated via _workspace/didChangeConfiguration_.
-  Default: _false_
+  Default: _false_, i.e., workspace diagnostics run on update
 
 - **-h**, **--help**
   Print a help message.
@@ -81,14 +77,10 @@ the Go sh package and featuring ShellCheck integration for real-time linting.
 
 # CONFIGURATION
 
-## workspace_diagnostics_on_startup (initialization option)
-Whether to run ShellCheck diagnostics for all shell files in the workspace when
-the language server initializes. Default: _false_
-
 ## workspace_diagnostics_on_update
 Whether to run ShellCheck diagnostics for all shell files in the workspace
 when the configuration gets updated via _workspace/didChangeConfiguration_.
-Default: _false_
+Default: _true_, i.e., workspace diagnostics run on update
 
 ## severity
 Minimum severity used for diagnostics. Must be one of
@@ -170,15 +162,10 @@ vim.lsp.config.bashd = {
   cmd = { "bashd" },
   filetypes = { "bash", "sh" },
   root_markers = { ".git" },
-  init_options = {
-      bashd = {
-          workspace_diagnostics_on_startup = false  -- Whether to run ShellCheck diagnostics on sh files in workspace on startup
-      }
-  },
   settings = {
     bashd = {
-      workspace_diagnostics_on_update = false  -- Whether to run ShellCheck diagnostics on sh files in workspace on update
       severity = "style",                      -- Minimum severity of errors to consider (error, warning, info, style)
+      workspace_diagnostics_on_update = true,  -- Whether to run ShellCheck diagnostics on sh files in workspace on update
       shellcheck = {
         include = {},                    -- Consider only given types of warnings
         exclude = {},                    -- Exclude types of warnings
@@ -215,8 +202,7 @@ vim.lsp.enable("bashd")
 command = "bashd"
 
 [language-server.bashd.config.bashd]
-workspace_diagnostics_on_startup = false  # Whether to run ShellCheck diagnostics on sh files in workspace on startup
-workspace_diagnostics_on_update = false   # Whether to run ShellCheck diagnostics on sh files in workspace on update
+workspace_diagnostics_on_update = true   # Whether to run ShellCheck diagnostics on sh files in workspace on update
 severity = "style"                 # Minimum severity of errors to consider (error, warning, info, style)
 shellcheck.include = []            # Consider only given types of warnings
 shellcheck.exclude = []            # Exclude types of warnings
