@@ -36,6 +36,9 @@ func main() {
 	fmtSpaceRedirectsOpt := pflag.Bool("fmt-space-redirects", false, "Redirect operators will be followed by a space")
 	fmtFuncNextLineOpt := pflag.Bool("fmt-func-next-line", false, "Function opening braces are placed on a separate line")
 
+	noWorkspaceDiagnosticsOnUpdate := pflag.Bool("no-workspace-diagnostics-on-update", false,
+		"Whether to run ShellCheck diagnostics on shell files in the workspace on update")
+
 	pflag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "bashd - Bash language server\n\n")
 		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", name)
@@ -79,10 +82,11 @@ func main() {
 	}
 
 	config := server.Config{
-		ExcludeDirs:            []string{".git", ".venv", "node_modules"},
-		DiagnosticDebounceTime: 200 * time.Millisecond,
-		ShellCheckOptions:      shellcheckOptions,
-		FormatOptions:          formatOptions,
+		ExcludeDirs:                   []string{".git", ".venv", "node_modules"},
+		DiagnosticDebounceTime:        200 * time.Millisecond,
+		ShellCheckOptions:             shellcheckOptions,
+		FormatOptions:                 formatOptions,
+		WorkspaceDiagnosticsOnUpdate:  !*noWorkspaceDiagnosticsOnUpdate,
 	}
 
 	state := server.NewState(config)
@@ -101,6 +105,10 @@ func main() {
 			slog.Error("ERROR decoding message", "err", err)
 		}
 		server.HandleMessage(method, contents)
+	}
+
+	if err := scanner.Err(); err != nil {
+		slog.Error("Error in scanloop", "err", scanner.Err().Error())
 	}
 }
 
