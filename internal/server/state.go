@@ -27,7 +27,6 @@ type Config struct {
 	DiagnosticDebounceTime        time.Duration
 	ShellCheckOptions             shellcheck.Options
 	FormatOptions                 FormatOptions
-	WorkspaceDiagnosticsOnStartup bool
 	WorkspaceDiagnosticsOnUpdate  bool
 }
 
