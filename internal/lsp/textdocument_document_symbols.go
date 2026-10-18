@@ -35,7 +35,7 @@ type DocumentSymbol struct {
 	// Deprecated
 	Range          Range            `json:"range"`
 	SelectionRange Range            `json:"selectionRange"`
-	Children       []DocumentSymbol `json:"children"`
+	Children       []DocumentSymbol `json:"children,omitempty"`
 }
 
 type SymbolKind int
