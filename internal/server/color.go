@@ -28,7 +28,7 @@ func handleDocumentColor(request *lsp.DocumentColorRequest, state *State) *lsp.D
 }
 
 func extractColorsFromDocument(documentText string) []lsp.ColorInformation {
-	var results []lsp.ColorInformation
+	results := []lsp.ColorInformation{}
 	lines := strings.Split(documentText, "\n")
 
 	for lineNum, line := range lines {
