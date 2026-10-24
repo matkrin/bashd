@@ -17,17 +17,22 @@ import (
 	"mvdan.cc/sh/v3/fileutil"
 )
 
+const (
+	checkShebangWorkers = 8
+	shebangBufferSize   = 256
+)
+
 type Document struct {
 	Text         string
 	SourcedFiles []Document
 }
 
 type Config struct {
-	ExcludeDirs                   []string
-	DiagnosticDebounceTime        time.Duration
-	ShellCheckOptions             shellcheck.Options
-	FormatOptions                 FormatOptions
-	WorkspaceDiagnosticsOnUpdate  bool
+	ExcludeDirs                  []string
+	DiagnosticDebounceTime       time.Duration
+	ShellCheckOptions            shellcheck.Options
+	FormatOptions                FormatOptions
+	WorkspaceDiagnosticsOnUpdate bool
 }
 
 type FormatOptions struct {
@@ -72,8 +77,7 @@ func (s *State) SetDocument(uri, documentText string) {
 // Find sh-files and return their filepaths
 func (s *State) WorkspaceShFiles() []string {
 	var shFiles []string
-	var mu sync.Mutex
-	var wg sync.WaitGroup
+	var candidates []string
 
 	for _, folder := range s.WorkspaceFolders {
 		dirpath, err := utils.UriToPath(folder.URI)
@@ -81,45 +85,75 @@ func (s *State) WorkspaceShFiles() []string {
 			continue
 		}
 
-		filepath.WalkDir(dirpath, func(path string, d fs.DirEntry, err error) error {
+		err = filepath.WalkDir(dirpath, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
-				return err
+				return nil
 			}
+
 			if d.IsDir() && slices.Contains(s.Config.ExcludeDirs, d.Name()) {
 				return fs.SkipDir
 			}
 
-			if fileutil.CouldBeScript2(d) == fileutil.ConfIsScript {
-				mu.Lock()
+			switch fileutil.CouldBeScript2(d) {
+			case fileutil.ConfIsScript:
 				shFiles = append(shFiles, path)
-				mu.Unlock()
-			} else if fileutil.CouldBeScript2(d) == fileutil.ConfIfShebang {
-				wg.Add(1)
-				go func(path string) {
-					defer wg.Done()
-					file, err := os.Open(path)
-					if err != nil {
-						return
-					}
-					defer file.Close()
-					// TODO: Maybe read not all bytes
-					data, err := io.ReadAll(file)
-					if err != nil {
-						return
-					}
-					if fileutil.HasShebang(data) {
-						mu.Lock()
-						shFiles = append(shFiles, path)
-						mu.Unlock()
-					}
-				}(path)
+
+			case fileutil.ConfIfShebang:
+				candidates = append(candidates, path)
 			}
+
 			return nil
 		})
+		_ = err
 	}
 
+	return append(shFiles, checkShebangFiles(candidates)...)
+}
+
+func checkShebangFiles(paths []string) []string {
+	filesChan := make(chan string, checkShebangWorkers*2)
+	resultsChan := make(chan string, len(paths))
+
+	var wg sync.WaitGroup
+
+	for range checkShebangWorkers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			for path := range filesChan {
+				if hasShebangFile(path) {
+					resultsChan <- path
+				}
+			}
+		}()
+	}
+
+	for _, path := range paths {
+		filesChan <- path
+	}
+	close(filesChan)
+
 	wg.Wait()
+	close(resultsChan)
+
+	var shFiles []string
+	for path := range resultsChan {
+		shFiles = append(shFiles, path)
+	}
+
 	return shFiles
+}
+
+func hasShebangFile(path string) bool {
+	file, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+	defer file.Close()
+
+	data, err := io.ReadAll(io.LimitReader(file, shebangBufferSize))
+	return err == nil && fileutil.HasShebang(data)
 }
 
 func getEnvVars() map[string]string {
