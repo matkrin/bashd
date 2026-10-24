@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"sync"
 
 	"github.com/matkrin/bashd/internal/ast"
 	"github.com/matkrin/bashd/internal/lsp"
@@ -11,6 +12,8 @@ import (
 	"github.com/matkrin/bashd/internal/utils"
 	"mvdan.cc/sh/v3/syntax"
 )
+
+const shellCheckWorkers = 8
 
 func findDiagnostics(
 	documentText string,
@@ -43,22 +46,60 @@ func findDiagnostics(
 }
 
 func findDiagnosticsWorkspace(state *State) map[string][]lsp.Diagnostic {
-	workspaceDiagnostics := make(map[string][]lsp.Diagnostic)
+	shFiles := state.WorkspaceShFiles()
+	workspaceDiagnostics := make(map[string][]lsp.Diagnostic, len(shFiles))
 
-	for _, shFile := range state.WorkspaceShFiles() {
-		fileContent, err := os.ReadFile(shFile)
-		if err != nil {
-			slog.Error("ERROR could not read file content", "file", shFile)
+	type result struct {
+		uri         string
+		diagnostics []lsp.Diagnostic
+	}
+
+	jobsChan := make(chan string, shellCheckWorkers*2)
+	resultsChan := make(chan result, shellCheckWorkers*2)
+
+	var wg sync.WaitGroup
+
+	for range shellCheckWorkers {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			for shFile := range jobsChan {
+				fileContent, err := os.ReadFile(shFile)
+				if err != nil {
+					slog.Error("could not read file content", "file", shFile, "err", err)
+					continue
+				}
+
+				uri := utils.PathToURI(shFile)
+				diagnostics := findDiagnostics(
+					string(fileContent),
+					uri,
+					state.EnvVars,
+					state.Config.ShellCheckOptions,
+				)
+
+				resultsChan <- result{
+					uri:         uri,
+					diagnostics: diagnostics,
+				}
+			}
+		}()
+	}
+
+	go func() {
+		for _, shFile := range shFiles {
+			jobsChan <- shFile
 		}
+		close(jobsChan)
 
-		uri := utils.PathToURI(shFile)
-		diagnostics := findDiagnostics(
-			string(fileContent),
-			uri,
-			state.EnvVars,
-			state.Config.ShellCheckOptions,
-		)
-		workspaceDiagnostics[uri] = diagnostics
+		wg.Wait()
+		close(resultsChan)
+	}()
+
+	for res := range resultsChan {
+		workspaceDiagnostics[res.uri] = res.diagnostics
 	}
 
 	return workspaceDiagnostics
