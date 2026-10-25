@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -79,9 +80,10 @@ echo "hello world"
 				}
 
 			case "shutdown":
-				expectedIn := []string{"Content-Length: 24", `"jsonrpc"`}
+				expectedIn := []string{"Content-Length: 38", `"jsonrpc"`, `"result":null`}
 				response := writer.String()
 				for _, exp := range expectedIn {
+					fmt.Println(response)
 					if !strings.Contains(response, exp) {
 						t.Errorf("'%s' failed. expected '%s' in '%s'", tt.name, exp, response)
 					}
