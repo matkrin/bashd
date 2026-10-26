@@ -1,12 +1,12 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log/slog"
-	"os"
 	"sync"
 	"time"
 
@@ -27,15 +27,21 @@ type Server struct {
 	wg              sync.WaitGroup
 	diagnosticTimer *time.Timer
 	mu              sync.Mutex
+	ctx             context.Context
+	cancel          context.CancelFunc
 }
 
 func NewServer(name, version string, state State, writer io.Writer) *Server {
+	ctx, cancel := context.WithCancel(context.Background())
+
 	s := &Server{
 		name:         name,
 		version:      version,
 		state:        state,
 		writer:       writer,
 		messageQueue: make(chan queuedMessage),
+		ctx:          ctx,
+		cancel:       cancel,
 	}
 
 	s.wg.Add(1)
@@ -52,12 +58,27 @@ func (s *Server) run() {
 }
 
 func (s *Server) Stop() {
+	s.cancel()
 	close(s.messageQueue)
 	s.wg.Wait()
 }
 
-func (s *Server) HandleMessage(method string, contents []byte) {
-	s.messageQueue <- queuedMessage{method: method, contents: contents}
+func (s *Server) HandleMessage(method string, contents []byte) (int, bool) {
+	switch method {
+	case "shutdown":
+		err := s.onShutdown(contents)
+		if err != nil {
+			slog.Error("ERROR", "method", method, "err", err)
+		}
+
+	case "exit":
+		return s.onExit(), true
+
+	default:
+		s.messageQueue <- queuedMessage{method: method, contents: contents}
+	}
+
+	return 0, false
 }
 
 func (s *Server) dispatchMessage(method string, contents []byte) {
@@ -66,10 +87,6 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 	switch method {
 	case "initialize":
 		err = s.onInitialize(contents)
-	case "shutdown":
-		err = s.onShutdown(contents)
-	case "exit":
-		s.onExit()
 	case "textDocument/didOpen":
 		err = s.onTextDocumentDidOpen(contents)
 	case "textDocument/didChange":
@@ -197,14 +214,15 @@ func (s *Server) onShutdown(contents []byte) error {
 	return nil
 }
 
-func (s *Server) onExit() {
+func (s *Server) onExit() int {
 	slog.Info("Exiting")
+
 	if s.state.ShutdownRequested {
-		os.Exit(0)
-	} else {
-		slog.Warn("Exiting without shutdown preceding shutdown request")
-		os.Exit(1)
+		return 0
 	}
+
+	slog.Warn("Exiting without shutdown preceding exit")
+	return 1
 }
 
 func (s *Server) onTextDocumentDidOpen(contents []byte) error {
@@ -341,10 +359,27 @@ func (s *Server) onDidChangeConfiguration(contents []byte) error {
 	}
 
 	if s.state.Config.WorkspaceDiagnosticsOnUpdate {
-		workspaceDiagnostics := findDiagnosticsWorkspace(&s.state)
-		for uri, diagnostics := range workspaceDiagnostics {
-			s.pushDiagnostic(uri, diagnostics)
-		}
+		s.wg.Add(1)
+
+		go func() {
+			defer s.wg.Done()
+
+			workspaceDiagnostics := findDiagnosticsWorkspace(
+				s.ctx,
+				&s.state,
+			)
+
+			if s.ctx.Err() != nil {
+				return
+			}
+
+			for uri, diagnostics := range workspaceDiagnostics {
+				if s.ctx.Err() != nil {
+					return
+				}
+				s.pushDiagnostic(uri, diagnostics)
+			}
+		}()
 	}
 
 	return nil
