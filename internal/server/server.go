@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -27,15 +28,21 @@ type Server struct {
 	wg              sync.WaitGroup
 	diagnosticTimer *time.Timer
 	mu              sync.Mutex
+	ctx             context.Context
+	cancel          context.CancelFunc
 }
 
 func NewServer(name, version string, state State, writer io.Writer) *Server {
+	ctx, cancel := context.WithCancel(context.Background())
+
 	s := &Server{
 		name:         name,
 		version:      version,
 		state:        state,
 		writer:       writer,
 		messageQueue: make(chan queuedMessage),
+		ctx:          ctx,
+		cancel:       cancel,
 	}
 
 	s.wg.Add(1)
@@ -52,6 +59,7 @@ func (s *Server) run() {
 }
 
 func (s *Server) Stop() {
+	s.cancel()
 	close(s.messageQueue)
 	s.wg.Wait()
 }
@@ -341,10 +349,27 @@ func (s *Server) onDidChangeConfiguration(contents []byte) error {
 	}
 
 	if s.state.Config.WorkspaceDiagnosticsOnUpdate {
-		workspaceDiagnostics := findDiagnosticsWorkspace(&s.state)
-		for uri, diagnostics := range workspaceDiagnostics {
-			s.pushDiagnostic(uri, diagnostics)
-		}
+		s.wg.Add(1)
+
+		go func() {
+			defer s.wg.Done()
+
+			workspaceDiagnostics := findDiagnosticsWorkspace(
+				s.ctx,
+				&s.state,
+			)
+
+			if s.ctx.Err() != nil {
+				return
+			}
+
+			for uri, diagnostics := range workspaceDiagnostics {
+				if s.ctx.Err() != nil {
+					return
+				}
+				s.pushDiagnostic(uri, diagnostics)
+			}
+		}()
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -45,7 +46,7 @@ func findDiagnostics(
 	return diagnostics
 }
 
-func findDiagnosticsWorkspace(state *State) map[string][]lsp.Diagnostic {
+func findDiagnosticsWorkspace(ctx context.Context, state *State) map[string][]lsp.Diagnostic {
 	shFiles := state.WorkspaceShFiles()
 	workspaceDiagnostics := make(map[string][]lsp.Diagnostic, len(shFiles))
 
@@ -65,35 +66,66 @@ func findDiagnosticsWorkspace(state *State) map[string][]lsp.Diagnostic {
 		go func() {
 			defer wg.Done()
 
-			for shFile := range jobsChan {
-				fileContent, err := os.ReadFile(shFile)
-				if err != nil {
-					slog.Error("could not read file content", "file", shFile, "err", err)
-					continue
-				}
+			for {
+				select {
+				case <-ctx.Done():
+					return
 
-				uri := utils.PathToURI(shFile)
-				diagnostics := findDiagnostics(
-					string(fileContent),
-					uri,
-					state.EnvVars,
-					state.Config.ShellCheckOptions,
-				)
+				case shFile, ok := <-jobsChan:
+					if !ok {
+						return
+					}
 
-				resultsChan <- result{
-					uri:         uri,
-					diagnostics: diagnostics,
+					if ctx.Err() != nil {
+						return
+					}
+
+					fileContent, err := os.ReadFile(shFile)
+					if err != nil {
+						if ctx.Err() == nil {
+							slog.Error(
+								"could not read file content",
+								"file", shFile,
+								"err", err,
+							)
+						}
+						continue
+					}
+
+					uri := utils.PathToURI(shFile)
+					diagnostics := findDiagnostics(
+						string(fileContent),
+						uri,
+						state.EnvVars,
+						state.Config.ShellCheckOptions,
+					)
+
+					select {
+					case resultsChan <- result{
+						uri:         uri,
+						diagnostics: diagnostics,
+					}:
+					case <-ctx.Done():
+						return
+					}
 				}
 			}
 		}()
 	}
 
 	go func() {
-		for _, shFile := range shFiles {
-			jobsChan <- shFile
-		}
-		close(jobsChan)
+		defer close(jobsChan)
 
+		for _, shFile := range shFiles {
+			select {
+			case jobsChan <- shFile:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	go func() {
 		wg.Wait()
 		close(resultsChan)
 	}()
