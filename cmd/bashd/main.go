@@ -82,16 +82,17 @@ func main() {
 	}
 
 	config := server.Config{
-		ExcludeDirs:                   []string{".git", ".venv", "node_modules"},
-		DiagnosticDebounceTime:        200 * time.Millisecond,
-		ShellCheckOptions:             shellcheckOptions,
-		FormatOptions:                 formatOptions,
-		WorkspaceDiagnosticsOnUpdate:  !*noWorkspaceDiagnosticsOnUpdate,
+		ExcludeDirs:                  []string{".git", ".venv", "node_modules"},
+		DiagnosticDebounceTime:       200 * time.Millisecond,
+		ShellCheckOptions:            shellcheckOptions,
+		FormatOptions:                formatOptions,
+		WorkspaceDiagnosticsOnUpdate: !*noWorkspaceDiagnosticsOnUpdate,
 	}
 
 	state := server.NewState(config)
 	writer := os.Stdout
 	server := server.NewServer(name, VERSION, state, writer)
+	exitCode := 0
 
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Split(lsp.Split)
@@ -103,13 +104,22 @@ func main() {
 		method, contents, err := lsp.DecodeMessage(msg)
 		if err != nil {
 			slog.Error("ERROR decoding message", "err", err)
+			continue
 		}
-		server.HandleMessage(method, contents)
+
+		code, shouldExit := server.HandleMessage(method, contents)
+		if shouldExit {
+			exitCode = code
+			break
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
 		slog.Error("Error in scanloop", "err", scanner.Err().Error())
 	}
+
+	server.Stop()
+	os.Exit(exitCode)
 }
 
 func initLogging(verbosity int, filename string, json bool) (*os.File, error) {
