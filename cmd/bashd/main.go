@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"slices"
 	"time"
 
@@ -49,7 +50,7 @@ func main() {
 	pflag.Parse()
 
 	if !slices.Contains([]string{"error", "warning", "info", "style"}, *severityOpt) {
-		fmt.Fprintf(os.Stderr, "illegal severity '%s'\n", *severityOpt)
+		fmt.Fprintf(os.Stderr, "Illegal severity: '%s'\n", *severityOpt)
 		os.Exit(1)
 	}
 
@@ -103,7 +104,7 @@ func main() {
 
 		method, contents, err := lsp.DecodeMessage(msg)
 		if err != nil {
-			slog.Error("ERROR decoding message", "err", err)
+			slog.Error("Error decoding message", "err", err)
 			continue
 		}
 
@@ -138,7 +139,16 @@ func initLogging(verbosity int, filename string, json bool) (*os.File, error) {
 
 	level.Set(l)
 	handlerOptions := &slog.HandlerOptions{
-		Level: level,
+		Level:     level,
+		AddSource: true,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.SourceKey {
+				if source, ok := a.Value.Any().(*slog.Source); ok {
+					source.File = filepath.Base(source.File)
+				}
+			}
+			return a
+		},
 	}
 
 	var handler slog.Handler
@@ -148,7 +158,7 @@ func initLogging(verbosity int, filename string, json bool) (*os.File, error) {
 	if filename != "" {
 		logfile, err = os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
 		if err != nil {
-			return nil, fmt.Errorf("ERROR: failed to open log file: %w", err)
+			return nil, fmt.Errorf("Failed to open log file: %w", err)
 		}
 		if json {
 			handler = slog.NewJSONHandler(logfile, handlerOptions)
