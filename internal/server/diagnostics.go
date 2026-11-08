@@ -26,8 +26,9 @@ func findDiagnostics(
 
 	shellcheck, err := shellcheck.Run(documentText, shellcheckOptions)
 	if err != nil {
-		slog.Error("ERROR running shellcheck", "err", err)
+		slog.Error("Error running shellcheck", "err", err)
 	} else {
+		slog.Debug("SHELLCHECK", "output", shellcheck)
 		diagnostics = append(diagnostics, shellcheck.ToDiagnostics()...)
 	}
 

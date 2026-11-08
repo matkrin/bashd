@@ -23,7 +23,7 @@ func handleWorkspaceSymbol(request *lsp.WorkspaceSymbolRequest, state *State) *l
 
 		fileAst, err := ast.ParseDocument(string(fileContent), shFile, false)
 		if err != nil {
-			slog.Error("Could not parse file", "file", shFile)
+			slog.Error("Could not parse document", "err", err, "file", shFile)
 			continue
 		}
 

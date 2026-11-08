@@ -1,6 +1,7 @@
 package server
 
 import (
+	"log/slog"
 	"regexp"
 	"strconv"
 	"strings"
@@ -86,6 +87,7 @@ func parseColorFromSGR(normalized string) (lsp.Color, bool) {
 	if len(parts) == 3 && parts[0] == "38" && parts[1] == "5" {
 		idx, err := strconv.Atoi(parts[2])
 		if err != nil {
+			slog.Error("Could not convert string to int", "err", err, "str", parts[2])
 			return lsp.Color{}, false
 		}
 		return xterm256ToRGB(idx), true
@@ -95,6 +97,7 @@ func parseColorFromSGR(normalized string) (lsp.Color, bool) {
 	if len(parts) == 3 && parts[0] == "48" && parts[1] == "5" {
 		idx, err := strconv.Atoi(parts[2])
 		if err != nil {
+			slog.Error("Could not convert string to int", "err", err, "str", parts[2])
 			return lsp.Color{}, false
 		}
 		return xterm256ToRGB(idx), true

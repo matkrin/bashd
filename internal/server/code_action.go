@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"log/slog"
 
 	"github.com/matkrin/bashd/internal/ast"
 	"github.com/matkrin/bashd/internal/lsp"
@@ -25,6 +26,7 @@ func handleCodeAction(request *lsp.CodeActionRequest, state *State) *lsp.CodeAct
 
 	shellcheck, err := shellcheck.Run(documentText, state.Config.ShellCheckOptions)
 	if err == nil {
+		slog.Debug("SHELLCHECK", "output", shellcheck)
 		// Fix all auto-fixable
 		if shellcheck.ContainsFixable() {
 			actions = append(actions, shellcheck.ToCodeActionFlat(uri))

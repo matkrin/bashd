@@ -22,7 +22,7 @@ func handleHover(request *lsp.HoverRequest, state *State) *lsp.HoverResponse {
 	documentText := state.Documents[uri].Text
 	fileAst, err := ast.ParseDocument(documentText, uri, true)
 	if err != nil {
-		slog.Error(err.Error())
+		slog.Error("Error parsing document", "err", err, "URI", uri)
 		return nil
 	}
 
@@ -92,7 +92,7 @@ func hoverFromDefinition(
 
 	filename, err := utils.UriToPath(uri)
 	if err != nil {
-		slog.Error("ERROR: Could not convert uri to path", "uri", uri)
+		slog.Error("Could not convert uri to path", "uri", uri)
 		return ""
 	}
 	baseDir := filepath.Dir(filename)
@@ -103,7 +103,7 @@ func hoverFromDefinition(
 	)
 	fileContent, err := os.ReadFile(sourcedFile)
 	if err != nil {
-		slog.Error("ERROR: Could not read file", "file", sourcedFile)
+		slog.Error("Could not read file", "file", sourcedFile)
 		return ""
 	}
 	return defNodeToHoverString(definition, string(fileContent), sourcedFile)

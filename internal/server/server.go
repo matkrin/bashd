@@ -68,7 +68,7 @@ func (s *Server) HandleMessage(method string, contents []byte) (int, bool) {
 	case "shutdown":
 		err := s.onShutdown(contents)
 		if err != nil {
-			slog.Error("ERROR", "method", method, "err", err)
+			slog.Error("Error handling 'shutdown'", "method", method, "err", err)
 		}
 
 	case "exit":
@@ -83,6 +83,7 @@ func (s *Server) HandleMessage(method string, contents []byte) (int, bool) {
 
 func (s *Server) dispatchMessage(method string, contents []byte) {
 	slog.Info("Received message", "method", method)
+	slog.Debug("Received message", "content", contents)
 	var err error
 	switch method {
 	case "initialize":
@@ -124,7 +125,7 @@ func (s *Server) dispatchMessage(method string, contents []byte) {
 	}
 
 	if err != nil {
-		slog.Error("ERROR", "method", method, "err", err)
+		slog.Error("Error handling request", "method", method, "err", err)
 	}
 }
 
@@ -137,9 +138,9 @@ func (s *Server) writeResponse(msg any) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	reply := lsp.EncodeMessage(msg)
-	// slog.Debug(reply)
-	s.writer.Write([]byte(reply))
+	resp := lsp.EncodeMessage(msg)
+	slog.Debug("Sending response", "response", resp)
+	s.writer.Write([]byte(resp))
 }
 
 func (s *Server) onInitialize(contents []byte) error {
@@ -196,7 +197,7 @@ func (s *Server) onInitialize(contents []byte) error {
 func (s *Server) onShutdown(contents []byte) error {
 	var request lsp.ShutdownRequest
 	if err := json.Unmarshal(contents, &request); err != nil {
-		return errors.New("ERROR: Could not parse request")
+		return errors.New("Could not parse request")
 	}
 
 	slog.Info("Received shutdown request")
@@ -221,14 +222,14 @@ func (s *Server) onExit() int {
 		return 0
 	}
 
-	slog.Warn("Exiting without shutdown preceding exit")
+	slog.Warn("Exiting without 'shutdown' preceding 'exit'")
 	return 1
 }
 
 func (s *Server) onTextDocumentDidOpen(contents []byte) error {
 	var request lsp.DidOpenTextDocumentNotification
 	if err := json.Unmarshal(contents, &request); err != nil {
-		return errors.New("ERROR: Could not parse request")
+		return errors.New("Could not parse request")
 	}
 
 	uri := request.Params.TextDocument.URI
@@ -250,7 +251,7 @@ func (s *Server) onTextDocumentDidOpen(contents []byte) error {
 func (s *Server) onTextDocumentDidChange(contents []byte) error {
 	var request lsp.TextDocumentDidChangeNotification
 	if err := json.Unmarshal(contents, &request); err != nil {
-		return errors.New("ERROR: Could not parse request")
+		return errors.New("Could not parse request")
 	}
 
 	uri := request.Params.TextDocument.URI
@@ -300,28 +301,28 @@ type didChangeConfigurationSettings struct {
 func (s *Server) onDidChangeConfiguration(contents []byte) error {
 	var request lsp.DidChangeConfigurationRequest
 	if err := json.Unmarshal(contents, &request); err != nil {
-		return errors.New("ERROR: Could not parse request")
+		return errors.New("Could not parse request")
 	}
 
 	paramsSettings, ok := request.Params.Settings.(map[string]any)
 	if !ok {
-		return errors.New("ERROR: Unknown settings type")
+		return errors.New("Unknown settings type")
 	}
 	slog.Info("onDidChangeConfiguration", "params.settings", paramsSettings)
 
 	rawSettings, ok := paramsSettings["bashd"]
 	if !ok {
-		return errors.New("ERROR: Settings did not contain key 'bashd'")
+		return errors.New("Settings did not contain key 'bashd'")
 	}
 
 	data, err := json.Marshal(rawSettings)
 	if err != nil {
-		return fmt.Errorf("ERROR: Could not marshal settings: %w", err)
+		return fmt.Errorf("Could not marshal settings: %w", err)
 	}
 
 	var settings didChangeConfigurationSettings
 	if err := json.Unmarshal(data, &settings); err != nil {
-		return fmt.Errorf("ERROR: Could not unmarshal bashd settings: %w", err)
+		return fmt.Errorf("Could not unmarshal bashd settings: %w", err)
 	}
 
 	slog.Info("onDidChangeConfiguration", "settings", settings)
@@ -388,7 +389,7 @@ func (s *Server) onDidChangeConfiguration(contents []byte) error {
 func (s *Server) onTextDocumentHover(contents []byte) error {
 	var request lsp.HoverRequest
 	if err := json.Unmarshal(contents, &request); err != nil {
-		return errors.New("ERROR: Could not parse request")
+		return errors.New("Could not parse request")
 	}
 	response := handleHover(&request, &s.state)
 	if response != nil {
@@ -400,7 +401,7 @@ func (s *Server) onTextDocumentHover(contents []byte) error {
 func (s *Server) onTextDocumentDefinition(contents []byte) error {
 	var request lsp.DefinitionRequest
 	if err := json.Unmarshal(contents, &request); err != nil {
-		return errors.New("ERROR: Could not parse request")
+		return errors.New("Could not parse request")
 	}
 	response := handleDefinition(&request, &s.state)
 	if response != nil {
@@ -412,7 +413,7 @@ func (s *Server) onTextDocumentDefinition(contents []byte) error {
 func (s *Server) onTextDocumentReferences(contents []byte) error {
 	var request lsp.ReferencesRequest
 	if err := json.Unmarshal(contents, &request); err != nil {
-		return errors.New("ERROR: Could not parse request")
+		return errors.New("Could not parse request")
 	}
 	response := handleReferences(&request, &s.state)
 	if response != nil {
@@ -424,7 +425,7 @@ func (s *Server) onTextDocumentReferences(contents []byte) error {
 func (s *Server) onTextDocumentCompletion(contents []byte) error {
 	var request lsp.CompletionRequest
 	if err := json.Unmarshal(contents, &request); err != nil {
-		return errors.New("ERROR: Could not parse request")
+		return errors.New("Could not parse request")
 	}
 	response := handleCompletion(&request, &s.state)
 	if response != nil {
@@ -436,7 +437,7 @@ func (s *Server) onTextDocumentCompletion(contents []byte) error {
 func (s *Server) onCompletionItemResolve(contents []byte) error {
 	var request lsp.CompletionItemResolveRequest
 	if err := json.Unmarshal(contents, &request); err != nil {
-		return errors.New("ERROR: Could not parse request")
+		return errors.New("Could not parse request")
 	}
 	response := handleCompletionItemResolve(&request)
 	if response != nil {
@@ -448,7 +449,7 @@ func (s *Server) onCompletionItemResolve(contents []byte) error {
 func (s *Server) onTextDocumentDocumentSymbol(contents []byte) error {
 	var request lsp.DocumentSymbolsRequest
 	if err := json.Unmarshal(contents, &request); err != nil {
-		return errors.New("ERROR: Could not parse request")
+		return errors.New("Could not parse request")
 	}
 	response := handleDocumentSymbol(&request, &s.state)
 	if response != nil {
@@ -460,7 +461,7 @@ func (s *Server) onTextDocumentDocumentSymbol(contents []byte) error {
 func (s *Server) onTextDocumentPerpareRename(contents []byte) error {
 	var request lsp.PrepareRenameRequest
 	if err := json.Unmarshal(contents, &request); err != nil {
-		return errors.New("ERROR: Could not parse request")
+		return errors.New("Could not parse request")
 	}
 	response := handlePrepareRename(&request, &s.state)
 	if response != nil {
@@ -472,7 +473,7 @@ func (s *Server) onTextDocumentPerpareRename(contents []byte) error {
 func (s *Server) onTextDocumentRename(contents []byte) error {
 	var request lsp.RenameRequest
 	if err := json.Unmarshal(contents, &request); err != nil {
-		return errors.New("ERROR: Could not parse request")
+		return errors.New("Could not parse request")
 	}
 	response := handleRename(&request, &s.state)
 	if response != nil {
@@ -484,7 +485,7 @@ func (s *Server) onTextDocumentRename(contents []byte) error {
 func (s *Server) onWorkspaceSymbol(contents []byte) error {
 	var request lsp.WorkspaceSymbolRequest
 	if err := json.Unmarshal(contents, &request); err != nil {
-		return errors.New("ERROR: Could not parse request")
+		return errors.New("Could not parse request")
 	}
 	response := handleWorkspaceSymbol(&request, &s.state)
 	if response != nil {
@@ -496,7 +497,7 @@ func (s *Server) onWorkspaceSymbol(contents []byte) error {
 func (s *Server) onTextDocumentFormatting(contents []byte) error {
 	var request lsp.FormattingRequest
 	if err := json.Unmarshal(contents, &request); err != nil {
-		return errors.New("ERROR: Could not parse request")
+		return errors.New("Could not parse request")
 	}
 	response := handleFormatting(&request, &s.state)
 	if response != nil {
@@ -508,7 +509,7 @@ func (s *Server) onTextDocumentFormatting(contents []byte) error {
 func (s *Server) onTextDocumentRangeFormatting(contents []byte) error {
 	var request lsp.RangeFormattingRequest
 	if err := json.Unmarshal(contents, &request); err != nil {
-		return errors.New("ERROR: Could not parse request")
+		return errors.New("Could not parse request")
 	}
 	response := handleRangeFormatting(&request, &s.state)
 	if response != nil {
@@ -520,7 +521,7 @@ func (s *Server) onTextDocumentRangeFormatting(contents []byte) error {
 func (s *Server) onTextDocumentCodeAction(contents []byte) error {
 	var request lsp.CodeActionRequest
 	if err := json.Unmarshal(contents, &request); err != nil {
-		return errors.New("ERROR: Could not parse request")
+		return errors.New("Could not parse request")
 	}
 	response := handleCodeAction(&request, &s.state)
 	if response != nil {
@@ -532,7 +533,7 @@ func (s *Server) onTextDocumentCodeAction(contents []byte) error {
 func (s *Server) onTextDocumentDocumentColor(contents []byte) error {
 	var request lsp.DocumentColorRequest
 	if err := json.Unmarshal(contents, &request); err != nil {
-		return errors.New("ERROR: Could not parse request")
+		return errors.New("Could not parse request")
 	}
 	response := handleDocumentColor(&request, &s.state)
 	if response != nil {
@@ -544,7 +545,7 @@ func (s *Server) onTextDocumentDocumentColor(contents []byte) error {
 func (s *Server) onTextDocumentInlayHint(contents []byte) error {
 	var request lsp.InlayHintRequest
 	if err := json.Unmarshal(contents, &request); err != nil {
-		return errors.New("ERROR: Could not parse request")
+		return errors.New("Could not parse request")
 	}
 	response := handleInlayHint(&request, &s.state)
 	if response != nil {

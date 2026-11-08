@@ -17,7 +17,7 @@ func handleCompletion(request *lsp.CompletionRequest, state *State) *lsp.Complet
 	document := state.Documents[uri].Text
 	fileAst, err := ast.ParseDocument(document, uri, true)
 	if err != nil {
-		slog.Error("Could not parse file", "file", uri)
+		slog.Error("Could not parse document", "err", err, "URI", uri)
 	}
 
 	triggerChar := request.Params.Context.TriggerCharacter
