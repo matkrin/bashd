@@ -7,7 +7,8 @@
 
 ### Fixes
 - Diagnostics for new form of command substitution which was introduced in
-  version 5.3 (#13, this was fixed in mvdan/sh)
+  bash version 5.3 (#13, this was fixed in mvdan/sh)
+
 
 ## v0.4.0 (2026-10-30)
 ### New
