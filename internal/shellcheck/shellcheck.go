@@ -159,7 +159,7 @@ func (c *Comment) levelToSeverity() lsp.DiagnosticSeverity {
 	case "style":
 		severity = lsp.DiagnosticHint
 	default:
-		slog.Warn("Unknown shellcheck level", "level", c.Level)
+		slog.Warn("Unknown shellcheck level, falling back to style (hint)", "level", c.Level)
 		severity = lsp.DiagnosticHint
 	}
 	return severity
@@ -223,11 +223,11 @@ func Run(filecontent string, options Options) (*ShellCheckResult, error) {
 		// https://github.com/koalaman/shellcheck/wiki/Integration#exit-codes
 		// return nil, errors.New("Could not get stdout from shellcheck")
 	}
-	slog.Info("SHELLCHECK", "shOutput", shOutput)
 
 	var output ShellCheckResult
 	if err = json.Unmarshal(shOutput, &output); err != nil {
 		return nil, errors.New("Could not unmarshal shellcheck output")
 	}
+
 	return &output, nil
 }

@@ -24,7 +24,7 @@ func handlePrepareRename(
 	document := state.Documents[uri].Text
 	fileAst, err := ast.ParseDocument(document, uri, false)
 	if err != nil {
-		slog.Error(err.Error())
+		slog.Error("Could not parse document", "err", err, "URI", uri)
 		return nil
 	}
 	cursorNode := fileAst.FindNodeUnderCursor(cursor)
@@ -66,7 +66,7 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 	document := state.Documents[uri].Text
 	fileAst, err := ast.ParseDocument(document, uri, false)
 	if err != nil {
-		slog.Error(err.Error())
+		slog.Error("Could not parse document", "err", err, "URI", uri)
 		return nil
 	}
 	referenceNodes := fileAst.FindRefsInFile(cursor, true)
@@ -77,7 +77,7 @@ func handleRename(request *lsp.RenameRequest, state *State) *lsp.RenameResponse 
 	// In sourced files
 	filename, err := utils.UriToPath(uri)
 	if err != nil {
-		slog.Error("Could not transform URI to path", "err", err.Error())
+		slog.Error("Could not convert URI to path", "err", err)
 		return nil
 	}
 	baseDir := filepath.Dir(filename)

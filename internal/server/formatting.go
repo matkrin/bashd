@@ -12,11 +12,12 @@ import (
 
 // TODO: Cleaner end position
 func handleFormatting(request *lsp.FormattingRequest, state *State) *lsp.FormattingResponse {
-	slog.Info("FORMATTING", "params", request.Params)
+	slog.Debug("FORMATTING", "params", request.Params)
 	uri := request.Params.TextDocument.URI
 	document := state.Documents[uri].Text
 	fileAst, err := ast.ParseDocument(document, uri, false)
 	if err != nil {
+		slog.Error("Could not parse document", "err", err,"URI", uri)
 		return nil
 	}
 
@@ -65,7 +66,7 @@ func handleFormatting(request *lsp.FormattingRequest, state *State) *lsp.Formatt
 // TODO: Think about determining nodes from AST of entire document that are
 // in range instead of slicing document and parse then. What's better?
 func handleRangeFormatting(request *lsp.RangeFormattingRequest, state *State) *lsp.RangeFormattingResponse {
-	slog.Info("RANGE-FORMATTING", "params", request.Params)
+	slog.Debug("RANGE-FORMATTING", "params", request.Params)
 	uri := request.Params.TextDocument.URI
 	document := state.Documents[uri].Text
 
@@ -78,6 +79,7 @@ func handleRangeFormatting(request *lsp.RangeFormattingRequest, state *State) *l
 
 	rangeAst, err := ast.ParseDocument(rangeString, uri, false)
 	if err != nil {
+		slog.Error("Could not parse document", "err", err,"URI", uri)
 		return nil
 	}
 
@@ -94,6 +96,7 @@ func handleRangeFormatting(request *lsp.RangeFormattingRequest, state *State) *l
 	buffer := bytes.NewBuffer([]byte{})
 	err = printer.Print(buffer, rangeAst.File)
 	if err != nil {
+		slog.Error("Could not pretty-print AST")
 		return nil
 	}
 

@@ -20,7 +20,7 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 	document := state.Documents[uri].Text
 	fileAst, err := ast.ParseDocument(document, uri, false)
 	if err != nil {
-		slog.Error(err.Error())
+		slog.Error("Could not parse document", "err", err, "URI", uri)
 		return nil
 	}
 	cursorNode := fileAst.FindNodeUnderCursor(cursor)
@@ -30,7 +30,7 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 		// Check for the definition in a sourced file
 		filename, err := utils.UriToPath(uri)
 		if err != nil {
-			slog.Error(err.Error())
+			slog.Error("Could not convert URI to path", "err", err)
 			return nil
 		}
 		baseDir := filepath.Dir(filename)
@@ -50,7 +50,7 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 		// Check if the cursor is over a filename in a source statement
 		filename, err := utils.UriToPath(uri)
 		if err != nil {
-			slog.Error(err.Error())
+			slog.Error("Could not convert URI to path", "err", err)
 			return nil
 		}
 		baseDir := filepath.Dir(filename)
@@ -83,4 +83,3 @@ func handleDefinition(request *lsp.DefinitionRequest, state *State) *lsp.Definit
 	)
 	return &response
 }
-
